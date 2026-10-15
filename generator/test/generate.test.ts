@@ -256,3 +256,20 @@ test('BTT Eddy Coil needs a toolhead board with an I2C header', () => {
   delete b.toolboard;
   assert.ok(generate(b, db, 'test').issues.some((i) => i.code === 'probe_needs_toolboard'));
 });
+
+test('hotend max_temp: sourced rating, thermistor cap, bare hotends, unknown rating', () => {
+  const maxTemp = (hotend: string, thermistor: string) => {
+    const b = example(); b.hotend = hotend; b.thermistors.hotend = thermistor;
+    const r = generate(b, db, 'test');
+    const m = /^\[extruder\][\s\S]*?^max_temp: (\d+)/m.exec(r.files['toolhead.cfg']);
+    return { t: Number(m![1]), codes: r.issues.map((i) => i.code) };
+  };
+  assert.equal(maxTemp('rapido2-hf', 'semitec-104nt4').t, 290);            // retailer-sourced 290, below the thermistor's 300
+  assert.equal(maxTemp('revo-voron', 'semitec-104nt4').t, 300);            // E3D: 300
+  const bare = maxTemp('dragon-sf', 'ntc100k-3950');                       // ships without heater/thermistor
+  assert.equal(bare.t, 280);
+  assert.ok(bare.codes.includes('max_temp_capped'));
+  const ace = maxTemp('dragon-ace', 'semitec-104nt4');                     // no published rating
+  assert.equal(ace.t, 300);
+  assert.ok(ace.codes.includes('hotend_max_temp_unknown'));
+});

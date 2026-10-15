@@ -99,7 +99,7 @@ def main():
             if e not in ext_ids:
                 errors.append(f"toolhead {t['id']}: unknown extruder {e}")
     for h in hotends:
-        if h.get("common_thermistor") not in therm_ids:
+        if h.get("common_thermistor") is not None and h.get("common_thermistor") not in therm_ids:
             errors.append(f"hotend {h['id']}: unknown thermistor {h.get('common_thermistor')}")
     for p in printers:
         if p["stock"]["toolhead"] not in th_ids:

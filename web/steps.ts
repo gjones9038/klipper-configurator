@@ -358,7 +358,7 @@ const hotendStep: Step = {
           value: e.id, label: `${e.name} · rd ${e.rotation_distance}${e.gear_ratio ? ` · ${e.gear_ratio}` : ''}`,
           group: fits(e.id) ? (toolhead ? `Fits ${toolhead.name}` : 'Extruders') : 'Other extruders',
         })).sort((a, b) => Number(!fits(a.value)) - Number(!fits(b.value))), (v) => update((b) => { b.extruder = v; delete b.motors.extruder; })),
-        select('Hotend', build.hotend, Object.values(db.hotends).map((x) => ({ value: x.id, label: `${x.name} · ${x.flow_class} flow · max ${x.max_temp} °C` })),
+        select('Hotend', build.hotend, Object.values(db.hotends).map((x) => ({ value: x.id, label: `${x.name} · ${x.flow_class} flow · ${x.max_temp == null ? 'no published max temp' : x.max_temp_basis === 'metalwork' ? `no heater/thermistor included (metal rated ${x.max_temp} °C)` : `max ${x.max_temp} °C`}` })),
           (v) => update((b) => { b.hotend = v; }), hotend.common_thermistor ? `Usually ships with: ${db.thermistors[hotend.common_thermistor]?.label ?? hotend.common_thermistor}` : undefined)),
       h('div', { class: 'grid' },
         select('Hotend thermistor', build.thermistors.hotend, therm, (v) => update((b) => { b.thermistors.hotend = v; })),

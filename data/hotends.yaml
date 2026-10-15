@@ -1,8 +1,18 @@
-schema: hotends/1
+schema: hotends/2
 
-# Hotend data drives max_temp, heater wattage notes, flow-class adjustments to
-# the PA baseline and a PID seed (always replaced by PID_CALIBRATE).
-# Thermistor is asked of the user; `common_thermistor` only preselects.
+# Hotend data drives max_temp (the generator uses min(hotend max_temp,
+# thermistor max_temp_c)), flow-class adjustments to the PA baseline and a PID
+# seed (always replaced by PID_CALIBRATE). The thermistor is asked of the user;
+# `common_thermistor` only preselects it and is set only when the hotend ships
+# with one.
+#
+# max_temp_basis says what the rating covers:
+#   hotend     - the vendor's rating for the hotend as sold (heater and sensor included)
+#   metalwork  - the vendor's rating for the metal parts; the hotend ships without a
+#                heater and sensor, so the thermistor (and heater) the user fits set the
+#                real limit
+# max_temp: null means no source gives one; the thermistor limit is used alone.
+# Retailer-only figures are marked `retailer` in their source.
 
 flow_classes:
   standard:   {pa_offset: 0.0}
@@ -10,24 +20,146 @@ flow_classes:
   ultra_high_flow: {pa_offset: 0.01}
 
 hotends:
-  - {id: revo-voron, name: E3D Revo Voron, flow_class: standard, max_temp: 300,
-     heater_w_options: [40, 60], common_thermistor: semitec-104nt4}
-  - {id: rapido2-hf, name: Phaetus Rapido 2 HF, flow_class: high_flow, max_temp: 300,
-     heater_w_options: [60, 115], common_thermistor: semitec-104nt4}
-  - {id: rapido2-uhf, name: Phaetus Rapido 2 UHF, flow_class: ultra_high_flow, max_temp: 300,
-     heater_w_options: [60, 115], common_thermistor: semitec-104nt4}
-  - {id: dragon-sf, name: Phaetus Dragon SF, flow_class: standard, max_temp: 300,
-     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
-  - {id: dragon-hf, name: Phaetus Dragon HF, flow_class: high_flow, max_temp: 300,
-     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
-  - {id: dragon-ace, name: Phaetus Dragon Ace, flow_class: high_flow, max_temp: 300,
-     heater_w_options: [60], common_thermistor: semitec-104nt4}
-  - {id: dragonfly-bms, name: Phaetus Dragonfly BMS, flow_class: standard, max_temp: 300,
-     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
-  - {id: chube-air, name: Chube Air, flow_class: high_flow, max_temp: 300,
-     heater_w_options: [60], common_thermistor: ntc100k-3950}
-  - {id: generic-v6, name: Generic V6-style, flow_class: standard, max_temp: 270,
-     heater_w_options: [40, 50, 60], common_thermistor: ntc100k-3950}
+  - id: revo-voron
+    name: E3D Revo Voron
+    maker: E3D
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    heater_w: [40]
+    common_thermistor: semitec-104nt4
+    sources:
+      - {url: "https://e3d-online.com/pages/revo-support-voron", accessed: 2026-10-15,
+         quote: "Max Printing Temperature: 300°C; Wattage: 40W; Temperature sensor type: Thermistor, Semitec 104NT-4-R025H42G"}
+    unverified: ["60 W HeaterCore for the Revo Voron: sold by retailers; E3D's Voron page lists only 40 W"]
+
+  - id: rapido2-hf
+    name: Phaetus Rapido 2 HF
+    maker: Phaetus
+    flow_class: high_flow
+    max_temp: 290
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104nt4
+    sources:
+      - {url: "https://www.matterhackers.com/store/l/phaetus-rapido-2-hotend/sk/MHLRSM03", accessed: 2026-10-15, retailer: true,
+         quote: "Max temperature 290°C; Thermistor 104NT-4-R025H42G; 24V 115W ±8%; HF up to 45mm3/s"}
+      - {url: "https://www.3djake.com/phaetus/rapido-hotend-2-hf", accessed: 2026-10-15, retailer: true,
+         quote: "Max. Temperature up to 290 °C; removable 104NT thermistor; 90-watt ceramic heater; 52 mm³/s"}
+      - {repo: "https://github.com/Phaetus/Rapido-2", path: "Instructions Sheet/Rapido Hotend 2 Instruction Sheet.pdf",
+         commit: d1f1a5d58db21d7ed0e690d34ddca5f89e339d8a, note: "assembly only; no electrical or temperature specs"}
+    discrepancies:
+      - "Heater wattage: 115 W (MatterHackers), 90 W and 80 W (3DJake, description vs table). Not recorded."
+      - "Flow: 45 mm³/s (MatterHackers) vs 52 mm³/s (3DJake)."
+    unverified: ["Phaetus publishes no temperature or heater spec for the Rapido 2; values are retailer figures (two agree on 290 °C and 104NT)"]
+
+  - id: rapido2-uhf
+    name: Phaetus Rapido 2 UHF
+    maker: Phaetus
+    flow_class: ultra_high_flow
+    max_temp: 290
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104nt4
+    sources:
+      - {url: "https://www.3djake.com/phaetus/rapido-hotend-2-uhf", accessed: 2026-10-15, retailer: true,
+         quote: "Max. Temperature up to 290 °C; uses a removable 104NT thermistor; maximum flow rate 75 mm³/s"}
+      - {url: "https://www.matterhackers.com/store/l/phaetus-rapido-2-hotend/sk/MHLRSM03", accessed: 2026-10-15, retailer: true,
+         quote: "UHF (Ultra High Flow) - Up to 75mm3/s; 290°C; 104NT-4-R025H42G (Rapido 2 family listing)"}
+    discrepancies: ["Heater wattage as for the HF: 80 / 90 / 115 W across retailer pages. Not recorded."]
+    unverified: ["Phaetus publishes no temperature or heater spec for the Rapido 2; values are retailer figures"]
+
+  - id: dragon-sf
+    name: Phaetus Dragon ST (formerly SF)
+    maker: Phaetus
+    flow_class: standard
+    max_temp: 500
+    max_temp_basis: metalwork
+    includes: {heater: false, thermistor: false}
+    common_thermistor: null
+    sources:
+      - {repo: "https://github.com/Phaetus/Dragon-ST", path: "Instructions Sheet/Dragon ST instruction sheet.pdf",
+         commit: 00bcd5c833634a5bf1db4af16baadc1ee57d254e, quote: "temperature resistance up to 500 ℃"}
+      - {url: "https://www.matterhackers.com/store/l/phaetus-dragon-hotend/sk/MTJEDR6H", accessed: 2026-10-15, retailer: true,
+         note: "What's included lists the hotend, tools, screws and collet clip; no heater or thermistor"}
+    unverified: ["'ships without heater and thermistor' is read from the package lists (Phaetus sheet and retailers), which name neither"]
+
+  - id: dragon-hf
+    name: Phaetus Dragon HF
+    maker: Phaetus
+    flow_class: high_flow
+    max_temp: 500
+    max_temp_basis: metalwork
+    includes: {heater: false, thermistor: false}
+    common_thermistor: null
+    sources:
+      - {repo: "https://github.com/Phaetus/Dragon-HF", path: "Instructions Sheet/Dragon HF instruction sheet.pdf",
+         commit: b2a8a226539c826e9543f87b136d7d26afa7cccf, quote: "temperature resistance up to 500 ℃"}
+    unverified: ["'ships without heater and thermistor' is read from the package list, which names neither"]
+
+  - id: dragon-ace
+    name: TriangleLab Dragon ACE
+    maker: TriangleLab
+    flow_class: high_flow
+    max_temp: null
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104nt4
+    sources:
+      - {url: "https://west3d.com/products/dragon-ace-hot-end", accessed: 2026-10-15, retailer: true,
+         note: "standard version ships with a 104NT thermistor (a PT1000 'Plus' version also exists); ceramic heating pad, not a cartridge"}
+    unverified:
+      - "No maximum temperature found from TriangleLab or a retailer; the thermistor limit applies"
+      - "The earlier record called this a Phaetus product; it is TriangleLab's"
+      - "flow_class high_flow is not from a source"
+
+  - id: dragonfly-bms
+    name: Phaetus Dragonfly BMS
+    maker: Phaetus
+    flow_class: standard
+    max_temp: 500
+    max_temp_basis: metalwork
+    includes: {heater: false, thermistor: false}
+    common_thermistor: null
+    sources:
+      - {repo: "https://github.com/Phaetus/Dragonfly-BMS", path: "Instructions Sheet/Dragonfly-BMS-Hotend-Instruction.pdf",
+         commit: 791f6e2131595211c33c55ab37f44f84d7247c46, quote: "Overall high temperature resistance up to 500"}
+    unverified: ["'ships without heater and thermistor' is not stated outright for the BMS; one retailer says so for a Dragonfly listing"]
+
+  - id: chube-air
+    name: Chube Air
+    maker: Luke's Laboratory
+    flow_class: high_flow
+    max_temp: 500
+    max_temp_basis: metalwork
+    includes: {heater: false, thermistor: false}
+    common_thermistor: null
+    heater_size: "6 mm OD, 20-22 mm long cartridge"
+    sensor_size: "3 mm OD, 15 mm long cartridge"
+    sources:
+      - {url: "https://store.dremc.com.au/products/chube-hotend", accessed: 2026-10-15,
+         quote: "Each component is rated for operation at 500°C block temperature and 300°C ambient temperature. Heater - Air: 6mm OD, 20-22mm Length. Temperature Sensor: 3mm OD, 15mm Length"}
+    unverified: ["flow_class high_flow is not from a source"]
+
+  - id: generic-v6
+    name: E3D V6 (and V6-style clones)
+    maker: E3D
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    heater_w: [30]
+    common_thermistor: null
+    sources:
+      - {url: "https://e3d-online.com/pages/e3d-classics-support-v6-hotend", accessed: 2026-10-15,
+         quote: "The V6 comes as standard with a maximum temperature rating of 300°C. Maximum operation temperature with sock fitted: 260°C. Nominal heater power: 30W"}
+    notes:
+      - "The silicone sock limits it to 260°C (E3D)."
+      - "E3D lists the thermistor among the temperature-limited parts but does not name it on that page, so none is preselected."
+    discrepancies:
+      - "A 2019 E3D V6 datasheet is quoted elsewhere as 285°C with the E3D thermistor; it could not be retrieved first-hand (the link is dead). Using E3D's current support page (300°C)."
+      - "Clones vary; check yours."
 
 defaults:
   min_temp: 10
@@ -36,11 +168,7 @@ defaults:
   pid_seed: {pid_kp: 26.213, pid_ki: 1.304, pid_kd: 131.721}   # Voron reference values
 
 unverified:
-  - "Every hotend above: max_temp, heater wattages and common thermistor come from general
-    knowledge, not from vendor docs fetched this session. Verify before marking reviewed."
   - "pa_offset per flow class is a heuristic"
-  - "Thermistors rated for 300C need a matching thermistor; a Generic 3950 should be capped at
-    about 280C. The generator should use min(hotend.max_temp, thermistor limit)."
 
 sources:
   - repo: https://github.com/VoronDesign/Voron-2

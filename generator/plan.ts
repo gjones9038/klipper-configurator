@@ -188,6 +188,25 @@ export function plan(build: Build, db: Db): Plan {
   addLinks(extruder.docs, 'extruder');
   addLinks([KLIPPER_DOCS.configChecks], 'first power-on');
 
+  // [extruder] max_temp: the lower of the hotend's rating and the thermistor's.
+  // A bare hotend's rating covers only its metal parts (heater and sensor not
+  // included), and some hotends have no published rating at all.
+  function hotendMaxTemp(he: Rec, th: Rec, label = ''): number {
+    const tl: number | undefined = th.max_temp_c;
+    if (he.max_temp == null) {
+      if (tl == null) throw new PlanError('no_max_temp', `${label}Neither the ${he.name} nor the ${th.label} thermistor has a known maximum temperature.`);
+      warn('hotend_max_temp_unknown', `${label}No published maximum temperature for the ${he.name}; max_temp follows the ${th.label} thermistor (${tl}°C). Check the hotend's limit.`);
+      return tl;
+    }
+    const t = Math.min(he.max_temp, tl ?? he.max_temp);
+    if (he.max_temp_basis === 'metalwork') {
+      warn('max_temp_capped', `${label}The ${he.name} ships without a heater or thermistor; its ${he.max_temp}°C rating covers the metal parts only. max_temp is ${t}°C from the ${th.label} thermistor; your heater cartridge's rating also applies.`);
+    } else if (t < he.max_temp) {
+      warn('max_temp_capped', `${label}Hotend max_temp capped at ${t}°C by the ${th.label} thermistor (hotend rated ${he.max_temp}°C).`);
+    }
+    return t;
+  }
+
   // A probe needs a supply voltage the port provides (toolboard v1.x Endstop
   // connectors are 5 V only; inductive probes need 12-24 V).
   function checkProbeSupply(p: Rec, port: Rec | undefined, kind: BoardKind, b: Rec | undefined) {
@@ -554,8 +573,7 @@ export function plan(build: Build, db: Db): Plan {
       else err('no_thermistor', 'No free thermistor port for the chamber sensor.');
     }
   }
-  const maxTemp = Math.min(hotend.max_temp, thermHotend.max_temp_c ?? hotend.max_temp);
-  if (maxTemp < hotend.max_temp) warn('max_temp_capped', `Hotend max_temp capped at ${maxTemp}°C by the ${thermHotend.label} thermistor (hotend rated ${hotend.max_temp}°C).`);
+  const maxTemp = hotendMaxTemp(hotend, thermHotend);
 
   // --- fans ----------------------------------------------------------------
   const usedFans: Record<BoardKind, Set<string>> = { mainboard: new Set(), toolboard: new Set() };
@@ -791,7 +809,7 @@ export function plan(build: Build, db: Db): Plan {
       steppers.push(stepper);
       const h = tb.heaters[0];
       const t = pick(tb.thermistors, (x) => x.typical_use === 'hotend')!;
-      const toolMax = Math.min(he.max_temp, th.max_temp_c ?? he.max_temp);
+      const toolMax = hotendMaxTemp(he, th, `T${n}: `);
       // Same fan ports as T0 when the board has them, so every tool is wired alike.
       const used = new Set<string>();
       const toolFans: FanPlan[] = [];
