@@ -51,6 +51,9 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({ component: `Probe: ${p.probe.name}`, board: 'mainboard', connector: conn === 'can' ? 'CAN bus' : 'host USB',
       pins: conn === 'can' ? 'CAN-H / CAN-L + 24V / GND' : 'USB cable to the host (Pi/CB1)', note: 'own MCU; mount it per the vendor guide and measure x/y offsets' });
   }
+  for (const e of p.board.activeExtensions ?? []) {
+    if (e.buzzer) add({ component: 'Buzzer', board: 'mainboard', connector: `${e.buzzer.id} (on the ${e.name})`, pins: bare(e.buzzer.pin), note: 'built in; M300 S<Hz> P<ms> plays a tone' });
+  }
   if (p.bltouch) add({ component: 'BLTouch', board: p.bltouch.board, connector: 'BLTouch', pins: `sensor ${bare(p.bltouch.sensor)} / servo ${bare(p.bltouch.control)}` });
   for (const t of p.tools ?? []) {
     const T = `T${t.n}`;

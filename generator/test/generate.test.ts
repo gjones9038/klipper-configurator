@@ -96,6 +96,9 @@ test('AWD on the Leviathan with its extension board: B1/A1 on the extension HV s
   const mb = r.files['mainboard.cfg'];
   assert.match(mb, /\[tmc5160 stepper_x1\][^[]*cs_pin: PB12[^[]*spi_bus: spi2/);
   assert.match(mb, /\[tmc5160 stepper_x\][^[]*spi_bus: spi4/);
+  assert.match(mb, /\[pwm_cycle_time _beeper\][^[]*pin: PB1/);
+  assert.match(mb, /\[gcode_macro M300\][\s\S]*?SET_PIN PIN=_beeper VALUE=0\.5 CYCLE_TIME=/);
+  assert.doesNotMatch(generate(example(), db, 'test').files['mainboard.cfg'], /_beeper/);   // no extension, no buzzer
 });
 
 test('Leviathan extension: 9 drivers fit AWD without a toolhead board; its fans and thermistors are usable', () => {

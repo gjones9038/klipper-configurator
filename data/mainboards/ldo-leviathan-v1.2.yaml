@@ -250,12 +250,14 @@ extensions:
   - id: EXT-TH5
     pin: PC5
     pullup_ohms: 2200
-  misc:
-    buzzer_pin: PB1
+  buzzer:
+    id: BUZZER
+    pin: PB1
+    kind: passive     # README "piezo buzzer"; LDO drives it as pwm_cycle_time (pitch = cycle time)
   notes:
   - LDO's config puts stepper_x1 (B1) on HV STEPPER 2 and stepper_y1 (A1) on HV STEPPER 3; the generator does the same.
   - The extension's drivers sit on SPI2, the Leviathan's own on SPI4.
-  - 'The passive buzzer (PB1) is not configured by the generator; LDO''s v2t_leviathan_ext.cfg has a [pwm_cycle_time _beeper] example.'
+  - 'The buzzer (PB1) is set up as [pwm_cycle_time _beeper] with an M300 macro (M300 S<Hz> P<ms>), as in LDO''s config; the macro follows Klipper''s config/sample-macros.cfg.'
   unverified:
   - Only LDO sources (config and schematic, which agree on every pin); Klipper has no config for this board, so it stays needs-review.
   - Fan voltage: README says 12V/24V selectable; the schematic has one FAN_V rail for both ports. The selector itself was not identified.
@@ -270,6 +272,10 @@ extensions:
   - repo: https://github.com/MotorDynamicsLab/LeviathanExt
     path: README.md
     commit: 060af34d9eecc6e967473f04f5e677e55a51dda8
+  - repo: https://github.com/Klipper3d/klipper
+    path: config/sample-macros.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+    note: M300 beeper macro (pwm_cycle_time pin, SET_PIN VALUE=0.5 CYCLE_TIME=1/S)
   - repo: https://github.com/MotorDynamicsLab/Leviathan
     path: Media/extensionport.jpg
     commit: 878c3c4893ea353552c957f574509f9890e1e37a

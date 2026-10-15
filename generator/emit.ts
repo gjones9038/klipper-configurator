@@ -217,6 +217,24 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       .set('initial_RED', 0.2).set('initial_GREEN', 0.2).set('initial_BLUE', 0.2).set('initial_WHITE', p.leds.order.length === 4 ? 0.2 : undefined));
   }
 
+  // Passive buzzer on a mainboard extension: the pitch is the PWM cycle time.
+  // [pwm_cycle_time _beeper] as in LDO's v2t_leviathan_ext.cfg; M300 follows
+  // Klipper's config/sample-macros.cfg.
+  for (const e of p.board.activeExtensions ?? []) {
+    if (!e.buzzer) continue;
+    mb.add(new Section('pwm_cycle_time _beeper', `${e.name} ${e.buzzer.id}`)
+      .set('pin', e.buzzer.pin).set('value', 0, 'silent at power on').set('shutdown_value', 0)
+      .set('cycle_time', 0.001, '1 kHz default tone'));
+    mb.add(new Section('gcode_macro M300', 'M300 [S<Hz>] [P<ms>]: play a tone on the buzzer').set('gcode', [
+      '{% set S = params.S|default(1000)|int %}',
+      '{% set P = params.P|default(100)|int %}',
+      'SET_PIN PIN=_beeper VALUE=0.5 CYCLE_TIME={ 1.0/S if S > 0 else 1 }',
+      'G4 P{P}',
+      'SET_PIN PIN=_beeper VALUE=0',
+    ]));
+    break;   // one M300
+  }
+
   files['mainboard.cfg'] = mb.render();
   if (eddy || beacon) files['probe.cfg'] = probeFile(p, header('probe.cfg'));
   if (tb) files['toolhead.cfg'] = tb.render();
