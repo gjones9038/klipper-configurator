@@ -13,7 +13,7 @@ AUTOTUNE_REPO=https://github.com/andrewmcgr/klipper_tmc_autotune.git
 TOOLCHANGER_REPO=https://github.com/viesturz/klipper-toolchanger.git
 TOOLCHANGER_REF=pull/174/head
 TOOLCHANGER_COMMIT=0bded502b27dae5b9261789e03b0c8a0b84f48fb
-CHIPS="stm32f042 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
+CHIPS="stm32f042 stm32f072 stm32f103 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C="$ROOT/.cache/klipper-check"
@@ -41,13 +41,16 @@ cd "$C/klipper"
 for chip in $CHIPS; do
   [ -f "$C/dicts/$chip.dict" ] && continue
   make clean >/dev/null 2>&1 || true
-  cp "test/configs/$chip.config" .config
+  # Klipper's test config, or a repo-local base config for chips it has none for (F072).
+  BASE="test/configs/$chip.config"
+  [ -f "$BASE" ] || BASE="$ROOT/tools/klipper-check/$chip.config"
+  cp "$BASE" .config
   # Per-chip overrides (e.g. Cartographer's F042 needs the LDC1612 driver). Override keys
   # are removed from the base config first so Kconfig sees each key once.
   OVR="$ROOT/tools/klipper-check/$chip.overrides"
   if [ -f "$OVR" ]; then
     keys="$(grep -oE '^CONFIG_[A-Z0-9_]+' "$OVR" | paste -sd'|')"
-    grep -vE "^($keys)=" "test/configs/$chip.config" > .config
+    grep -vE "^($keys)=" "$BASE" > .config
     grep -v '^#' "$OVR" >> .config
   fi
   make olddefconfig >/dev/null

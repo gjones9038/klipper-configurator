@@ -1,0 +1,105 @@
+schema: toolboard/1
+id: mellow-fly-sht36-v2
+name: Mellow Fly-SHT36 V2
+manufacturer: Mellow
+revisions:
+- '2.0'
+status: needs-review
+mcu:
+  chip: stm32f072
+  crystal_mhz: 8
+  bootloader_kib: 8
+  bootloader_note: Mellow firmware settings (CanBoot preinstalled)
+  startup_pins: '!PC13'
+  startup_pins_note: Mellow's firmware settings
+interfaces:
+- can
+- usb
+can_pins: PB8/PB9
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PA15'
+  uart_pin: PB5
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: PA8
+  role: hotend
+thermistors:
+- id: TH0
+  pin: PA3
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: PA4
+  typical_use: chamber
+fans:
+- id: FAN0
+  pin: PB10
+  wires: 2
+- id: FAN1
+  pin: PB11
+  wires: 2
+probe_ports:
+- id: PROBE
+  pin: PC15
+  note: Probe pin of the BLTouch connector (servo PB1).
+bltouch:
+  sensor_pin: PC15
+  control_pin: PB1
+endstops:
+- id: LIMIT_1
+  pin: PA1
+- id: LIMIT_2
+  pin: PA2
+neopixel_ports:
+- id: RGB
+  pin: PB0
+i2c_ports: []
+accelerometer:
+  chip: adxl345
+  cs_pin: PA9
+  spi_bus: spi2
+notes:
+- 'Pins: Mellow pin table and sample config agree. Extruder DIAG PB6. MAX31865 (PT100) CS PB12 on spi2; AS5047D
+  angle sensor CS PC14 on spi1.'
+- 'MCU by purchase date (Mellow): GD32F103 before 2022-10-18, APM32F072 after, STM32F072 after 2023-05-01. APM32F072
+  and STM32F072 build as STM32F072: 8KiB bootloader, 8 MHz crystal, CAN PB8/PB9 at 1M, startup pin !PC13. GD32F103
+  boards build as STM32F103 with the same offset, crystal and startup pin at 500K.'
+- 'Mellow: CanBoot speed is 500K on boards bought before 2023-09-20 and 1M after.'
+- Thermistor pull-up 4.7 kΩ or 1.1 kΩ (PT1000) by jumper (Mellow README); fan voltage 5/12/24 V selectable.
+- 'The onboard NTC (PA4) is meant for chamber temperature (Mellow README: 用于测仓温).'
+discrepancies:
+- The community SHT36 V2 pin table lists the hotend thermistor on PB0 and PT100 on PA3, which matches the V1 board;
+  Mellow's V2 table and sample use PA3 for the thermistor, PB0 for RGB and PB12 for the MAX31865. Following Mellow.
+- 'Fan labels: Mellow''s V2 table gives FAN0 PB10 and FAN1 PB11; the community notes a silkscreen error (FAN0 is
+  PB11, FAN1 is PB10), and Mellow''s sample drives the part fan from PB11. Check which connector your fan is on.'
+unverified:
+- probe port supply voltage
+- GD32F103 boards are not modelled separately (choose STM32F103 in menuconfig for them)
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht_v2/pins.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht_v2/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht_v2/README.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht_v2/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht_v2/config_072.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht_v2/config.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/mellow-3d.github.io
+  path: _includes/custom/can/sht_v2_pins.html
+  commit: 31f184d39f5390b57b09241d1c0249c433f31723

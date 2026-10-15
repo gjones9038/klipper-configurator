@@ -1,0 +1,90 @@
+schema: toolboard/1
+id: mellow-fly-sht36-v1
+name: Mellow Fly-SHT36
+manufacturer: Mellow
+revisions:
+- '1.0'
+status: needs-review
+mcu:
+  chip: stm32f072
+  crystal_mhz: 8
+  bootloader_kib: 0
+interfaces:
+- can
+- usb
+can_pins: PB8/PB9
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PA15'
+  uart_pin: PB5
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: PA8
+  role: hotend
+thermistors:
+- id: TH0
+  pin: PB0
+  pullup_ohms: 4700
+  typical_use: hotend
+fans:
+- id: FAN0
+  pin: PB10
+  wires: 2
+- id: FAN1
+  pin: PB11
+  wires: 2
+probe_ports:
+- id: PROBE
+  pin: PC15
+  note: Probe pin of the BLTouch connector (servo PB1).
+bltouch:
+  sensor_pin: PC15
+  control_pin: PB1
+endstops:
+- id: LIMIT_0
+  pin: PA0
+- id: LIMIT_1
+  pin: PA1
+- id: LIMIT_2
+  pin: PA2
+neopixel_ports:
+- id: RGB
+  pin: PB15
+i2c_ports: []
+accelerometer:
+  chip: adxl345
+  cs_pin: PA4
+  spi_bus: spi1
+notes:
+- 'Pins: Mellow pin table and sample config agree with the community pin table. MAX31865 (PT100) CS PA3 on spi1.'
+- 'MCU STM32F072C8T6 (Mellow README). Mellow''s firmware screenshot: no bootloader, 8 MHz crystal, CAN on PB8/PB9
+  at 500000. Every node on a CAN bus must use the same speed; this generator assumes 1000000, so either build at
+  1M or set the whole bus to 500K.'
+- SHT36 and SHT42 share this pin map (Mellow documents them together).
+unverified:
+- probe port supply voltage
+- 'thermistor pull-up value (4.7k assumed: the sample sets none)'
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_42/pins.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_42/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_42/README.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_42/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht36_42/config.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/mellow-3d.github.io
+  path: _includes/custom/can/sht_pins.html
+  commit: 31f184d39f5390b57b09241d1c0249c433f31723
