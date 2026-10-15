@@ -57,7 +57,10 @@ viesturz/klipper-toolchanger (`data/toolchangers.yaml`, every value cited):
 
 Tool changes are refused (by the generated macros) until a tool's dock and the safe Y are set.
 The pickup / dropoff macros are written for this repo from klipper-toolchanger's documentation; the
-upstream example macros are GPLv3. Only the Voron 2.4 (fixed docks) is modelled; Trident needs a liftbar.
+upstream example macros are GPLv3. StealthChanger is a Voron 2.4 toolchanger (its wiki); the Trident is refused with the reason
+(a liftbar would be needed, and klipper-toolchanger's liftbar example is untested and its manual_rail
+module fails on current Klipper, issue #165). Z probing: a Tap on every tool (default) or one
+shuttle-mounted eddy probe (`toolchanger.zProbe: shuttle`).
 
 > klipper-toolchanger `main` (94756df) does not load on Klipper after its 2026-05-25 probe rework.
 > The generator warns about it; the Klipper check runs against the open fix, PR #174.

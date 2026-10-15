@@ -238,7 +238,8 @@ export function plan(build: Build, db: Db): Plan {
     : undefined;
   if (tcSpec && tcRec) {
     if (!tcRec.applies_to.includes(build.printer)) {
-      err('toolchanger_printer', `${tcRec.name} is modelled for ${tcRec.applies_to.map((id: string) => db.printers[id]?.name ?? id).join(', ')} (fixed docks on a flying gantry). ${printer.name} needs a liftbar, which the generator does not write yet.`);
+      err('toolchanger_printer', tcRec.not_supported?.[build.printer]
+        ?? `${tcRec.name} is modelled for ${tcRec.applies_to.map((id: string) => db.printers[id]?.name ?? id).join(', ')} only.`);
     }
     if (build.toolhead !== tcRec.toolhead) err('toolchanger_toolhead', `${tcRec.name} tools are "${db.toolheads[tcRec.toolhead]?.name}"; set the toolhead to it.`);
     if (!toolboard) err('toolchanger_needs_toolboard', `Every ${tcRec.name} tool carries its own toolhead board; T0 has none.`);

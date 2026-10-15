@@ -7,7 +7,13 @@ schema: 1
 toolchangers:
   - id: stealthchanger
     name: StealthChanger
-    applies_to: [voron-2.4]       # flying gantry with fixed docks; Trident needs a liftbar (not modelled)
+    applies_to: [voron-2.4]       # StealthChanger wiki: "a ... tool changer for the Voron 2.4 printer"
+    not_supported:
+      voron-trident: >-
+        StealthChanger is designed for the Voron 2.4 (StealthChanger wiki, Home). A fixed-gantry printer
+        such as the Trident would need a liftbar; klipper-toolchanger's liftbar example is marked
+        "NOT tested, use with caution", and its manual_rail module fails on current Klipper (open
+        issue #165). Not generated.
     toolhead: stealthchanger-sb   # toolheads.yaml entry every tool uses
     dock: fixed
     z_probe: per_tool             # default: each tool's Tap / OptoTap sensor homes Z and detects the tool
@@ -94,4 +100,7 @@ toolchangers:
       - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "toolchanger.md", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
       - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "klipper/extras/tool.py", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
       - {repo: "https://github.com/DraftShift/StealthChanger", path: "wiki/Configuration.md", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+      - {repo: "https://github.com/DraftShift/StealthChanger", path: "wiki/Home.md", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "examples/dock location/litfbar/toolchanger.cfg", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {url: "https://github.com/viesturz/klipper-toolchanger/issues/165", accessed: 2026-10-15, note: "LIFTBAR_HOME broken on current Klipper (manual_rail); open"}
       - {repo: "https://github.com/DraftShift/StealthChanger", path: "Klipper/Toolhead_T0.cfg", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
