@@ -200,7 +200,7 @@ export function plan(build: Build, db: Db): Plan {
     }
     const t = Math.min(he.max_temp, tl ?? he.max_temp);
     if (he.max_temp_basis === 'metalwork') {
-      warn('max_temp_capped', `${label}The ${he.name} ships without a heater or thermistor; its ${he.max_temp}°C rating covers the metal parts only. max_temp is ${t}°C from the ${th.label} thermistor; your heater cartridge's rating also applies.`);
+      warn('max_temp_capped', `${label}The ${he.name} ships without a heater or thermistor; its ${he.max_temp}°C rating covers the metal parts only. max_temp is ${t}°C from the ${th.label} thermistor${th.basis === 'seller' ? ` (a seller's rating; generic parts vary, so check yours)` : ''}; your heater cartridge's rating also applies.`);
     } else if (t < he.max_temp) {
       warn('max_temp_capped', `${label}Hotend max_temp capped at ${t}°C by the ${th.label} thermistor (hotend rated ${he.max_temp}°C).`);
     }

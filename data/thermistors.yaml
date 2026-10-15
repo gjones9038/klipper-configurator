@@ -19,26 +19,85 @@ builtin_sensor_types:
 
 # What users actually pick in the UI -> Klipper sensor_type.
 user_choices:
-  - {id: ntc100k-3950, max_temp_c: 280, label: "NTC 100K 3950 (most generic hotends, Keenovo beds)",
-     sensor_type: "Generic 3950",
-     note: "Voron config: 'Use Generic 3950 for Keenovo heaters' and NTC 100K 3950 thermistors."}
-  - {id: semitec-104gt2, max_temp_c: 300, label: "ATC Semitec 104GT-2", sensor_type: "ATC Semitec 104GT-2"}
-  - {id: semitec-104nt4, max_temp_c: 300, label: "ATC Semitec 104NT-4 (E3D Revo and others)",
-     sensor_type: "ATC Semitec 104NT-4-R025H42G"}
-  - {id: epcos-b57560, max_temp_c: 280, label: "EPCOS 100K B57560G104F", sensor_type: "EPCOS 100K B57560G104F"}
-  - {id: slice-450, max_temp_c: 450, label: "Slice Engineering 450C", sensor_type: "SliceEngineering 450"}
-  - {id: pt1000, max_temp_c: 400, label: "PT1000 (direct)", sensor_type: "PT1000",
-     note: "Works on a 4.7k port, but resolution is better with a 2.2k pull-up (jumper on some
-       boards). Set pullup_resistor to the port's actual value."}
-  - {id: pt100-max31865, max_temp_c: 400, label: "PT100 via MAX31865", sensor_type: "MAX31865",
-     needs: ["SPI MAX31865 on the board or an add-on", "rtd_nominal_r: 100, rtd_reference_r: 430"]}
-  - {id: ldo-cmfb103f3950, max_temp_c: 125, label: "LDO Nitehawk-SB chamber NTC (CMFB103F3950FANT)",
-     sensor_type: "CMFB103F3950FANT", custom_definition_required: true,
-     note: "Not built into Klipper; LDO's nitehawk-sb.cfg defines it with a [thermistor] section."}
+  - id: ntc100k-3950
+    max_temp_c: 280
+    label: "NTC 100K 3950 (most generic hotends, Keenovo beds)"
+    sensor_type: "Generic 3950"
+    basis: seller          # no single manufacturer; the rating is one seller's (decided 2026-10-15)
+    sources:
+      - {url: "https://www.trianglelab.net/products/100k-3950-glass-thermistor", accessed: 2026-10-15,
+         quote: "This sensor are able to measure higher temperatures-upto 280degC."}
+    note: "Voron config: 'Use Generic 3950 for Keenovo heaters' and NTC 100K 3950 thermistors."
+    discrepancies:
+      - "Generic 3950 parts come from many makers: AMWEI rates its glass bead to 300°C, Zentriad 250°C, 3dprinterspares 270°C, WINSINN 350°C (high-temp version). Trianglelab's page itself also says 'up to 300°C' in its firmware note. Using Trianglelab's 280°C; check your part's listing."
+  - id: semitec-104gt2
+    max_temp_c: 300
+    label: "ATC Semitec 104GT-2"
+    sensor_type: "ATC Semitec 104GT-2"
+    sources:
+      - {url: "https://www.semitec.co.jp/uploads/GT-2シリーズ.pdf", accessed: 2026-10-15,
+         quote: "104GT-2 100kΩ 4267K±2％ 使用温度範囲 −50 〜 ＋300 ℃"}
+      - {url: "https://devel.lulzbot.com/hot_ends/argon/data_sheets/Semitec_USA_Corporation_GT_and_NT_Product_Comparison_Chart.pdf", accessed: 2026-10-15,
+         quote: "GT-2 & NT-4 Comparison Chart: Temp Range -50℃ ～ +300℃ (both)"}
+    note: "Semitec is phasing out the GT-2 in favour of the NT-4 (same chart)."
+  - id: semitec-104nt4
+    max_temp_c: 300
+    label: "ATC Semitec 104NT-4 (E3D Revo and others)"
+    sensor_type: "ATC Semitec 104NT-4-R025H42G"
+    sources:
+      - {url: "https://static.rapidonline.com/pdf/61187_v2.pdf", accessed: 2026-10-15,
+         quote: "Semitec NT Series Glass NTC Thermistor (rev 30.05.18): wide operating temperature range from -50°C to 300°C; lists 104NT-4-R025H42G, 100 kΩ, 4267 K"}
+      - {url: "https://devel.lulzbot.com/hot_ends/argon/data_sheets/Semitec_USA_Corporation_GT_and_NT_Product_Comparison_Chart.pdf", accessed: 2026-10-15,
+         quote: "NT-4 Temp Range -50℃ ～ +300℃"}
+    note: "Slice Engineering's current 300°C thermistor is set up as this curve (Slice FAQ: Marlin #5); pick this entry for it."
+  - id: epcos-b57560
+    max_temp_c: 300
+    label: "EPCOS 100K B57560G104F"
+    sensor_type: "EPCOS 100K B57560G104F"
+    sources:
+      - {url: "https://www.tdk-electronics.tdk.com/inf/50/db/ntc_09/Glass_enc_Sensors__B57560__G560__G1560.pdf", accessed: 2026-10-15,
+         quote: "For temperature measurement up to 300 °C; Climatic category (IEC 60068-1) 55/300/56"}
+    note: "TDK lists the 100 kΩ B57560G1104 among parts withdrawn in 2012; existing stock and Creality-style sensors still use the curve."
+  - id: slice-450
+    max_temp_c: 450
+    label: "Slice Engineering 450°C (discontinued)"
+    sensor_type: "SliceEngineering 450"
+    sources:
+      - {url: "https://support.sliceengineering.com/portal/en/kb/articles/faq", accessed: 2026-10-15,
+         quote: "Select Thermistor #67 in settings for the 450°C variant and #5 for the 300°C variant."}
+      - {url: "https://www.sliceengineering.com/products/thermistor-high-temperature", accessed: 2026-10-15,
+         quote: "Temperature Limit 300°C (the thermistor Slice sells now)"}
+    note: "Slice now sells only the 300°C thermistor; for that one choose ATC Semitec 104NT-4."
+  - id: pt1000
+    max_temp_c: 500
+    label: "PT1000 (direct)"
+    sensor_type: "PT1000"
+    sources:
+      - {url: "https://e3d-online.com/products/pt1000-temperature-sensor", accessed: 2026-10-15,
+         quote: "High temperature enabled up to 500°C; can be connected to your pre-existing temperature sensing pin using a 4.7k pullup resistance"}
+    note: "500°C is E3D's cartridge rating; PT1000 cartridges from other makers may be rated lower. Works on a 4.7k port, but resolution is better with a 2.2k pull-up (jumper on some boards). Set pullup_resistor to the port's actual value."
+  - id: pt100-max31865
+    max_temp_c: 500
+    label: "PT100 via MAX31865"
+    sensor_type: "MAX31865"
+    needs: ["SPI MAX31865 on the board or an add-on", "rtd_nominal_r: 100, rtd_reference_r: 430"]
+    sources:
+      - {url: "https://e3d-online.com/products/pt100-temperature-sensor", accessed: 2026-10-15,
+         quote: "High temperature ready up to 500°C; an amplifier board will be required"}
+    note: "500°C is E3D's cartridge rating; other makers' PT100 cartridges may be rated lower."
+  - id: ldo-cmfb103f3950
+    max_temp_c: 120
+    label: "LDO Nitehawk-SB chamber NTC (FH CMFB103F3950FANT)"
+    sensor_type: "CMFB103F3950FANT"
+    custom_definition_required: true
+    sources:
+      - {url: "https://www.lcsc.com/product-detail/C51597.html", accessed: 2026-10-15,
+         quote: "FH CMFB103F3950FANT: operating temperature -40℃~+120℃; 10kΩ; B 3950K (25/50)"}
+    note: "Not built into Klipper; LDO's nitehawk-sb.cfg defines it with a [thermistor] section. The previous 125°C was unsourced; FH's listing gives 120°C."
 
 rules:
-  - "max_temp_c is a practical ceiling for the sensor (unverified, typical community values); the
-    generator uses min(hotend.max_temp, max_temp_c)."
+  - "max_temp_c is the sensor's rated maximum from the cited datasheet (or, for generic parts, the
+    named seller's rating); the generator uses min(hotend.max_temp, max_temp_c)."
   - "Always emit pullup_resistor when the port's pullup_ohms != 4700 (Klipper default)."
   - "Chamber sensors use [temperature_sensor chamber] unless a chamber heater or fan is
     controlled from it."
