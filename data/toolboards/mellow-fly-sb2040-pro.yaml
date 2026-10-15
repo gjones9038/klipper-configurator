@@ -1,0 +1,108 @@
+schema: toolboard/1
+id: mellow-fly-sb2040-pro
+name: Mellow Fly-SB2040 Pro
+manufacturer: Mellow
+revisions:
+- '1.0'
+status: needs-review
+mcu:
+  chip: rp2040
+  bootloader_kib: 16
+  bootloader_note: ships with CanBoot/Katapult (Mellow CAN firmware settings)
+  startup_pins: gpio24
+  startup_pins_note: Mellow's firmware settings
+interfaces:
+- can
+can_pins: gpio4/gpio5
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2240
+  interface: spi
+  step_pin: gpio9
+  dir_pin: gpio10
+  enable_pin: '!gpio7'
+  spi_cs_pin: gpio11
+  spi_software:
+    sclk_pin: gpio0
+    mosi_pin: gpio3
+    miso_pin: gpio2
+  rref_ohms: 12300
+heaters:
+- id: HEAT
+  pin: gpio6
+  role: hotend
+thermistors:
+- id: TEMP
+  pin: gpio27
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: gpio26
+  typical_use: board
+fans:
+- id: FAN0
+  pin: gpio13
+  wires: 2
+- id: FAN1
+  pin: gpio14
+  wires: 2
+- id: FAN2
+  pin: gpio15
+  wires: 2
+probe_ports:
+- id: HV-ENDSTOP
+  pin: gpio25
+  protected: true
+  supply_v:
+  - 12
+  - 24
+  note: 'HV ENDSTOP connector: VCC, GND, gpio25.'
+bltouch:
+  sensor_pin: gpio29
+  control_pin: gpio28
+endstops:
+- id: ENDSTOP1
+  pin: gpio28
+  note: 5V, GND, gpio28
+- id: ENDSTOP2
+  pin: gpio29
+  note: GND, gpio29
+neopixel_ports:
+- id: RGB
+  pin: gpio12
+i2c_ports: []
+accelerometer:
+  chip: adxl345
+  cs_pin: gpio1
+  spi_software:
+    sclk_pin: gpio0
+    mosi_pin: gpio3
+    miso_pin: gpio2
+notes:
+- The SB2040 v1 layout with a TMC2240 on software SPI (CS gpio11) instead of a TMC2209; the SPI pins are shared
+  with the ADXL345 (diagram and sample config).
+- TMC2240 rref 12300 Ω (Mellow sample config).
+- 'Pins: Mellow pin diagrams (v1, v2) and sample config agree. FAN0/FAN1 (and PWM0 gpio16 / PWM1 gpio17 for 4-wire
+  fans) go through the header to the Stealthburner front board.'
+- Thermistor pull-up 4.7 kΩ; a jumper adds 1 kΩ for PT1000.
+- BLTouch on the two endstop connectors (sensor gpio29, servo gpio28), as in the sample config.
+- 'Mellow: boards ship with CanBoot for testing; all pins are pulled high after power-up until Klipper is flashed.'
+unverified:
+- probe pin polarity
+- HV-ENDSTOP voltage tolerance
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sb2040_pro/pinout.jpg
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sb2040_pro/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sb2040_pro/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sb2040_pro/can.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sb2040_pro/README.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd

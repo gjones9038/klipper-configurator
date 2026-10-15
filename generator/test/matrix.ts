@@ -19,6 +19,9 @@ const TOOLBOARD_ROTATION = [
   'btt-ebb42-can-v1.2',
   'mellow-fly-sb2040-v3',
   'mellow-fly-sht36-v3',
+  'mellow-fly-sb2040-v1',
+  'mellow-fly-sb2040-pro',
+  'mellow-fly-sb2040-v3-pro',
 ];
 
 // Probe rotation: [probe id, extra build fields]. Eddy probes home Z with the probe.
@@ -93,6 +96,7 @@ export function matrix(db: Db): Case[] {
   }
   cases.push(...toolchangerCases(db, cases.length));
   cases.push(...eddyCoilCases(db, cases.length));
+  cases.push(...everyToolboardCases(db, cases.length));
   return cases;
 }
 
@@ -159,5 +163,27 @@ function eddyCoilCases(db: Db, start: number): Case[] {
       autotune: false, webUi: 'mainsail',
     };
     return { name: `${String(start + i).padStart(3, '0')}-eddy-coil-${tb}${i % 2 ? '-zhome' : ''}`, build };
+  });
+}
+
+// Every toolhead board in the data at least once, on a plain Voron 2.4 build.
+function everyToolboardCases(db: Db, start: number): Case[] {
+  return Object.keys(db.toolboards).sort().map((tb, i) => {
+    const t = db.toolboards[tb];
+    const build: Build = {
+      printer: 'voron-2.4', size: '300', variant: 'standard',
+      mainboard: { id: 'btt-octopus-pro-v1.1', connection: 'usb-can-bridge' },
+      toolboard: { id: tb, connection: t.interfaces.includes('can') ? 'can' : 'usb' },
+      toolhead: 'stealthburner',
+      drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
+      motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
+      homing: { xy: 'physical', z: 'nozzle_switch', zSwitchXY: [200, 300] },
+      probe: 'voron-tap',
+      extruder: 'galileo2', hotend: 'revo-voron',
+      thermistors: { hotend: 'semitec-104nt4', bed: 'ntc100k-3950' },
+      fans: [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }],
+      leds: true, autotune: true, webUi: 'mainsail',
+    };
+    return { name: `${String(start + i).padStart(3, '0')}-toolboard-${tb}`, build };
   });
 }

@@ -1,0 +1,101 @@
+schema: toolboard/1
+id: mellow-fly-sb2040-v3-pro
+name: Mellow Fly-SB2040 Pro V3
+manufacturer: Mellow
+revisions:
+- '3.0'
+status: needs-review
+mcu:
+  chip: rp2040
+  bootloader_kib: 16
+  bootloader_note: ships with Katapult, CAN 1M
+  startup_pins: '!gpio5'
+  startup_pins_note: Mellow's firmware settings
+interfaces:
+- can
+can_pins: gpio1/gpio0
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2240
+  interface: uart
+  step_pin: gpio14
+  dir_pin: gpio13
+  enable_pin: '!gpio16'
+  uart_pin: gpio15
+  rref_ohms: 12300
+heaters:
+- id: HEAT
+  pin: gpio23
+  role: hotend
+thermistors:
+- id: TEMP
+  pin: gpio27
+  pullup_ohms: 4700
+  typical_use: hotend
+fans:
+- id: FAN0
+  pin: gpio24
+  wires: 2
+- id: FAN1
+  pin: gpio19
+  wires: 2
+- id: FAN2
+  pin: gpio21
+  wires: 2
+probe_ports:
+- id: HV-ENDSTOP
+  pin: gpio22
+  protected: true
+  supply_v:
+  - 12
+  - 24
+  note: gpio22, GND, VCC (board input 12-24 V); DIP switch 2 "HVIN".
+endstops:
+- id: ENDSTOP1
+  pin: gpio18
+  note: 5V, GND, gpio18
+- id: ENDSTOP2
+  pin: gpio20
+  note: GND, gpio20
+neopixel_ports:
+- id: RGB
+  pin: gpio26
+i2c_ports: []
+accelerometer:
+  chip: lis2dw
+  cs_pin: gpio12
+  spi_software:
+    sclk_pin: gpio2
+    mosi_pin: gpio3
+    miso_pin: gpio4
+notes:
+- The SB2040 V3 layout with a TMC2240 (UART on gpio15, rref 12300 Ω per the Mellow sample) instead of a TMC2209.
+- 'Pins: Mellow pin diagram (V3) and sample config agree on the driver, heater, thermistor, accelerometer, probe
+  and RGB pins. FAN0 gpio24 / FAN1 gpio19 are on the SB2040-FV fan board (Mellow wiring sheet); FAN2 gpio21 on the
+  main board.'
+- 'Fan connectors: each has a 5V/VCC voltage switch and a PWM/DC type switch (Mellow wiring sheet).'
+- 'Thermistor pull-up 4.7 kΩ; a jumper adds 1 kΩ for PT1000 (diagram: NONE 4700 / CONN 1000). Optional MAX31865
+  (CS gpio17) for PT100/PT1000.'
+- Optional onboard LDC1612 (eddy sensor) on i2c1b, address 43; there is no I2C header for an external Eddy Coil.
+- 'Firmware (Mellow): RP2040, 16KiB bootloader (Katapult preinstalled), CAN on gpio1/gpio0 at 1M, startup pin !gpio5.'
+discrepancies:
+- Mellow's sample config has a commented X endstop on ^!gpio16, but gpio16 is the extruder enable pin (diagram and
+  sample). The diagram's endstop inputs are gpio18 and gpio20.
+- 'Fan roles: the sample puts the part fan on gpio24 and the hotend fan on gpio19; the wiring sheet draws them the
+  other way round. Ports are recorded; roles are assigned by the generator.'
+unverified:
+- probe pin polarity
+- HV-ENDSTOP voltage tolerance beyond "HVIN" on the DIP switch
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sb2040_v3_pro/pin.jpg
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sb2040_v3_pro/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sb2040_v3_pro/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sb2040_v3/sb2040v3_wiring.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
