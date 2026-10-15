@@ -13,6 +13,9 @@ export function printMacros(p: Plan, header: string[]): string {
   const [bx, by] = p.size.bed_mm;
   const tc = !!p.tools;
   const nm = p.nevermore;
+  // Buzzer (Leviathan extension): M300 is in mainboard.cfg.
+  const beeps = (p.board.activeExtensions ?? []).some((e: any) => e.buzzer) && p.build.beeps !== false;
+  const clientPause = beeps && (p.build.webUi ?? 'mainsail') !== 'none';
   const hasChamber = !!p.chamberSensor;
   const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
   const threshold = nm?.threshold ?? 90;
@@ -112,8 +115,37 @@ gcode:
     G0 X${bx / 2} Y${by - 10} F6000
     TURN_OFF_HEATERS
     M107
-    BED_MESH_CLEAR${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}
+    BED_MESH_CLEAR${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}${beeps ? '\n    _BEEP_DONE' : ''}
 `)}
+${beeps ? `
+${block(`
+[gcode_macro _BEEP_DONE]
+description: Rising three-note tune on the buzzer (print finished).
+gcode:
+    M300 S1047 P150
+    G4 P50
+    M300 S1319 P150
+    G4 P50
+    M300 S1568 P300
+`)}
+
+${block(`
+[gcode_macro _BEEP_ATTENTION]
+description: Three short high beeps on the buzzer (printer paused, e.g. filament runout).
+gcode:
+    {% for i in range(3) %}
+        M300 S2000 P150
+        G4 P150
+    {% endfor %}
+`)}
+` : ''}${clientPause ? `
+${block(`
+[gcode_macro _CLIENT_VARIABLE]
+description: ${p.build.webUi === 'fluidd' ? 'Fluidd' : 'Mainsail'} client macro settings. Only the pause hook is set; every other setting keeps its default.
+variable_user_pause_macro: "_BEEP_ATTENTION"   # runs after PAUSE_BASE
+gcode:
+`)}
+` : ''}
 ${nm ? `
 ${block(`
 [delayed_gcode _NEVERMORE_OFF]

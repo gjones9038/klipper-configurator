@@ -257,7 +257,7 @@ extensions:
   notes:
   - LDO's config puts stepper_x1 (B1) on HV STEPPER 2 and stepper_y1 (A1) on HV STEPPER 3; the generator does the same.
   - The extension's drivers sit on SPI2, the Leviathan's own on SPI4.
-  - 'The buzzer (PB1) is set up as [pwm_cycle_time _beeper] with an M300 macro (M300 S<Hz> P<ms>), as in LDO''s config; the macro follows Klipper''s config/sample-macros.cfg.'
+  - 'The buzzer (PB1) is set up as [pwm_cycle_time _beeper] with an M300 macro (M300 S<Hz> P<ms>), as in LDO''s config; the macro follows Klipper''s config/sample-macros.cfg. Unless turned off (build beeps: false), PRINT_END plays a tune and PAUSE beeps via the Mainsail/Fluidd user_pause_macro hook.'
   unverified:
   - Only LDO sources (config and schematic, which agree on every pin); Klipper has no config for this board, so it stays needs-review.
   - Fan voltage: README says 12V/24V selectable; the schematic has one FAN_V rail for both ports. The selector itself was not identified.

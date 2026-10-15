@@ -119,6 +119,8 @@ const mainboardStep: Step = {
               if (list.length) b.mainboard.extensions = list; else delete b.mainboard.extensions;
             }),
             [e.note, ' ', statusPill(e.status)]),
+          build.mainboard.extensions?.includes(e.id) && e.buzzer ? checkbox('Buzzer tunes', build.beeps !== false, (v) => update((b) => { if (v) delete b.beeps; else b.beeps = false; }),
+            `A tune when a print finishes${(build.webUi ?? 'mainsail') !== 'none' ? ' and beeps when it pauses (filament runout included)' : ''}. M300 S<Hz> P<ms> is always available.`) : null,
           build.mainboard.extensions?.includes(e.id) && e.notes?.length ? h('ul', { class: 'hint' }, e.notes.map((n: string) => h('li', null, n))) : null,
           build.mainboard.extensions?.includes(e.id) ? sources(e) : null))) : null,
       board.notes?.length ? h('ul', { class: 'hint' }, board.notes.map((n: string) => h('li', null, n))) : null,

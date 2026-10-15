@@ -99,6 +99,16 @@ test('AWD on the Leviathan with its extension board: B1/A1 on the extension HV s
   assert.match(mb, /\[pwm_cycle_time _beeper\][^[]*pin: PB1/);
   assert.match(mb, /\[gcode_macro M300\][\s\S]*?SET_PIN PIN=_beeper VALUE=0\.5 CYCLE_TIME=/);
   assert.doesNotMatch(generate(example(), db, 'test').files['mainboard.cfg'], /_beeper/);   // no extension, no buzzer
+  const pm = r.files['macros/print.cfg'];
+  assert.match(pm, /\[gcode_macro PRINT_END\][\s\S]*?_BEEP_DONE/);
+  assert.match(pm, /variable_user_pause_macro: "_BEEP_ATTENTION"/);
+  assert.doesNotMatch(generate(example(), db, 'test').files['macros/print.cfg'], /_BEEP|_CLIENT_VARIABLE/);
+  const quiet = generate({ ...b, beeps: false }, db, 'test').files;
+  assert.doesNotMatch(quiet['macros/print.cfg'], /_BEEP|_CLIENT_VARIABLE/);
+  assert.match(quiet['mainboard.cfg'], /gcode_macro M300/);
+  const noUi = generate({ ...b, webUi: 'none' }, db, 'test').files['macros/print.cfg'];
+  assert.match(noUi, /_BEEP_DONE/);
+  assert.doesNotMatch(noUi, /_CLIENT_VARIABLE/);
 });
 
 test('Leviathan extension: 9 drivers fit AWD without a toolhead board; its fans and thermistors are usable', () => {
