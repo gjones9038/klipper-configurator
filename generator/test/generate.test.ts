@@ -76,6 +76,45 @@ test('AWD on the 7-slot Leviathan is refused with a clear reason', () => {
   const r = generate(b, db, 'test');
   assert.equal(r.ok, false);
   assert.equal(r.issues[0].code, 'not_enough_drivers');
+  assert.match(r.issues[0].message, /LDO Leviathan Extension Board adds 2 driver slots/);
+});
+
+test('AWD on the Leviathan with its extension board: B1/A1 on the extension HV slots (LDO layout)', () => {
+  const b = example();
+  b.variant = 'awd';
+  b.mainboard.extensions = ['ldo-leviathan-ext'];
+  const p = plan(b, db);
+  const slot = (n: string) => p.steppers.find((s) => s.name === n)!;
+  assert.equal(slot('stepper_x').slot, 'HV-STEPPER-0');
+  assert.equal(slot('stepper_y').slot, 'HV-STEPPER-1');
+  assert.equal(slot('stepper_x1').slot, 'EXT-HV-STEPPER-2');
+  assert.equal(slot('stepper_y1').slot, 'EXT-HV-STEPPER-3');
+  assert.equal(slot('stepper_x1').step, 'PD15');
+  assert.deepEqual(slot('stepper_y1').driver.pins, { cs_pin: 'PG5', spi_bus: 'spi2' });
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  assert.match(mb, /\[tmc5160 stepper_x1\][^[]*cs_pin: PB12[^[]*spi_bus: spi2/);
+  assert.match(mb, /\[tmc5160 stepper_x\][^[]*spi_bus: spi4/);
+});
+
+test('Leviathan extension: 9 drivers fit AWD without a toolhead board; its fans and thermistors are usable', () => {
+  const b = example();
+  b.variant = 'awd';
+  delete b.toolboard;
+  b.mainboard.extensions = ['ldo-leviathan-ext'];
+  b.fans = [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }, { role: 'exhaust', port: 'EXT-FAN4' }];
+  b.thermistors.chamber = 'ntc100k-3950';
+  const p = plan(b, db);
+  assert.equal(p.issues.filter((i) => i.level === 'error').length, 0, JSON.stringify(p.issues));
+  assert.equal(p.steppers.length, 9);
+  assert.equal(p.fans.find((f) => f.role === 'exhaust')!.pin, 'PF5');
+});
+
+test('an unknown mainboard extension is refused', () => {
+  const b = example();
+  b.mainboard.extensions = ['nope'];
+  assert.throws(() => plan(b, db), /no extension board "nope"/);
 });
 
 test('CAN toolboard without a CAN path is an error', () => {

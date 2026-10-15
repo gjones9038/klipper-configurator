@@ -26,6 +26,7 @@ export interface Build {
     mcu?: string;                            // mcu_variants[].chip; default first
     connection: Connection;
     bootloaderKib?: number;                  // override when the board was reflashed
+    extensions?: string[];                   // mainboard extensions[].id, e.g. ldo-leviathan-ext
   };
   toolboard?: { id: string; connection?: 'can' | 'usb' };
   canAdapter?: 'u2c' | null;                 // separate USB-CAN adapter instead of bridge mode

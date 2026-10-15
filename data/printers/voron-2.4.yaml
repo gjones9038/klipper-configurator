@@ -48,8 +48,10 @@ variants:
     name: AWD (4 A/B motors)
     drivers_required: {motion: 8, extruder: 1}
     extra_steppers:
-      - {klipper: stepper_x1, role: B1, position: front-left,  rotation_distance: 40, pairs_with: stepper_x}
-      - {klipper: stepper_y1, role: A1, position: front-right, rotation_distance: 40, pairs_with: stepper_y}
+      # Each pair sits diagonally (B rear-left + B1 front-right): LDO LeviathanExt
+      # Klipper_config/v2t_leviathan_ext.cfg ("B1 Stepper - Front Right", "A1 Stepper - Front Left").
+      - {klipper: stepper_x1, role: B1, position: front-right, rotation_distance: 40, pairs_with: stepper_x}
+      - {klipper: stepper_y1, role: A1, position: front-left,  rotation_distance: 40, pairs_with: stepper_y}
     notes:
       - "stepper_x1/stepper_y1 carry no endstop; they share homing with their pair."
       - "Each paired motor must turn the same way as its partner. Check one pair at a time with
@@ -114,3 +116,7 @@ sources:
   - repo: https://github.com/VoronDesign/Voron-2
     path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg
     commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73
+  - repo: https://github.com/MotorDynamicsLab/LeviathanExt
+    path: Klipper_config/v2t_leviathan_ext.cfg
+    commit: 060af34d9eecc6e967473f04f5e677e55a51dda8
+    note: AWD motor positions (stepper_x1 front-right, stepper_y1 front-left; pairs are diagonal)

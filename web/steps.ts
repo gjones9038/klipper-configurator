@@ -4,6 +4,7 @@ import type { Build, Db, Rec, Result, Issue, ToolSpec } from '../generator/types
 import type { Plan } from '../generator/plan.ts';
 import { h, select, segmented, numberField, checkbox, pill, extLink, type Child, type Option } from './dom.ts';
 import { canDevices, driversNeeded, toolchangerFor } from './state.ts';
+import { mainboardFor } from '../generator/dbcore.ts';
 
 export interface Ctx {
   db: Db;
@@ -84,6 +85,8 @@ const mainboardStep: Step = {
   render({ db, build, update }) {
     const need = driversNeeded({ ...build, toolboard: undefined }, db);
     const board = db.mainboards[build.mainboard.id];
+    const exts: Rec[] = board.extensions ?? [];
+    const extSlots = (id: string) => (db.mainboards[id].extensions ?? []).reduce((n: number, e: Rec) => n + (e.driver_slots?.length ?? 0), 0);
     const mcu = board.mcu_variants.find((m: Rec) => m.chip === build.mainboard.mcu) ?? board.mcu_variants[0];
     const fit = (n: number): HTMLElement => n >= need ? pill('Fits', 'ok')
       : n >= need - 1 ? (build.toolboard ? pill('Fits (extruder on toolhead)', 'ok') : pill('Extruder → toolhead board', 'warn'))
@@ -94,7 +97,9 @@ const mainboardStep: Step = {
       pickTable(['Board', 'Rev', 'Drivers', 'Pin data', `${db.printers[build.printer].name}${variant.id === 'awd' ? ' AWD' : ''} fit`], boards.map((b) => ({
         id: b.id, picked: b.id === build.mainboard.id, name: b.name, sub: b.manufacturer,
         onPick: () => update((x) => { x.mainboard = { id: b.id, connection: x.mainboard.connection }; }),
-        cells: [h('span', { class: 'mono' }, b.revisions.join(' / ')), `${b.driver_slots.length} × ${b.driver_mount === 'onboard' ? 'onboard' : b.driver_mount === 'ez' ? 'EZ socket' : 'stepstick'}`, statusPill(b.status), fit(b.driver_slots.length)],
+        cells: [h('span', { class: 'mono' }, b.revisions.join(' / ')), `${b.driver_slots.length} × ${b.driver_mount === 'onboard' ? 'onboard' : b.driver_mount === 'ez' ? 'EZ socket' : 'stepstick'}`, statusPill(b.status), b.driver_slots.length >= need || !extSlots(b.id) ? fit(b.driver_slots.length)
+          : b.id === build.mainboard.id && build.mainboard.extensions?.length ? fit(mainboardFor(db, build.mainboard).driver_slots.length)
+          : b.driver_slots.length + extSlots(b.id) >= need ? pill('Fits with extension board', 'warn') : fit(b.driver_slots.length)],
       }))),
       h('div', { class: 'grid' },
         select('MCU on your board', mcu.chip, board.mcu_variants.map((m: Rec) => ({ value: m.chip, label: `${m.chip.toUpperCase()} · ${m.crystal_mhz} MHz${m.bootloader_kib ? ` · ${m.bootloader_kib} KiB bootloader` : ''}` })),
@@ -105,6 +110,17 @@ const mainboardStep: Step = {
           'USB-CAN bridge: the board talks to the host over USB and forwards CAN to the toolhead board.'),
         numberField('Bootloader offset (KiB)', build.mainboard.bootloaderKib, (v) => update((b) => { if (v === undefined) delete b.mainboard.bootloaderKib; else b.mainboard.bootloaderKib = v; }),
           { min: 0, step: 1, placeholder: String(mcu.bootloader_kib ?? 0), hint: 'Only if your board was reflashed (e.g. Katapult).' })),
+      exts.length ? h('div', { class: 'section' }, h('h2', null, 'Extension boards'), exts.map((e) =>
+        h('div', null,
+          checkbox(`${e.name} ${e.revisions?.join('/') ?? ''}`, !!build.mainboard.extensions?.includes(e.id),
+            (on) => update((b) => {
+              const list = (b.mainboard.extensions ?? []).filter((x) => x !== e.id);
+              if (on) list.push(e.id);
+              if (list.length) b.mainboard.extensions = list; else delete b.mainboard.extensions;
+            }),
+            [e.note, ' ', statusPill(e.status)]),
+          build.mainboard.extensions?.includes(e.id) && e.notes?.length ? h('ul', { class: 'hint' }, e.notes.map((n: string) => h('li', null, n))) : null,
+          build.mainboard.extensions?.includes(e.id) ? sources(e) : null))) : null,
       board.notes?.length ? h('ul', { class: 'hint' }, board.notes.map((n: string) => h('li', null, n))) : null,
       sources(board),
     ];
@@ -121,7 +137,7 @@ const toolboardStep: Step = {
     const toolhead = build.toolhead ? db.toolheads[build.toolhead] : undefined;
     const tc = toolchangerFor(build, db);
     const tb = build.toolboard ? db.toolboards[build.toolboard.id] : undefined;
-    const board = db.mainboards[build.mainboard.id];
+    const board = mainboardFor(db, build.mainboard);
     const can = canDevices(build, db);
     const boards = Object.values(db.toolboards).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const ffPill = (ff: string) => !toolhead?.toolboard_form_factors ? h('span', { class: 'mono' }, ff)
@@ -198,7 +214,7 @@ const motorsStep: Step = {
   lead: 'Run current starts from the maker\'s recommendation, capped at the motor rating and the driver limit. Leave the override blank to use it.',
   codes: ['unknown_driver_module', 'driver_', 'no_tmc_spi', 'unknown_motor', 'run_current_high'],
   render({ db, build, plan, update }) {
-    const board = db.mainboards[build.mainboard.id];
+    const board = mainboardFor(db, build.mainboard);
     const onboard = board.driver_mount === 'onboard';
     const modules = Object.values(db.modules).filter((m) => m.format === board.driver_mount);
     const groups = GROUPS.filter(([g]) => g !== 'extruder' || !build.toolboard);
@@ -435,7 +451,7 @@ const fansStep: Step = {
     const model = nm ? db.filters[nm.model] : undefined;
     const portOf = (role: string) => plan?.fans.filter((f) => f.role === role).map((f) => `${f.port} on the ${f.board === 'toolboard' ? 'toolhead board' : 'mainboard'}`).join(', ');
     const boardFans = (kind: 'mainboard' | 'toolboard'): Rec[] =>
-      kind === 'toolboard' ? db.toolboards[build.toolboard?.id ?? '']?.fans ?? [] : db.mainboards[build.mainboard.id].fans ?? [];
+      kind === 'toolboard' ? db.toolboards[build.toolboard?.id ?? '']?.fans ?? [] : mainboardFor(db, build.mainboard).fans ?? [];
     // Which board a fan lands on when left on Auto (plan.ts: prefer_board, if that board exists).
     const kindOf = (role: string, f: { board?: string }) => (f.board as 'mainboard' | 'toolboard' | undefined)
       ?? (db.fanRoles[role]?.prefer_board === 'toolboard' && build.toolboard ? 'toolboard' : 'mainboard');

@@ -52,3 +52,22 @@ export function assembleDb(raw: RawData): Db {
     toolchangers: byId(raw.toolchangers.toolchangers),
   };
 }
+
+// The mainboard record for a build: the board plus any extension boards plugged
+// into it (e.g. the Leviathan extension), whose driver slots, fans and thermistors
+// are appended and tagged with the extension id. Unknown extension ids are skipped
+// here; the planner reports them.
+export function mainboardFor(db: Db, mb: { id: string; extensions?: string[] }): Rec {
+  const board = db.mainboards[mb.id];
+  if (!board || !mb.extensions?.length) return board;
+  const exts = mb.extensions.map((id) => (board.extensions ?? []).find((e: Rec) => e.id === id)).filter(Boolean) as Rec[];
+  if (!exts.length) return board;
+  const tag = (e: Rec, list?: Rec[]) => (list ?? []).map((x) => ({ ...x, extension: e.id }));
+  return {
+    ...board,
+    driver_slots: [...board.driver_slots, ...exts.flatMap((e) => tag(e, e.driver_slots))],
+    fans: [...(board.fans ?? []), ...exts.flatMap((e) => tag(e, e.fans))],
+    thermistors: [...(board.thermistors ?? []), ...exts.flatMap((e) => tag(e, e.thermistors))],
+    activeExtensions: exts,
+  };
+}

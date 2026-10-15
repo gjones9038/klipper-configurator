@@ -3,6 +3,7 @@
 // modules for EZ ones). normalize() only fixes choices that are no longer
 // possible; anything the user must decide is left for plan() to report.
 import type { Build, Db, Rec } from '../generator/types.ts';
+import { mainboardFor } from '../generator/dbcore.ts';
 import example from '../examples/v24-350-leviathan-sb2209.json' with { type: 'json' };
 
 const KEY = 'klipper-configurator.build.v1';
@@ -65,7 +66,13 @@ export function normalize(input: Build, db: Db): Build {
   if (b.zDrive && !db.zDrives[b.zDrive]?.applies_to.includes(b.printer)) delete b.zDrive;
   if (b.leadscrew && !printer.leadscrew_options?.some((l: Rec) => l.id === b.leadscrew)) delete b.leadscrew;
 
-  const board = db.mainboards[b.mainboard.id];
+  // Extensions belong to one board; drop any the picked board does not have.
+  if (b.mainboard.extensions) {
+    const known = new Set((db.mainboards[b.mainboard.id].extensions ?? []).map((e: Rec) => e.id));
+    b.mainboard.extensions = b.mainboard.extensions.filter((id) => known.has(id));
+    if (!b.mainboard.extensions.length) delete b.mainboard.extensions;
+  }
+  const board = mainboardFor(db, b.mainboard);
   if (b.mainboard.mcu && !board.mcu_variants.some((m: Rec) => m.chip === b.mainboard.mcu)) delete b.mainboard.mcu;
   if (!board.interfaces.includes(b.mainboard.connection)) b.mainboard.connection = board.interfaces.includes('usb') ? 'usb' : board.interfaces[0];
 

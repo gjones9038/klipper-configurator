@@ -15,7 +15,7 @@ export function buildSummary(b: Build, db: Db): string {
   const board = db.mainboards[b.mainboard.id];
   const conn = { usb: 'USB', can: 'CAN', 'usb-can-bridge': 'USB-CAN bridge' }[b.mainboard.connection];
   return [
-    `${board.name} ${board.revisions.join('/')} (${conn})`,
+    `${board.name} ${board.revisions.join('/')}${(b.mainboard.extensions ?? []).map((id) => ` + ${board.extensions?.find((e: any) => e.id === id)?.name ?? id}`).join('')} (${conn})`,
     b.toolchanger ? `${db.toolchangers[b.toolchanger.system]?.name ?? 'toolchanger'}, ${b.toolchanger.tools.length + 1} tools` : null,
     b.toolboard ? `${b.toolchanger ? 'T0 ' : ''}${db.toolboards[b.toolboard.id].name}` : 'no toolhead board',
     db.extruders[b.extruder].name, db.hotends[b.hotend].name,

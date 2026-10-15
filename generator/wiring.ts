@@ -87,8 +87,14 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     }
     if (diagRemove.size) j.push(`DIAG jumper OFF under ${[...diagRemove].join(', ')}: those DIAG headers are used for physical switches.`);
   }
+  // Extension-board fans share one voltage setting per extension (Leviathan ext: one FAN_V rail).
+  const extFan = (f: { board: string; port: string }) => f.board === 'mainboard' && (p.board.fans ?? []).find((x: any) => x.id === f.port)?.extension;
+  for (const e of p.board.activeExtensions ?? []) {
+    const ports = p.fans.filter((f) => extFan(f) === e.id);
+    if (ports.length) j.push(`${e.name} fan voltage: ${e.fans[0].voltage_select}; it applies to ${e.fans.map((x: any) => x.id).join(' and ')} together, so the fans on ${ports.map((f) => `${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`).join(', ')} must all run at the same voltage.`);
+  }
   const fanPorts = [
-    ...p.fans.map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`),
+    ...p.fans.filter((f) => !extFan(f)).map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`),
     ...(p.tools ?? []).flatMap((t) => t.fans.map((f) => `T${t.n} ${f.port}`)),
   ];
   if (fanPorts.length) j.push(`Fan voltage: set the voltage jumper for ${fanPorts.join(', ')} to match each fan.`);
@@ -112,7 +118,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
 export function wiringMarkdown(p: Plan, w: ReturnType<typeof wiring>): string {
   const rows = w.connections.map((x) => `| ${x.num} | ${x.component} | ${x.board} | ${x.connector} | \`${x.pins}\` | ${x.note ?? ''} |`);
   return [
-    `# Wiring: ${p.board.name} ${p.board.revisions.join('/')}${p.tools ? ` + ${p.tools.length} tools` : p.toolboard ? ` + ${p.toolboard.name}` : ''}`,
+    `# Wiring: ${p.board.name} ${p.board.revisions.join('/')}${(p.board.activeExtensions ?? []).map((e: any) => ` + ${e.name}`).join('')}${p.tools ? ` + ${p.tools.length} tools` : p.toolboard ? ` + ${p.toolboard.name}` : ''}`,
     '',
     'Connector names come from the vendor sample configs. Check them against the silkscreen before plugging anything in.',
     '',

@@ -97,6 +97,7 @@ export function matrix(db: Db): Case[] {
   cases.push(...toolchangerCases(db, cases.length));
   cases.push(...eddyCoilCases(db, cases.length));
   cases.push(...everyToolboardCases(db, cases.length));
+  cases.push(...extensionCases(db, cases.length));
   return cases;
 }
 
@@ -192,4 +193,35 @@ function everyToolboardCases(db: Db, start: number): Case[] {
     };
     return { name: `${String(start + i).padStart(3, '0')}-toolboard-${tb}`, build };
   });
+}
+
+// Mainboard extension boards (Leviathan extension): AWD with all 9 drivers on the
+// board, AWD with the extruder on a toolhead board, and the extension's fan and
+// thermistor ports in use.
+function extensionCases(db: Db, start: number): Case[] {
+  const out: Case[] = [];
+  for (const board of Object.values(db.mainboards).filter((b) => b.extensions?.length).sort((a, b) => a.id.localeCompare(b.id))) {
+    for (const ext of board.extensions) {
+      const combos: Array<[string, string, boolean]> = [['voron-2.4', 'awd', false], ['voron-2.4', 'awd', true], ['voron-trident', 'awd', true], ['voron-2.4', 'standard', true]];
+      combos.forEach(([printer, variant, withToolboard], i) => {
+        const build: Build = {
+          printer, size: '300', variant,
+          mainboard: { id: board.id, connection: 'usb-can-bridge', extensions: [ext.id] },
+          ...(withToolboard ? { toolboard: { id: 'btt-ebb-sb2209-can-v1.0', connection: 'can' as const } } : {}),
+          toolhead: 'stealthburner',
+          drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
+          motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
+          homing: i % 2 ? { xy: 'physical', z: 'probe_virtual_endstop' } : { xy: 'sensorless', z: 'probe_virtual_endstop' },
+          probe: 'voron-tap',
+          extruder: 'galileo2', hotend: 'rapido2-hf',
+          thermistors: { hotend: 'semitec-104nt4', bed: 'ntc100k-3950', chamber: 'ntc100k-3950' },
+          fans: [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }, { role: 'exhaust', port: ext.fans?.[0]?.id }],
+          ...(i === 3 ? { nevermore: { model: 'nevermore-micro-v6', voltage: 24, mode: 'hot_bed' as const, port: ext.fans?.[1]?.id } } : {}),
+          autotune: i % 2 === 0, webUi: 'mainsail',
+        };
+        out.push({ name: `${String(start + out.length).padStart(3, '0')}-${ext.id}-${printer}-${variant}${withToolboard ? '-toolboard' : ''}`, build });
+      });
+    }
+  }
+  return out;
 }

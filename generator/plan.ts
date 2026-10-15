@@ -2,6 +2,7 @@
 // driver, every heater/sensor/fan on a port, with issues collected on the way.
 // Rendering (emit.ts) only formats a Plan; all decisions happen here.
 import type { Build, Db, Issue, Rec, Interface, Link, McuInfo } from './types.ts';
+import { mainboardFor } from './dbcore.ts';
 
 const KD = 'https://www.klipper3d.org/';
 // Klipper documentation pages the generated files refer to.
@@ -169,7 +170,13 @@ export function plan(build: Build, db: Db): Plan {
     `${printer.name} has no size "${build.size}"`);
   const variant = need(printer.variants.find((v: Rec) => v.id === (build.variant ?? 'standard')),
     'unknown_variant', `${printer.name} has no variant "${build.variant}"`);
-  const board = need(db.mainboards[build.mainboard.id], 'unknown_board', `Unknown mainboard "${build.mainboard.id}"`);
+  const baseBoard = need(db.mainboards[build.mainboard.id], 'unknown_board', `Unknown mainboard "${build.mainboard.id}"`);
+  for (const id of build.mainboard.extensions ?? []) {
+    if (!(baseBoard.extensions ?? []).some((e: Rec) => e.id === id)) {
+      throw new PlanError('unknown_extension', `${baseBoard.name} has no extension board "${id}".`);
+    }
+  }
+  const board = mainboardFor(db, build.mainboard);
   const mcu = build.mainboard.mcu
     ? need(board.mcu_variants.find((m: Rec) => m.chip === build.mainboard.mcu), 'unknown_mcu',
       `${board.name} has no MCU variant "${build.mainboard.mcu}"`)
@@ -184,6 +191,7 @@ export function plan(build: Build, db: Db): Plan {
 
   addLinks(printer.docs, 'printer');
   addLinks(repoLink(board, 'manufacturer docs, pinout and sample configs'), 'mainboard');
+  for (const e of board.activeExtensions ?? []) addLinks(repoLink(e, 'manufacturer docs, schematic and sample config'), 'mainboard');
   if (toolboard) addLinks(repoLink(toolboard, 'manufacturer docs and pinout'), 'toolhead board');
   addLinks(extruder.docs, 'extruder');
   addLinks([KLIPPER_DOCS.configChecks], 'first power-on');
@@ -291,8 +299,10 @@ export function plan(build: Build, db: Db): Plan {
   if (slots.length < orderedRoles.length) {
     const hint = !extruderOnToolboard && slots.length >= orderedRoles.length - 1
       ? ' Add a toolhead board so the extruder driver moves off the mainboard.' : '';
+    const unused = (baseBoard.extensions ?? []).filter((e: Rec) => !build.mainboard.extensions?.includes(e.id));
+    const extHint = unused.map((e: Rec) => ` The ${e.name} adds ${e.driver_slots?.length ?? 0} driver slots.`).join('');
     throw new PlanError('not_enough_drivers',
-      `${board.name} has ${slots.length} driver slots; ${printer.name} ${variant.name} needs ${orderedRoles.length}.${hint}`);
+      `${board.name} has ${slots.length} driver slots; ${printer.name} ${variant.name} needs ${orderedRoles.length}.${hint}${extHint}`);
   }
 
   // Overrides first, then HV slots for A/B, then the remaining slots in order.
@@ -306,8 +316,10 @@ export function plan(build: Build, db: Db): Plan {
     if (!free.includes(slot)) { err('slot_taken', `Slot ${slotId} assigned twice.`); continue; }
     assign[role] = slot; take(slot);
   }
+  // HV slots go to A/B first, then to the AWD pair (Leviathan extension: B1 on
+  // HV STEPPER 2, A1 on HV STEPPER 3, as in LDO's v2t_leviathan_ext.cfg).
   const hvSlots = free.filter((s) => s.onboard_driver?.motor_power);
-  for (const role of ['B', 'A']) {
+  for (const role of roleOrder) {
     if (!assign[role] && hvSlots.length) { const s = hvSlots.shift()!; assign[role] = s; take(s); }
   }
   for (const role of orderedRoles) {

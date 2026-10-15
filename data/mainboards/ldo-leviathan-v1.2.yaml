@@ -185,6 +185,95 @@ filament_sensor_ports:
 misc:
   caselight_pin: PE6
   led_strip: LED-Strip (PE6), flicker-free dimming
+extensions:
+- id: ldo-leviathan-ext
+  name: LDO Leviathan Extension Board
+  revisions:
+  - '1.1'
+  status: needs-review
+  connects: 30-pin extension port on the Leviathan (SPI2 + GPIO); powered from the Leviathan HV input
+  note: Adds 2 HV TMC5160 drivers (9 in total), 2 fans and 2 thermistors, so AWD fits.
+  driver_slots:
+  - id: EXT-HV-STEPPER-2
+    label: HV STEPPER 2 (extension)
+    step_pin: PD15
+    dir_pin: PD14
+    enable_pin: '!PG2'
+    onboard_driver:
+      chip: tmc5160
+      klipper_section: tmc5160
+      sense_resistor: 0.075
+      max_current_a: 3.0
+      motor_power: HV input, 24-55V (48V typical)
+    spi_cs_pin: PB12
+    spi_bus: spi2
+    diag_pin: PG3
+    diag_pin_key: diag0_pin
+    diag_modifier: ^!
+  - id: EXT-HV-STEPPER-3
+    label: HV STEPPER 3 (extension)
+    step_pin: PG4
+    dir_pin: PE8
+    enable_pin: '!PB0'
+    onboard_driver:
+      chip: tmc5160
+      klipper_section: tmc5160
+      sense_resistor: 0.075
+      max_current_a: 3.0
+      motor_power: HV input, 24-55V (48V typical)
+    spi_cs_pin: PG5
+    spi_bus: spi2
+    diag_pin: PE7
+    diag_pin_key: diag0_pin
+    diag_modifier: ^!
+  fans:
+  - id: EXT-FAN4
+    pin: PF5
+    tachometer_pin: PF4
+    wires: 3
+    voltage_options:
+    - 12
+    - 24
+    voltage_select: one FAN_V rail for both ports (schematic), 12 or 24 V
+  - id: EXT-FAN5
+    pin: PF3
+    tachometer_pin: PF2
+    wires: 3
+    voltage_options:
+    - 12
+    - 24
+    voltage_select: one FAN_V rail for both ports (schematic), 12 or 24 V
+  thermistors:
+  - id: EXT-TH4
+    pin: PC4
+    pullup_ohms: 2200
+  - id: EXT-TH5
+    pin: PC5
+    pullup_ohms: 2200
+  misc:
+    buzzer_pin: PB1
+  notes:
+  - LDO's config puts stepper_x1 (B1) on HV STEPPER 2 and stepper_y1 (A1) on HV STEPPER 3; the generator does the same.
+  - The extension's drivers sit on SPI2, the Leviathan's own on SPI4.
+  - 'The passive buzzer (PB1) is not configured by the generator; LDO''s v2t_leviathan_ext.cfg has a [pwm_cycle_time _beeper] example.'
+  unverified:
+  - Only LDO sources (config and schematic, which agree on every pin); Klipper has no config for this board, so it stays needs-review.
+  - Fan voltage: README says 12V/24V selectable; the schematic has one FAN_V rail for both ports. The selector itself was not identified.
+  sources:
+  - repo: https://github.com/MotorDynamicsLab/LeviathanExt
+    path: Klipper_config/v2t_leviathan_ext.cfg
+    commit: 060af34d9eecc6e967473f04f5e677e55a51dda8
+  - repo: https://github.com/MotorDynamicsLab/LeviathanExt
+    path: Schematic/Leviathan_Ext_V1.1.pdf
+    commit: 060af34d9eecc6e967473f04f5e677e55a51dda8
+    note: net names STEP/DIR/EN/CS/DIAG_DRV_HV2/HV3, PWM_FAN4/5, TACH4/5, TH4/5, PWM_BUZZER match the config's pins
+  - repo: https://github.com/MotorDynamicsLab/LeviathanExt
+    path: README.md
+    commit: 060af34d9eecc6e967473f04f5e677e55a51dda8
+  - repo: https://github.com/MotorDynamicsLab/Leviathan
+    path: Media/extensionport.jpg
+    commit: 878c3c4893ea353552c957f574509f9890e1e37a
+    note: extension port pinout (all 20 signal pins match)
 exp_aliases:
   EXP1_1: PG9
   EXP1_2: PG12
