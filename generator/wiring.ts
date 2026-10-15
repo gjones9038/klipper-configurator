@@ -199,9 +199,14 @@ export function firmwareMarkdown(p: Plan): string {
       '- Enable extra low-level configuration options',
       `- Micro-controller: ${t.mcu.chip.toUpperCase()}`,
       ...(t.mcu.crystal_mhz ? [`- Clock reference: ${t.mcu.crystal_mhz} MHz crystal`] : []),
-      `- Bootloader offset: no bootloader when flashing over DFU/USB; the Katapult offset if you installed Katapult`,
+      t.mcu.bootloader_kib
+        ? `- Bootloader offset: ${t.mcu.bootloader_kib}KiB bootloader${t.mcu.bootloader_note ? ` (${t.mcu.bootloader_note})` : ''}`
+        : `- Bootloader offset: no bootloader when flashing over DFU/USB; the Katapult offset if you installed Katapult`,
       `- Communication interface: ${conn === 'can' ? `CAN bus (on ${t.can_pins ?? 'the board CAN pins'})` : 'USB'}`,
+      ...(conn === 'can' && t.mcu.chip === 'rp2040' && /^gpio\d+\/gpio\d+$/.test(t.can_pins ?? '')
+        ? [`- CAN RX gpio number: ${t.can_pins.split('/')[0].slice(4)}, CAN TX gpio number: ${t.can_pins.split('/')[1].slice(4)}`] : []),
       ...(conn === 'can' ? ['- CAN bus speed: 1000000 (must match the mainboard / adapter)'] : []),
+      ...(t.mcu.startup_pins ? [`- GPIO pins to set at micro-controller startup: ${t.mcu.startup_pins}${t.mcu.startup_pins_note ? ` (${t.mcu.startup_pins_note})` : ''}`] : []),
       '');
   }
   const pr = p.probe;

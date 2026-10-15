@@ -17,6 +17,8 @@ const TOOLBOARD_ROTATION = [
   'btt-ebb-sb2209-usb-v1.0',
   'btt-ebb36-can-v1.1',
   'btt-ebb42-can-v1.2',
+  'mellow-fly-sb2040-v3',
+  'mellow-fly-sht36-v3',
 ];
 
 // Probe rotation: [probe id, extra build fields]. Eddy probes home Z with the probe.

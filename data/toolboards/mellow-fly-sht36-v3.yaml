@@ -1,0 +1,105 @@
+schema: toolboard/1
+id: mellow-fly-sht36-v3
+name: Mellow Fly-SHT36 V3
+manufacturer: Mellow
+revisions:
+- '3.0'
+status: needs-review
+mcu:
+  chip: rp2040
+  bootloader_kib: 16
+  bootloader_note: ships with Katapult, CAN 1M
+  startup_pins: '!gpio5'
+  startup_pins_note: Mellow's firmware settings
+interfaces:
+- can
+can_pins: gpio1/gpio0
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio7
+  dir_pin: gpio6
+  enable_pin: '!gpio14'
+  uart_pin: gpio15
+  sense_resistor: 0.11
+heaters:
+- id: HEAT
+  pin: gpio23
+  role: hotend
+thermistors:
+- id: TEMP
+  pin: gpio27
+  pullup_ohms: 4700
+  typical_use: hotend
+fans:
+- id: FAN0
+  pin: gpio13
+  wires: 2
+- id: FAN1
+  pin: gpio21
+  wires: 2
+probe_ports:
+- id: PROBE
+  pin: gpio22
+  supply_v:
+  - 5
+  note: 'Probe/Servo connector: GPIO22, GND, GPIO24 (servo), 5V, GND.'
+- id: ENDSTOP
+  pin: gpio20
+  protected: true
+  supply_v:
+  - 5
+  - 12
+  note: Endstop connector 5V, GND, 12V, GPIO20, GPIO16. GPIO20 is a high-voltage input with the jumper off (NONE),
+    3.3V input with it on (CONN).
+bltouch:
+  sensor_pin: gpio22
+  control_pin: gpio24
+endstops:
+- id: ENDSTOP
+  pin: gpio16
+neopixel_ports:
+- id: RGB
+  pin: gpio26
+i2c_ports:
+- id: I2C
+  scl_pin: gpio19
+  sda_pin: gpio18
+  bus: i2c1e
+  supply_v:
+  - 5
+  note: I2C header; Mellow names the bus i2c1e (also the onboard LDC1612, address 43). Pins from Klipper's rp2040
+    bus table.
+accelerometer:
+  chip: lis2dw
+  cs_pin: gpio12
+  spi_software:
+    sclk_pin: gpio2
+    mosi_pin: gpio3
+    miso_pin: gpio4
+notes:
+- 'Pins: Mellow pin diagram (V3) and sample config agree on the driver, heater, thermistor, fan, probe/BLTouch,
+  RGB and accelerometer pins.'
+- 'Fan voltage: VCC / 12V / 5V by jumper (diagram).'
+- Thermistor pull-up 4.7 kΩ; jumper adds 1 kΩ for PT1000. Optional MAX31865 (CS gpio17).
+- 'Firmware (Mellow): RP2040, 16KiB bootloader (Katapult preinstalled), CAN on gpio1/gpio0 at 1M, startup pin !gpio5.'
+unverified:
+- probe pin polarity
+- I2C header pin order on the connector (only the bus name is on the diagram)
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht36_v3/pin.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_v3/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_v3/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_v3/README.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Klipper3d/klipper
+  path: src/rp2040/i2c.c
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

@@ -7,6 +7,7 @@ revisions:
 status: reviewed
 mcu:
   chip: rp2040
+can_pins: gpio4/gpio5   # BTT pin diagram: CAN-H RX-GPIO4, CAN-L TX-GPIO5
 interfaces:
 - can
 - usb
@@ -68,4 +69,7 @@ sources:
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
 - repo: https://github.com/bigtreetech/EBB
   path: "EBB SB2209 CAN (RP2040)/Hardware/EBB SB2209 CAN V1.0\uFF08RP2040\uFF09-Pin.png"
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB SB2209 CAN (RP2040)/Hardware/EBB SB2209 CAN V1.0（RP2040）-Pin.png
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
