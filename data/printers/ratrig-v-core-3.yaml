@@ -1,0 +1,114 @@
+schema: printer/1
+id: ratrig-v-core-3
+name: Rat Rig V-Core 3.1
+manufacturer: Rat Rig
+status: reviewed
+docs:
+  - {title: "RatOS: V-Core 3", url: "https://os.ratrig.com/docs/printers/v-core-3"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: corexy
+z_leveling: z_tilt
+
+sizes:
+  - id: "200"
+    bed_mm: [200, 200]
+    position_max: {x: 200, y: 200, z: 200}
+    z_tilt: {z_positions: [[0, 0], [100, 200], [200, 0]], points: [[60, 60], [135, 170], [190, 60]]}
+  - id: "300"
+    bed_mm: [300, 300]
+    position_max: {x: 300, y: 300, z: 300}
+    z_tilt: {z_positions: [[0, 0], [150, 300], [300, 0]], points: [[60, 60], [185, 270], [260, 60]]}
+  - id: "400"
+    bed_mm: [400, 400]
+    position_max: {x: 400, y: 400, z: 400}
+    z_tilt: {z_positions: [[0, 0], [200, 400], [400, 0]], points: [[60, 60], [235, 370], [360, 60]]}
+  - id: "500"
+    bed_mm: [500, 500]
+    position_max: {x: 500, y: 500, z: 500}
+    z_tilt: {z_positions: [[0, 0], [250, 500], [500, 0]], points: [[60, 60], [285, 470], [460, 60]]}
+
+steppers:
+  - {klipper: stepper_x,  role: B,  rotation_distance: 40}
+  - {klipper: stepper_y,  role: A,  rotation_distance: 40}
+  - {klipper: stepper_z,  role: Z0, position: front-left,  rotation_distance: 4, dir_inverted: true}
+  - {klipper: stepper_z1, role: Z1, position: rear-center, rotation_distance: 4, dir_inverted: true}
+  - {klipper: stepper_z2, role: Z2, position: front-right, rotation_distance: 4, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Standard
+    drivers_required: {motion: 5, extruder: 1}
+
+defaults:
+  printer:                        # RatOS speed-limits-basic.cfg
+    max_velocity: 200
+    max_accel: 1500
+    max_z_velocity: 15
+    max_z_accel: 30
+    square_corner_velocity: 5
+  stepper_xy:
+    microsteps: 64
+    full_steps_per_rotation: 200
+    homing_speed: 50
+    homing_retract_dist: 5
+    position_min: 0
+    run_current: 1.1              # RatOS steppers/ldo/42sth48-2504ac/2209/24v-1.1a
+  axes:
+    x: {endstop_at_max: false, position_endstop: 0, homing_positive_dir: false}   # physical-endstop-x.cfg / 300.cfg
+    y: {endstop_at_max: true, homing_positive_dir: true}                           # physical-endstop-y.cfg
+  stepper_z:
+    microsteps: 64
+    position_endstop: 0
+    position_min: -5              # RatOS: "Needed for z-offset calibration and tilt_adjust"
+    homing_speed: 10
+    second_homing_speed: 5
+    homing_retract_dist: 5
+    run_current: 1.1
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0      # RatOS tmc2209-performance.cfg
+  extruder:
+    run_current: 0.5              # RatOS tmc2209.cfg
+  bed:
+    max_temp: 140
+    pwm_cycle_time: 0.02          # RatOS: "50hz for european AC, to avoid flickering lights"
+    pid: {pid_kp: 22.2, pid_ki: 1.08, pid_kd: 114}
+  z_tilt:
+    speed: 200
+    horizontal_move_z: 20
+    retries: 10
+    retry_tolerance: 0.02
+  safe_z_home:
+    home_xy_position: user
+    speed: 100
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [btt-octopus-v1.1]
+  toolhead: null
+  extruder: lgx-lite
+  hotend: rapido2-hf
+  thermistors: {hotend: semitec-104nt4, bed: ntc100k-3950}
+  probe: super-pinda
+  probe_options: [super-pinda, bltouch, beacon]
+  probe_offsets: {super-pinda: {x: -27.8, y: -12}}
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend, controller]
+
+notes:
+  - "A kit: RatOS's printer template uses a BTT Octopus 1.1, an LGX Lite and a Rapido; pick what you built."
+  - "X homes at 0 and Y at its maximum (RatOS physical endstop files); Z homes with the probe."
+unverified:
+  - "second_homing_speed 5 is Klipper's default (homing_speed / 2)."
+  - "The probe offset -27.8, -12 is RatOS's default probe mount; measure yours."
+sources:
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/v-core-3.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/steppers.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/300.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4, note: "z_tilt geometry per size from 200/300/400/500.cfg"}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/physical-endstop-x.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/physical-endstop-y.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/speed-limits-basic.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/v-core-3/tmc2209-performance.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: steppers/ldo/42sth48-2504ac/2209/24v-1.1a-x.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: templates/v-core-3-printer.template.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}

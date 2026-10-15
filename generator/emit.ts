@@ -86,7 +86,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   if (p.printer.z_leveling === 'quad_gantry_level' && p.size.quad_gantry_level) {
     const q = p.size.quad_gantry_level;
-    const s = new Section('quad_gantry_level', `${p.printer.name} ${p.size.id} (Voron reference geometry)`)
+    const s = new Section('quad_gantry_level', `${p.printer.name} ${p.size.id} (maker reference geometry)`)
       .set('gantry_corners', q.gantry_corners.map((c: number[]) => c.join(', ')))
       .set('points', q.points.map((c: number[]) => c.join(', ')));
     for (const [k, v] of Object.entries(d.quad_gantry_level)) s.set(k, v as number);
@@ -94,7 +94,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   if (p.printer.z_leveling === 'z_tilt' && p.size.z_tilt) {
     const z = p.size.z_tilt;
-    const s = new Section('z_tilt', `${p.printer.name} ${p.size.id} (Voron reference geometry)`)
+    const s = new Section('z_tilt', `${p.printer.name} ${p.size.id} (maker reference geometry)`)
       .set('z_positions', z.z_positions.map((c: number[]) => c.join(', ')))
       .set('points', z.points.map((c: number[]) => c.join(', ')));
     for (const [k, v] of Object.entries(d.z_tilt)) s.set(k, v as number);
@@ -171,7 +171,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   bed.set('max_power', b.bed?.maxPower ?? d.bed?.max_power ?? 0.6, dcBed ? `DC bed on the board's ${p.bedHeater.port} output` : 'SSR rating / (bed watts / mains volts), max 1.0')
     .set('min_temp', 0).set('max_temp', b.bed?.maxTemp ?? d.bed?.max_temp ?? 120)
     .set('control', 'pid', 'seed values; run TUNE_PID_BED')
-    .set('pid_kp', bedPid.pid_kp).set('pid_ki', bedPid.pid_ki).set('pid_kd', bedPid.pid_kd);
+    .set('pid_kp', bedPid.pid_kp).set('pid_ki', bedPid.pid_ki).set('pid_kd', bedPid.pid_kd)
+    .set('pwm_cycle_time', d.bed?.pwm_cycle_time, d.bed?.pwm_cycle_time ? 'mains bed: avoids flickering lights (printer maker)' : undefined);
   mb.add(bed);
 
   if (p.chamberSensor && p.thermistor.chamber) {

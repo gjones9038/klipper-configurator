@@ -186,6 +186,7 @@ extruders:
     pa_baseline: {start: 0.03, range: [0.015, 0.05]}
     confidence: low
     unverified: ["rotation_distance (562 steps/mm @16 microsteps per vendor docs, not fetched)"]
+    discrepancies: ["RatOS extruders/lgx-lite.cfg uses rotation_distance 5.57 (Rat-OS/RatOS-configuration 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4); 562 steps/mm would be 5.694. Calibrate it (TUNE_E_STEPS)."]
 
 # Z drive options that change Z stepper math (Voron 2.4 only).
 z_drives:

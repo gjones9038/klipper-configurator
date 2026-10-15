@@ -487,3 +487,16 @@ test('Voron 0.2 on the SKR Mini E3 V3: shared UART with addresses, sensorless X/
   assert.match(r.files['printer.cfg'], /\[bed_screws\][^[]*screw1: 60, 5\nscrew2: 5, 115/);
   assert.match(r.files['homing.cfg'], /G28 X\n\s*G91\n\s*G1 X-10/);   // homes at max, backs off toward 0
 });
+
+test('Rat Rig V-Core 3.1: X at 0 and Y at max, Z-tilt from RatOS geometry, SuperPINDA polarity from RatOS', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/ratrig-v-core-3-300.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  assert.match(mb, /\[stepper_x\][^[]*microsteps: 64[^[]*position_endstop: 0\nposition_max: 300[^[]*homing_positive_dir: False/);
+  assert.match(mb, /\[stepper_y\][^[]*position_endstop: 300\nposition_max: 300[^[]*homing_positive_dir: True/);
+  assert.match(mb, /\[stepper_z2\][^[]*rotation_distance: 4\n/);
+  assert.match(mb, /\[probe\][^\n]*\npin: \^PB7\n/);   // RatOS: pin: ^probe_pin (NPN NC)
+  assert.match(mb, /\[heater_bed\][^[]*pwm_cycle_time: 0\.02/);
+  assert.match(r.files['printer.cfg'], /\[z_tilt\][^[]*z_positions:\n\s+0, 0\n\s+150, 300\n\s+300, 0/);
+});

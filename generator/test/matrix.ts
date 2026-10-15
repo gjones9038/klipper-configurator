@@ -235,7 +235,8 @@ function stockPrinterCases(db: Db, start: number): Case[] {
     for (const boardId of printer.stock.mainboards) {
       const board = db.mainboards[boardId];
       for (const mcu of board.mcu_variants) {
-        for (const probe of [undefined, ...printer.stock.probe_options]) {
+        // A printer that levels (Z-tilt / QGL) always needs a probe.
+        for (const probe of [...(printer.z_leveling ? [] : [undefined]), ...printer.stock.probe_options]) {
           const st = printer.stock;
           const build: Build = {
             printer: printer.id, size: printer.sizes[0].id, variant: 'standard',

@@ -742,11 +742,12 @@ export function plan(build: Build, db: Db): Plan {
         if (output?.startsWith('pnp') && use && !use.port.pnp_capable) {
           err('pnp_unsupported_port', `${p.name} is a PNP probe; its output sits at supply voltage (12-24 V) when active. ${use.port.id} on the ${use.b} is not marked PNP-capable. Use an NPN probe or a board with a PNP-selectable probe port.`);
         }
-        // Port modifier is for the NC reference probe; NO flips the inversion.
-        const base = use?.port.modifier ?? '^';
+        // A probe whose polarity its maker documents (RatOS: ^probe_pin for SuperPINDA-type NPN NC)
+        // wins; otherwise the port modifier, which is for the NC reference probe. NO flips the inversion.
+        const base = p.pin_modifier ?? use?.port.modifier ?? '^';
         mods = output?.endsWith('-no') ? (base.includes('!') ? base.replace('!', '') : base + '!') : base;
         if (output?.endsWith('-no')) warn('probe_no', `${p.name} is normally open: if its wire breaks Klipper sees "not triggered" and the nozzle can crash. Voron recommends NC probes.`);
-        if (use && !use.port.modifier) warn('probe_modifier_default', `No source gives the pin polarity for ${use.port.id} on the ${use.b}; using ${mods}. Confirm with QUERY_PROBE (open when away from the bed, TRIGGERED near metal) before homing.`);
+        if (use && !use.port.modifier && !p.pin_modifier) warn('probe_modifier_default', `No source gives the pin polarity for ${use.port.id} on the ${use.b}; using ${mods}. Confirm with QUERY_PROBE (open when away from the bed, TRIGGERED near metal) before homing.`);
         if (use && !use.port.protected) warn('probe_voltage', `${use.port.id} is not marked as 12-24 V tolerant. Inductive probes output their supply voltage: add a BAT85 diode (black band toward the probe) as in Voron's wiring guide, or use a protected probe port.`);
         if (use?.port.pnp_capable) warn('probe_port_jumper', `Set the ${use.port.id} jumper to ${output?.startsWith('pnp') ? 'PNP' : 'NPN'} to match the probe.`);
       } else {

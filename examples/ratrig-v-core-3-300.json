@@ -1,0 +1,16 @@
+{
+  "printer": "ratrig-v-core-3",
+  "size": "300",
+  "variant": "standard",
+  "mainboard": { "id": "btt-octopus-v1.1", "connection": "usb" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "ldo-42sth48-2504ac", "z": "ldo-42sth48-2504ac" },
+  "homing": { "xy": "physical", "z": "probe_virtual_endstop" },
+  "probe": "super-pinda",
+  "extruder": "lgx-lite",
+  "hotend": "rapido2-hf",
+  "thermistors": { "hotend": "semitec-104nt4", "bed": "ntc100k-3950" },
+  "fans": [{ "role": "part_cooling" }, { "role": "hotend" }, { "role": "controller" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}
