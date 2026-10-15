@@ -84,10 +84,9 @@ notes:
 - Thermistor pull-up 4.7 kΩ; a jumper selects 1.1 kΩ for PT1000. Fan voltage VCC / 12V / 5V by jumper.
 - 'Firmware (Mellow): RP2040, 16KiB bootloader, CAN on gpio4/gpio5 at 1M, startup pin !gpio13.'
 - Mellow's diagram also shows a TMC2209 build of this board (step gpio24, dir gpio23, en gpio25, UART gpio1, TX
-  gpio0, MAX31865 CS gpio13); it is not modelled here.
+  gpio0, MAX31865 CS gpio13); it is modelled as mellow-fly-sht36-pro-2209.
 unverified:
 - probe pin polarity
-- TMC2209 variant (not modelled)
 sources:
 - repo: https://github.com/Mellow-3D/klipper-docs
   path: docs/images/boards/fly_sht36_pro/interface.jpg

@@ -341,7 +341,7 @@ export function plan(build: Build, db: Db): Plan {
     const d = toolboard!.extruder_driver;
     steppers.push(buildStepper({ klipper: 'extruder', role: 'E' }, {
       id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
-      uart_pin: d.uart_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
+      uart_pin: d.uart_pin, tx_pin: d.tx_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
       onboard_driver: { chip: d.chip, klipper_section: db.drivers.chips[d.chip].klipper_section,
         sense_resistor: d.sense_resistor, rref: d.rref_ohms },
     }, 'toolboard', 'extruder'));
@@ -389,8 +389,10 @@ export function plan(build: Build, db: Db): Plan {
       const od = slot.onboard_driver;
       const iface: Interface = slot.uart_pin ? 'uart' : 'spi';
       const pins: Record<string, string> = {};
-      if (iface === 'uart') pins.uart_pin = qpin(boardKind, slot.uart_pin);
-      else {
+      if (iface === 'uart') {
+        pins.uart_pin = qpin(boardKind, slot.uart_pin);
+        if (slot.tx_pin) pins.tx_pin = qpin(boardKind, slot.tx_pin);   // separate TX line (Klipper [tmc2209] tx_pin)
+      } else {
         pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
         // A toolhead board's driver brings its own SPI (bus or software pins); never the mainboard's.
         const spi = slot.spi_bus ? { bus: slot.spi_bus } : slot.spi_software ? { software: slot.spi_software } : boardKind === 'toolboard' ? undefined : board.tmc_spi;
@@ -806,7 +808,7 @@ export function plan(build: Build, db: Db): Plan {
       const d = tb.extruder_driver;
       const stepper = buildStepper({ klipper: extruderName(n), role: 'E' }, {
         id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
-        uart_pin: d.uart_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
+        uart_pin: d.uart_pin, tx_pin: d.tx_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
         onboard_driver: { chip: d.chip, klipper_section: db.drivers.chips[d.chip].klipper_section, sense_resistor: d.sense_resistor, rref: d.rref_ohms },
       }, 'toolboard', 'extruder', { extruder: ext, motor, mcu: mcuName });
       steppers.push(stepper);

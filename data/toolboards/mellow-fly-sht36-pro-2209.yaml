@@ -1,0 +1,103 @@
+schema: toolboard/1
+id: mellow-fly-sht36-pro-2209
+name: Mellow Fly-SHT36 Pro (TMC2209)
+manufacturer: Mellow
+revisions:
+- '1.0'
+status: needs-review
+mcu:
+  chip: rp2040
+  bootloader_kib: 16
+  bootloader_note: CanBoot preinstalled (Mellow)
+  startup_pins: '!gpio13'
+  startup_pins_note: Mellow's firmware settings
+interfaces:
+- can
+- usb
+can_pins: gpio4/gpio5
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio24
+  dir_pin: gpio23
+  enable_pin: '!gpio25'
+  uart_pin: gpio1
+  tx_pin: gpio0
+  sense_resistor: 0.11
+heaters:
+- id: HEAT
+  pin: gpio8
+  role: hotend
+thermistors:
+- id: TEMP
+  pin: gpio26
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: gpio27
+  typical_use: board
+fans:
+- id: FAN0
+  pin: gpio15
+  wires: 2
+- id: FAN1
+  pin: gpio14
+  wires: 2
+probe_ports:
+- id: PROBE
+  pin: gpio3
+  supply_v:
+  - 5
+  note: 'Probe/Servo connector: GPIO3, GND, GPIO7 (servo), 5V, GND.'
+- id: ENDSTOP
+  pin: gpio21
+  protected: true
+  supply_v:
+  - 5
+  - 12
+  note: Endstop connector 5V, GND, 12V, GPIO21, GPIO2; GPIO21 is a high-voltage input with the jumper off (NONE),
+    3.3V input with it on (CONN).
+bltouch:
+  sensor_pin: gpio3
+  control_pin: gpio7
+endstops:
+- id: ENDSTOP
+  pin: gpio2
+neopixel_ports:
+- id: RGB
+  pin: gpio6
+i2c_ports: []
+accelerometer:
+  chip: adxl345
+  cs_pin: gpio9
+  spi_software:
+    sclk_pin: gpio10
+    mosi_pin: gpio11
+    miso_pin: gpio12
+notes:
+- 'The TMC2209 build of the SHT36 Pro, from Mellow''s pin diagram only: step gpio24, dir gpio23, en gpio25, UART
+  gpio1 with a separate TX on gpio0, DIAG gpio22; its MAX31865 CS is gpio13.'
+- Mellow's sample config and product page cover the TMC5160 build; everything except the driver is taken from that
+  build (same diagram).
+- 'Firmware (Mellow): RP2040, 16KiB bootloader, CAN on gpio4/gpio5 at 1M, startup pin !gpio13.'
+unverified:
+- TMC2209 sense resistor (0.11 assumed, as on other TMC2209 boards; not stated)
+- 'driver pins: single source (pin diagram)'
+- probe pin polarity
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht36_pro/interface.jpg
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_pro/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_pro/README.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_sht36_pro/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_sht36_pro/flashcan.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
