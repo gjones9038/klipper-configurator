@@ -452,3 +452,19 @@ test('Ender 5 Pro: X/Y home at max, 4 mm Z lead, metal Bowden extruder (Klipper 
   assert.match(mb, /\[extruder\][^[]*rotation_distance: 32\.342[^[]*max_temp: 260/);
   assert.match(mb, /\[heater_bed\][^[]*max_temp: 135/);
 });
+
+test('Sovol SV06: TMC2209 UART at address 3, sensorless X/Y with maker thresholds, built-in probe homes Z', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/sovol-sv06-stock.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  // printer-sovol-sv06-2022.cfg / Sovol pins_SOVOL_V131.h
+  assert.match(mb, /\[stepper_x\][^[]*dir_pin: !PB9[^[]*endstop_pin: tmc2209_stepper_x:virtual_endstop/);
+  assert.match(mb, /\[tmc2209 stepper_x\][^[]*uart_pin: PC1\nuart_address: 3\nsense_resistor: 0\.15[^[]*diag_pin: PA5[^\n]*\ndriver_SGTHRS: 81/);
+  assert.match(mb, /\[tmc2209 stepper_y\][^[]*uart_pin: PC0[^[]*driver_SGTHRS: 82/);
+  assert.match(mb, /\[tmc2209 extruder\][^[]*uart_pin: PC14\nuart_address: 3/);
+  assert.match(mb, /\[extruder\][^[]*dir_pin: !PB3[^[]*rotation_distance: 4\.56/);
+  assert.match(mb, /\[probe\][^[]*pin: PB1\nx_offset: 27\ny_offset: -20/);
+  assert.match(r.files['homing.cfg'], /G0 X83 Y130 F6000\n\s*G28 Z/);
+  assert.ok(!r.issues.some((i) => /probe_voltage|probe_output|probe_modifier/.test(i.code)));
+});

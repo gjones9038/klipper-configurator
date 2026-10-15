@@ -1,0 +1,100 @@
+schema: printer/1
+id: sovol-sv06
+name: Sovol SV06
+manufacturer: Sovol
+status: reviewed
+docs:
+  - {title: "Klipper: Sovol SV06 reference config", url: "https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-2022.cfg"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: cartesian
+z_leveling: null                 # two Z leadscrews on one driver; no automatic tilt correction
+bed_heater: dc
+hotend_fan: always_on
+display: not_generated           # the 12864 LCD works in Klipper ([display] st7920); not generated yet
+
+sizes:
+  - id: stock
+    bed_mm: [220, 220]
+    position_max: {x: 220, y: 220, z: 250}
+
+steppers:
+  - {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+  - {klipper: stepper_y, role: Y, rotation_distance: 40}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 4, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 300
+    max_accel: 3000
+    max_z_velocity: 5
+    max_z_accel: 100
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 40
+    homing_retract_dist: 0
+    homing_positive_dir: false
+    position_min: 0
+    endstop_at_max: false
+    position_endstop: 0
+    run_current: 0.86              # Klipper X 0.860 / Y 0.900 (Marlin X_CURRENT 860, Y_CURRENT 900); the lower is used for both
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: -4
+    homing_speed: 4
+    second_homing_speed: 2
+    homing_retract_dist: 5
+    run_current: 0.8               # Marlin Z_CURRENT 800; Klipper's config uses 1.0
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.55
+  sensorless_thresholds: {stepper_x: 81, stepper_y: 82}   # Klipper driver_SGTHRS (Marlin stall sensitivity 68 / 70 is a different scale)
+  bed:
+    max_power: 1.0
+    max_temp: 110                  # Marlin BED_MAXTEMP 110; Klipper's config allows 130
+    pid: {pid_kp: 64.440, pid_ki: 0.773, pid_kd: 1343.571}
+  safe_z_home:
+    home_xy_position: user
+    speed: 100
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [sovol-v131]
+  toolhead: null
+  extruder: sovol-sv06
+  hotend: sovol-sv06
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe: sovol-sv06-probe
+  probe_options: [sovol-sv06-probe, bltouch]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling]
+
+notes:
+  - "Stock homing: X and Y sensorless (TMC2209 DIAG), Z with the built-in inductive probe."
+  - "Both Z leadscrews run from one driver; if the gantry is out of level, level it by hand (turn a leadscrew with the motors off)."
+unverified:
+  - "second_homing_speed 2 is Klipper's default (homing_speed / 2)."
+discrepancies:
+  - "Probe offset: Klipper's config 27, -20; Sovol's Marlin NOZZLE_TO_PROBE_OFFSET 25, -25. Using Klipper's; measure yours (PROBE_CALIBRATE)."
+  - "Z run current: Klipper 1.0 A, Marlin 0.8 A. Using 0.8."
+  - "Bed max temperature: Klipper 130, Marlin BED_MAXTEMP 110. Using 110."
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: config/printer-sovol-sv06-2022.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+  - repo: https://github.com/Sovol3d/Sv06-Source-Code
+    path: Marlin/Configuration.h
+    commit: ba1b9e11815d3202d5fd7871e35c18f7416b4ab1
+  - repo: https://github.com/Sovol3d/Sv06-Source-Code
+    path: Marlin/Configuration_adv.h
+    commit: ba1b9e11815d3202d5fd7871e35c18f7416b4ab1

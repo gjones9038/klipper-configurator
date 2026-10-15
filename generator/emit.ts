@@ -370,6 +370,7 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
   const d = s.driver;
   const sec = new Section(`${d.section} ${s.name}`, d.onboard ? `onboard ${d.chip}` : `${d.moduleId}, ${d.iface.toUpperCase()}`);
   for (const [k, v] of Object.entries(d.pins)) sec.set(k, v);
+  if (d.uartAddress !== undefined) sec.set('uart_address', d.uartAddress);
   if (d.rref) sec.set('rref', d.rref);
   else if (d.sense) sec.set('sense_resistor', d.sense);
   sec.set('run_current', s.runCurrent, s.currentNote);
@@ -377,12 +378,13 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
   sec.set('interpolate', auto ? true : p.printer.defaults.tmc.interpolate, auto ? 'klipper_tmc_autotune recommends interpolation' : undefined);
   if (!auto) sec.set('stealthchop_threshold', p.printer.defaults.tmc.stealthchop_threshold);
   if (s.endstop === 'virtual' && d.diag) {
-    sec.set(d.diag.key, d.diag.pin, 'sensorless homing; DIAG jumper on for stepsticks');
+    sec.set(d.diag.key, d.diag.pin, d.onboard ? 'sensorless homing' : 'sensorless homing; DIAG jumper on for stepsticks');
     if (!auto) {
       const chip = db.drivers.chips[d.chip];
       const start = db.homing.xy_methods.sensorless.starting_thresholds[d.chip] ?? {};
       const key = chip.sensorless.threshold_key;
-      sec.set(key, start[key], 'starting point: tune it');
+      const maker = p.printer.defaults.sensorless_thresholds?.[s.name];
+      sec.set(key, maker ?? start[key], maker !== undefined ? 'printer maker value; tune it' : 'starting point: tune it');
     }
   }
   return sec;

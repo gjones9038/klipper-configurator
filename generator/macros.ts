@@ -360,7 +360,10 @@ gcode:
 
 export function homingMacros(p: Plan, header: string[]): string {
   const [bx, by] = p.size.bed_mm;
-  const zxy = p.build.homing.z === 'probe_virtual_endstop' ? [bx / 2, by / 2] : p.build.homing.zSwitchXY ?? [bx / 2, by / 2];
+  // Probe homing: the probe (nozzle + offset) over the bed centre, as in [safe_z_home].
+  const off = p.probe?.offset ?? { x: 0, y: 0 };
+  const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
+  const zxy = p.build.homing.z === 'probe_virtual_endstop' ? [clamp(bx / 2 - off.x, 'x'), clamp(by / 2 - off.y, 'y')] : p.build.homing.zSwitchXY ?? [bx / 2, by / 2];
   const cur = p.homingCurrent;
   const run = Object.fromEntries(p.steppers.map((s) => [s.name, s.runCurrent]));
   const names = Object.keys(cur);
@@ -368,6 +371,11 @@ export function homingMacros(p: Plan, header: string[]): string {
     names.map((n) => `    SET_TMC_CURRENT STEPPER=${n} CURRENT=${vals[n]}`).join('\n');
   const sensorless = p.build.homing.xy === 'sensorless';
   const tc = !!p.tools;
+  // Back off away from the end the axis homes to (Voron: max, bed-slingers: min).
+  const away = (axis: 'X' | 'Y') => {
+    const xy = { ...p.printer.defaults.stepper_xy, ...p.printer.defaults.axes?.[axis.toLowerCase()] };
+    return xy.homing_positive_dir ? '-' : '';
+  };
   const homeAxis = (axis: 'X' | 'Y') => !sensorless ? block(`
 [gcode_macro _HOME_${axis}]
 description: ${axis} home on its endstop switch.
@@ -381,7 +389,7 @@ ${setAll(cur)}
     G4 P2000
     G28 ${axis}
     G91
-    G1 ${axis}-10 F1200
+    G1 ${axis}${away(axis)}10 F1200
     G90
 ${setAll(run)}
 `);

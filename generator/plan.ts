@@ -34,6 +34,7 @@ export interface DriverPlan {
   moduleId?: string;
   hv: boolean;
   standalone?: boolean;       // no UART/SPI: no TMC section, current set on the board
+  uartAddress?: number;       // drivers sharing an address scheme (Sovol SV06: every driver at 3)
   microsteps?: number;        // fixed by the board (standalone drivers)
 }
 
@@ -382,7 +383,8 @@ export function plan(build: Build, db: Db): Plan {
     const driver = resolveDriver(slot, boardKind, group, tool.mcu);
     const motor = group === 'extruder' ? tool.motor : motors[group];
     const extruder = tool.extruder;
-    const dirInverted = def.dir_inverted ?? false;
+    // Extruder direction is a property of the extruder (Sovol SV06: !PB3 in Klipper's config).
+    const dirInverted = def.dir_inverted ?? (group === 'extruder' ? tool.extruder.dir_inverted : undefined) ?? false;
     let rotationDistance: number, gearRatio: string | undefined, microsteps: number;
     if (group === 'extruder') {
       rotationDistance = extruder.rotation_distance;
@@ -439,7 +441,7 @@ export function plan(build: Build, db: Db): Plan {
         sense: od.sense_resistor ?? chips[od.chip].sense_resistor_default ?? undefined,
         rref: od.rref ?? (od.chip === 'tmc2240' ? chips.tmc2240.current_reference.default_ohms : undefined),
         diag: slot.diag_pin ? { key: slot.diag_pin_key ?? 'diag_pin', pin: diagPin(slot, od.chip, boardKind, mcuName) } : undefined,
-        onboard: true, hv: !!od.motor_power,
+        onboard: true, hv: !!od.motor_power, uartAddress: slot.uart_address,
       };
     }
     const choice = build.drivers[group] ?? build.drivers.xy;
@@ -725,7 +727,7 @@ export function plan(build: Build, db: Db): Plan {
       probe = { ...p, offset };
     } else {
       // Inductive probes go on the mainboard PROBE port (Voron); contact probes on the toolhead.
-      const preferTool = p.kind !== 'inductive';
+      const preferTool = !['inductive', 'integrated'].includes(p.kind);   // a printer's built-in probe uses the board's own input
       const tPort = toolboard?.probe_ports?.[0];
       const mPort = board.probe_ports?.[0];
       const use = preferTool && tPort ? { b: 'toolboard' as BoardKind, port: tPort } : mPort ? { b: 'mainboard' as BoardKind, port: mPort } : tPort ? { b: 'toolboard' as BoardKind, port: tPort } : undefined;

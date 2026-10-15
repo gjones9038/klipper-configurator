@@ -296,6 +296,7 @@ function slotPicker(board: Rec, plan: Plan, stepper: string, current: string, up
 
 // --- 5. Homing and probe -----------------------------------------------------------
 const PROBE_KINDS: Record<string, string> = {
+  integrated: 'Built into the printer',
   inductive: 'Inductive (leveling only)', nozzle_contact: 'Nozzle contact', dockable_switch: 'Dockable switch',
   eddy_native: 'Eddy current (Klipper native)', eddy_plugin: 'Eddy current (vendor module)', servo_pin: 'Servo probe',
 };
@@ -323,7 +324,7 @@ const homingStep: Step = {
         segmented('X / Y homing', build.homing.xy, Object.entries(db.homing.xy_methods).map(([id, m]: [string, any]) => ({ value: id as 'physical' | 'sensorless', label: m.name })),
           (v) => update((b) => { b.homing.xy = v; }), db.homing.xy_methods[build.homing.xy]?.description),
         select('Probe', build.probe ?? '', [{ value: '', label: 'No probe' },
-          ...Object.values(db.probes).map((p) => ({ value: p.id, label: p.name, group: PROBE_KINDS[p.kind] ?? p.kind }))],
+          ...Object.values(db.probes).filter((p) => !p.applies_to || p.applies_to.includes(build.printer)).map((p) => ({ value: p.id, label: p.name, group: PROBE_KINDS[p.kind] ?? p.kind }))],
           (v) => update((b) => { if (v) b.probe = v; else delete b.probe; delete b.probeOffset; }))),
       probe ? h('div', { class: 'grid' },
         probe.kind === 'inductive' && !probe.output ? segmented('Probe output', build.probeOutput ?? 'npn-no',

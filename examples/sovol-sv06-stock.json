@@ -1,0 +1,16 @@
+{
+  "printer": "sovol-sv06",
+  "size": "stock",
+  "variant": "standard",
+  "mainboard": { "id": "sovol-v131", "connection": "usb-serial" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "", "z": "" },
+  "homing": { "xy": "sensorless", "z": "probe_virtual_endstop" },
+  "probe": "sovol-sv06-probe",
+  "extruder": "sovol-sv06",
+  "hotend": "sovol-sv06",
+  "thermistors": { "hotend": "epcos-b57560", "bed": "epcos-b57560" },
+  "fans": [{ "role": "part_cooling" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}

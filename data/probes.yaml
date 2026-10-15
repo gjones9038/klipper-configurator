@@ -191,6 +191,18 @@ probes:
     sources:
       - {repo: https://github.com/beacon3d/beacon_klipper, path: beacon.py, commit: 3eb0134607664734ccf5cd94cb51840e1c8b27b3}
 
+  - id: sovol-sv06-probe
+    name: Sovol SV06 built-in inductive probe
+    kind: integrated
+    applies_to: [sovol-sv06]
+    z_endstop_capable: true         # Klipper's SV06 config homes Z with it (Marlin USE_PROBE_FOR_Z_HOMING)
+    defaults: {x_offset: 27, y_offset: -20, z_offset: 0, speed: 5.0, samples: 2, samples_result: average,
+               sample_retract_dist: 2.0, samples_tolerance: 0.015, samples_tolerance_retries: 5}
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: config/printer-sovol-sv06-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+      - {repo: https://github.com/Sovol3d/Sv06-Source-Code, path: Marlin/Configuration.h, commit: ba1b9e11815d3202d5fd7871e35c18f7416b4ab1, note: "FIX_MOUNTED_PROBE, NOZZLE_TO_PROBE_OFFSET { 25, -25, 0 }"}
+    unverified: ["speed, samples_result and sample_retract_dist are Klipper defaults (the SV06 config sets samples 2, tolerance 0.015, retries 5)"]
+
   - id: bltouch
     name: BLTouch / CR-Touch
     kind: servo_pin

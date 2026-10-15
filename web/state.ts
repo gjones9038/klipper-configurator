@@ -27,7 +27,7 @@ export function switchPrinter(b: Build, db: Db, id: string): Build {
       printer: id, size: next.sizes[0].id, variant: 'standard',
       mainboard: { id: board.id, connection: board.interfaces[0] },
       drivers: b.drivers, motors: { xy: '', z: '' },
-      homing: { xy: 'physical', z: st.homing_z ?? 'physical_min' },
+      homing: { xy: st.homing_xy ?? 'physical', z: st.homing_z ?? 'physical_min' },
       ...(st.probe ? { probe: st.probe, ...(st.probe_offsets?.[st.probe] ? { probeOffset: { ...st.probe_offsets[st.probe] } } : {}) } : {}),
       extruder: st.extruder, hotend: st.hotend,
       thermistors: { hotend: st.thermistors.hotend, bed: st.thermistors.bed },

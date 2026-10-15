@@ -221,6 +221,19 @@ hotends:
       - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-creality-ender5pro-2020.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
          note: "[extruder] max_temp: 260, sensor_type: EPCOS 100K B57560G104F"}
 
+  - id: sovol-sv06
+    name: Sovol SV06 stock hotend
+    maker: Sovol
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    pid_seed: {pid_kp: 21.479, pid_ki: 1.326, pid_kd: 86.991}
+    sources:
+      - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-sovol-sv06-2022.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b, note: "[extruder] max_temp: 300"}
+      - {repo: "https://github.com/Sovol3d/Sv06-Source-Code", path: "Marlin/Configuration.h", commit: ba1b9e11815d3202d5fd7871e35c18f7416b4ab1, note: "HEATER_0_MAXTEMP 315 (Marlin keeps 15 C below it usable: 300)"}
+
 defaults:
   min_temp: 10
   min_extrude_temp: 170
