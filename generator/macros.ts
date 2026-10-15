@@ -11,28 +11,95 @@ function levelCmd(p: Plan): string {
 
 export function printMacros(p: Plan, header: string[]): string {
   const [bx, by] = p.size.bed_mm;
+  const nm = p.nevermore;
+  const hasChamber = !!p.chamberSensor;
+  const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
+  const threshold = nm?.threshold ?? 90;
+  const nevermoreOn = nm
+    ? (nm.mode === 'always'
+      ? `    SET_FAN_SPEED FAN=nevermore SPEED=${nm.speed}`
+      : `    {% if BED >= ${threshold} %}\n        SET_FAN_SPEED FAN=nevermore SPEED=${nm.speed}\n    {% endif %}`)
+    : '';
+  const chamberWait = hasChamber
+    ? `        {% if CHAMBER > 0 %}
+            SET_DISPLAY_TEXT MSG="Heat soak: chamber {CHAMBER}C"
+            M106 S255
+            TEMPERATURE_WAIT SENSOR="temperature_sensor chamber" MINIMUM={CHAMBER}
+            M107
+        {% else %}
+            SET_DISPLAY_TEXT MSG="Heat soak: {SOAK} min"
+            M106 S255
+            G4 P{SOAK * 60000}
+            M107
+        {% endif %}`
+    : `        SET_DISPLAY_TEXT MSG="Heat soak: {SOAK} min (no chamber sensor)"
+        M106 S255
+        G4 P{SOAK * 60000}
+        M107`;
   return `${hdr(header)}
+# PRINT_START follows the flow of "A better print_start macro" by jontek2
+# (https://github.com/jontek2/A-better-print_start-macro): home, heat and soak, level,
+# adaptive mesh, heat the nozzle, purge. Written fresh for this generator; slicer
+# start G-code lines are in SLICER.md.
 
 ${block(`
 [gcode_macro PRINT_START]
-description: Home, level, mesh and heat. Slicer start G-code: PRINT_START BED=<bed temp> EXTRUDER=<nozzle temp>
+description: Home, heat and soak, level, adaptive mesh, heat nozzle, purge. Params: BED EXTRUDER [CHAMBER] [CHAMBER_MINIMAL] [SOAK]
 gcode:
-    {% set BED = params.BED|default(100)|float %}
-    {% set EXTRUDER = params.EXTRUDER|default(240)|float %}
-    M140 S{BED}
+    {% set BED = params.BED|default(100)|int %}
+    {% set EXTRUDER = params.EXTRUDER|default(240)|int %}
+    {% set CHAMBER_SET = params.CHAMBER|default(0)|int %}
+    {% set CHAMBER_MIN = params.CHAMBER_MINIMAL|default(0)|int %}
+    {% set CHAMBER = CHAMBER_MIN if CHAMBER_MIN > 0 else CHAMBER_SET %}
+    {% set HOT = BED >= ${threshold} %}
+    {% set SOAK = params.SOAK|default(10 if HOT else 5)|int %}
+    SET_DISPLAY_TEXT MSG="Homing"
+    BED_MESH_CLEAR
     G28
+    G90
+${nevermoreOn}
+    SET_DISPLAY_TEXT MSG="Bed: {BED}C"
+    G0 X${bx / 2} Y${by / 2} Z30 F6000
     M190 S{BED}
+    {% if HOT %}
+${chamberWait}
+    {% else %}
+        SET_DISPLAY_TEXT MSG="Bed soak: {SOAK} min"
+        G4 P{SOAK * 60000}
+    {% endif %}
+    SET_DISPLAY_TEXT MSG="Hotend: 150C"
+    M109 S150
+    SET_DISPLAY_TEXT MSG="Leveling"
     ${levelCmd(p)}
     G28 Z
-    BED_MESH_CALIBRATE ADAPTIVE=1
-    G90
-    G0 X${bx / 2} Y${by / 2} Z10 F6000
+    SET_DISPLAY_TEXT MSG="Bed mesh"
+    BED_MESH_CALIBRATE ADAPTIVE=1${scan}
+    SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
+    G0 X${bx / 2} Y20 Z10 F6000
     M109 S{EXTRUDER}
+    PURGE_LINE
+    SET_DISPLAY_TEXT MSG="Printing"
+`)}
+
+${block(`
+[gcode_macro PURGE_LINE]
+description: Prime the nozzle with a short line along the front edge of the bed.
+gcode:
+    SAVE_GCODE_STATE NAME=purge
+    G90
+    M83
+    G0 X20 Y5 Z5 F6000
+    G0 Z0.3 F600
+    G1 E8 F300
+    G1 X100 E10 F1200
+    G1 X110 F6000
+    G0 Z2 F600
+    RESTORE_GCODE_STATE NAME=purge
 `)}
 
 ${block(`
 [gcode_macro PRINT_END]
-description: Retract, park and turn everything off.
+description: Retract, park, turn heaters off${nm ? `, keep the Nevermore running ${nm.postMinutes} min` : ''}.
 gcode:
     {% set max_z = printer.toolhead.axis_maximum.z|float %}
     {% set z = [printer.toolhead.position.z + 10, max_z]|min %}
@@ -44,7 +111,62 @@ gcode:
     G0 X${bx / 2} Y${by - 10} F6000
     TURN_OFF_HEATERS
     M107
+    BED_MESH_CLEAR${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}
+`)}
+${nm ? `
+${block(`
+[delayed_gcode _NEVERMORE_OFF]
+gcode:
+    SET_FAN_SPEED FAN=nevermore SPEED=0
+`)}
+` : ''}`;
+}
+
+export function levelingMacros(p: Plan, header: string[]): string {
+  const [bx, by] = p.size.bed_mm;
+  const lvl = levelCmd(p);
+  const status = p.printer.z_leveling === 'quad_gantry_level' ? 'quad_gantry_level' : 'z_tilt';
+  const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
+  return `${hdr(header)}
+
+${block(`
+[gcode_macro _HOME_IF_NEEDED]
+description: Home all axes unless they are already homed.
+gcode:
+    {% if printer.toolhead.homed_axes != "xyz" %}
+        G28
+    {% endif %}
+`)}
+
+${block(`
+[gcode_macro G32]
+description: Home, ${lvl === 'QUAD_GANTRY_LEVEL' ? 'level the gantry' : 'level the bed'}, home Z again and park in the middle (Voron standard).
+gcode:
     BED_MESH_CLEAR
+    G28
+    ${lvl}
+    G28 Z
+    G0 X${bx / 2} Y${by / 2} Z30 F3600
+`)}
+
+${block(`
+[gcode_macro LEVEL_IF_NEEDED]
+description: Run ${lvl} only if it has not been applied since the motors were enabled.
+gcode:
+    _HOME_IF_NEEDED
+    {% if not printer.${status}.applied %}
+        ${lvl}
+        G28 Z
+    {% endif %}
+`)}
+
+${block(`
+[gcode_macro LEVEL_BED]
+description: Full leveling for a fresh start: level if needed, then a full bed mesh saved as "default".
+gcode:
+    LEVEL_IF_NEEDED
+    BED_MESH_CALIBRATE${scan}
+    BED_MESH_PROFILE SAVE=default
 `)}
 `;
 }
@@ -77,7 +199,7 @@ gcode:
     {% endfor %}
     QUERY_ENDSTOPS
     RESPOND MSG="Endstops should read 'open'. Press each switch by hand and run QUERY_ENDSTOPS again: it must read 'TRIGGERED'."
-${p.probe || p.bltouch ? '    QUERY_PROBE\n    RESPOND MSG="Probe should be open; trigger it by hand and run QUERY_PROBE again."' : ''}
+${(p.probe?.port || p.bltouch) ? '    QUERY_PROBE\n    RESPOND MSG="Probe should be open; trigger it by hand and run QUERY_PROBE again."' : ''}
     {% if ns.ok %}
         RESPOND MSG="Sensors look sane. Next: PREFLIGHT_MOTORS with the toolhead centered, then PREFLIGHT_FANS."
     {% endif %}
@@ -138,6 +260,7 @@ gcode:
     RESPOND MSG="Input shaper measured. Run SAVE_CONFIG to keep it."
 `)}
 ` : ''}
+${probeMacros(p)}
 ${block(`
 [gcode_macro TUNE_ALL]
 description: Every automatic tuning step in order, then SAVE_CONFIG (Klipper restarts).
@@ -240,9 +363,6 @@ gcode:
     G0 Z10 F1200
 `)}
 
-[force_move]
-enable_force_move: True   # for SET_KINEMATIC_POSITION below
-
 # If Z is unhomed, pretend it is 0 just long enough to lift the nozzle clear of
 # the bed, then clear the homed flag again unless Z was homed too.
 # (set_position_z would do this on every G28 X as well, corrupting a homed Z.)
@@ -276,4 +396,57 @@ gcode:
     {% endif %}
 `)}
 `;
+}
+
+// Probe calibration helpers: eddy probes need calibration before they can probe at all.
+function probeMacros(p: Plan): string {
+  const pr = p.probe;
+  if (!pr) return '';
+  const [bx, by] = p.size.bed_mm;
+  const homes = p.build.homing.z === 'probe_virtual_endstop';
+  if (pr.kind === 'eddy_plugin') {
+    return block(`
+[gcode_macro TUNE_BEACON]
+description: Beacon first calibration (BEACON_CALIBRATE, paper test). See docs.beacon3d.com.
+gcode:
+    G28 X Y
+    G0 X${bx / 2} Y${by / 2} F6000
+    RESPOND MSG="Follow the Beacon quickstart: BEACON_CALIBRATE runs the paper test, then SAVE_CONFIG."
+    BEACON_CALIBRATE
+`) + '\n';
+  }
+  if (pr.kind !== 'eddy_native') return '';
+  const chip = pr.eddy.section_name ?? pr.mcu.name;
+  const first = homes ? `
+    {% if params.FIRST|default(0)|int == 1 %}
+        RESPOND MSG="First calibration: Z is not homed. Place the nozzle about 20 mm above the bed centre before running this."
+        G28 X Y
+        G0 X${bx / 2} Y${by / 2} F6000
+        SET_STEPPER_ENABLE STEPPER=stepper_z ENABLE=1
+        SET_KINEMATIC_POSITION Z=25
+    {% else %}
+        G28
+        G0 X${bx / 2} Y${by / 2} Z5 F6000
+    {% endif %}` : `
+    G28
+    G0 X${bx / 2} Y${by / 2} Z5 F6000`;
+  return block(`
+[gcode_macro TUNE_EDDY_DRIVE]
+description: Eddy step 1 (Klipper Eddy_Probe.md): calibrate the drive current with the sensor about 20 mm above the bed.
+gcode:${homes ? `
+    RESPOND MSG="If Z cannot home yet, move the nozzle by hand to about 20 mm above the bed centre first."
+    {% if printer.toolhead.homed_axes == "xyz" %}
+        G0 X${bx / 2} Y${by / 2} Z20 F6000
+    {% endif %}` : `
+    G28
+    G0 X${bx / 2} Y${by / 2} Z20 F6000`}
+    LDC_CALIBRATE_DRIVE_CURRENT CHIP=${chip}
+    RESPOND MSG="Drive current found. Run SAVE_CONFIG, then TUNE_EDDY_HEIGHT${homes ? ' FIRST=1' : ''}."
+`) + '\n\n' + block(`
+[gcode_macro TUNE_EDDY_HEIGHT]
+description: Eddy step 2: map sensor readings to Z heights (paper test, then ACCEPT).${homes ? ' Use FIRST=1 before Z can home with the probe.' : ''}
+gcode:${first}
+    PROBE_EDDY_CURRENT_CALIBRATE CHIP=${chip}
+    RESPOND MSG="Do the paper test, ACCEPT, wait for the sweep, then SAVE_CONFIG."
+`) + '\n';
 }

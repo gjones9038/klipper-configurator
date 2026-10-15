@@ -172,6 +172,8 @@ fans:
 probe_ports:
 - id: PROBE
   pin: PF11
+  pnp_capable: true
+  protected: true
   note: Optocoupler-isolated; PNP or NPN selected by jumper (vendor README).
 bltouch:
   sensor_pin: PB15

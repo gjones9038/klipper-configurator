@@ -15,6 +15,8 @@ extruders:
     full_steps_per_rotation: 200
     recommended_motor: ldo-36sth20-1004ahg
     run_current: 0.5
+    docs:
+      - {title: "Voron: extruder calibration (rotation_distance)", url: "https://docs.vorondesign.com/build/startup/#extruder-calibration-e-steps"}
     pa_baseline: {start: 0.04, range: [0.02, 0.06]}
     confidence: high
     sources:
@@ -58,6 +60,8 @@ extruders:
     run_current: 0.6
     pa_baseline: {start: 0.035, range: [0.02, 0.06]}
     confidence: high
+    docs:
+      - {title: "Galileo 2 Klipper settings", url: "https://github.com/JaredC01/Galileo2#klipper-settings-for-g2-extruders-g2e-and-g2sa"}
     sources:
       - repo: https://github.com/JaredC01/Galileo2
         path: README.md

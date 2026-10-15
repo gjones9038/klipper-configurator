@@ -1,0 +1,54 @@
+schema: filters/1
+
+# Chamber air filters. The generator drives them as [fan_generic nevermore] so
+# speed is controllable, starts them in PRINT_START and keeps them running for
+# `post_print_minutes` after PRINT_END.
+
+filters:
+  - id: nevermore-micro-v6
+    name: Nevermore Micro V6
+    fans: {count: 2, size: "5015 blower", wiring: "both fans in parallel on one port"}
+    voltage_options: [12, 24]       # depends on the blowers chosen (12V GDStime / 24V Delta BFB0524HH)
+    docs:
+      - {title: "Nevermore Micro (build guide, fan choices)", url: "https://github.com/nevermore3d/Nevermore_Micro"}
+    sources:
+      - {repo: https://github.com/nevermore3d/Nevermore_Micro, path: README.md, commit: 8740b34fcc88e64afff74115f2c7c7002059f229}
+
+  - id: nevermore-micro-v5-duo
+    name: Nevermore Micro V5 Duo
+    fans: {count: 2, size: "5015 blower", wiring: "both fans in parallel on one port"}
+    voltage_options: [12, 24]
+    docs:
+      - {title: "Nevermore Micro (build guide, fan choices)", url: "https://github.com/nevermore3d/Nevermore_Micro"}
+    sources:
+      - {repo: https://github.com/nevermore3d/Nevermore_Micro, path: README.md, commit: 8740b34fcc88e64afff74115f2c7c7002059f229}
+
+  - id: nevermore-stealthmax
+    name: Nevermore StealthMax (sensorless)
+    fans: {count: 1, size: "StealthMax fan", wiring: "one port"}
+    voltage_options: [12]
+    min_supply_a: 1.5               # "A 12V power supply unit (PSU) with a minimum rating of 1.5 Amps"
+    docs:
+      - {title: "StealthMax (power source, fan, setup)", url: "https://github.com/nevermore3d/StealthMax"}
+    notes:
+      - "The Smart StealthMax uses the Nevermore Controller (Pico W, its own Klipper module); the
+        generator configures the sensorless version only."
+    sources:
+      - {repo: https://github.com/nevermore3d/StealthMax, path: README.md, commit: a3451c513127818b06c573948adce109943eb27e}
+
+  - id: nevermore-max
+    name: Nevermore Max
+    fans: {count: 1, size: "radial blower (e.g. Sanyo 9TD12P6G001)", wiring: "one port"}
+    voltage_options: [12, 24]
+    optional: ["4010 exhaust fan for slight negative pressure", "2x SGP40 VOC sensors (Pro, third-party sgp40 module)"]
+    docs:
+      - {title: "Nevermore Max (BOM, electronics)", url: "https://github.com/nevermore3d/Nevermore_Max"}
+    unverified: ["blower voltage options depend on the blower chosen"]
+    sources:
+      - {repo: https://github.com/nevermore3d/Nevermore_Max, path: BOM.md, commit: 159df10e4f6015680107d1cbd10a3aab23dd5f18}
+
+defaults:
+  mode: hot_bed                     # always | hot_bed (run only when bed target > hot_bed_threshold)
+  hot_bed_threshold_c: 90           # same threshold the "better print_start" uses for heat soak
+  speed: 1.0
+  post_print_minutes: 10

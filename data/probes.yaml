@@ -1,65 +1,197 @@
-schema: probes/1
+schema: probes/2
+
+# kind:
+#   inductive            switching proximity sensor on a probe input (pin modifiers depend on
+#                        the sensor's output type and the board's probe-port circuit)
+#   nozzle_contact       Tap-style: the nozzle itself triggers an optical/mechanical switch
+#   dockable_switch      Klicky / Euclid microswitch that is picked up and docked
+#   servo_pin            BLTouch-style (sensor + control pin)
+#   eddy_native          LDC1612 eddy-current sensor driven by Klipper's [probe_eddy_current]
+#   eddy_plugin          eddy-current sensor that needs a vendor Klipper module
+#
+# output (inductive only): npn-nc | npn-no | pnp-nc | pnp-no | null (ask the user)
+# docs: links shown to the user (opened in a new tab by the web UI)
+
+klipper_docs_base: https://www.klipper3d.org/
 
 probes:
   - id: omron-tl-q5mc2
-    name: Omron TL-Q5MC2 (inductive, NPN NO)
+    name: Omron TL-Q5MC2
     kind: inductive
-    supply_v: 24
-    output: npn-no
-    z_endstop_capable: false        # Voron: used for QGL/Z-tilt only, not Z height
-    pin_modifier: "~!"              # Voron reference on PROBE ports
-    wiring_notes:
-      - "Outputs up to supply voltage: on 3.3V MCU inputs use a port with protection (PROBE
-        port on Octopus/Leviathan) or a BAT85 diode on a DIAG input (Voron Octopus guide)."
+    output: npn-nc
+    supply_v: [12, 24]
+    z_endstop_capable: false        # Voron: QGL / Z-tilt / mesh only, not Z height
     defaults: {x_offset: 0, y_offset: 25.0, z_offset: 0, speed: 10.0, samples: 3,
                samples_result: median, sample_retract_dist: 3.0, samples_tolerance: 0.006,
                samples_tolerance_retries: 3}
-    sources: [{repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg}]
+    docs:
+      - {title: "Voron: inductive probe wiring (12-24 V, NC, BAT85 diode)", url: "https://docs.vorondesign.com/build/electrical/#inductive-probe-wiring-v1-trident-v2-switchwire"}
+    unverified: ["output npn-nc is inferred from Voron's Octopus config ('Change to !PG15 if probe is NO')"]
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg}
+      - {repo: https://github.com/VoronDesign/Voron-Documentation, path: build/electrical/index.md, commit: b8c014f88948c9fca963dfe726e0e66b1287af90}
+
+  - id: pl-08n
+    name: PL-08N (Voron BOM inductive probe)
+    kind: inductive
+    output: npn-nc
+    supply_v: [12, 24]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 25.0, z_offset: 0, speed: 10.0, samples: 3,
+               samples_result: median, sample_retract_dist: 3.0, samples_tolerance: 0.006,
+               samples_tolerance_retries: 3}
+    docs:
+      - {title: "Voron: inductive probe wiring (12-24 V, NC, BAT85 diode)", url: "https://docs.vorondesign.com/build/electrical/#inductive-probe-wiring-v1-trident-v2-switchwire"}
+    unverified: ["output: Voron treats the BOM part as the NC reference; listings vary, so check with QUERY_PROBE"]
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-Documentation, path: build/electrical/index.md, commit: b8c014f88948c9fca963dfe726e0e66b1287af90}
+
+  - id: generic-inductive
+    name: Other inductive probe (choose its output type)
+    kind: inductive
+    output: null                    # build.probeOutput is required
+    supply_v: [12, 24]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 25.0, z_offset: 0, speed: 10.0, samples: 3,
+               samples_result: median, sample_retract_dist: 3.0, samples_tolerance: 0.006,
+               samples_tolerance_retries: 3}
+    docs:
+      - {title: "Voron: inductive probe wiring (12-24 V, NC, BAT85 diode)", url: "https://docs.vorondesign.com/build/electrical/#inductive-probe-wiring-v1-trident-v2-switchwire"}
 
   - id: voron-tap
     name: Voron Tap (optical)
     kind: nozzle_contact
-    supply_v: [5, 24]               # depends on Tap PCB/sensor version
+    supply_v: [5, 24]
     z_endstop_capable: true
     offsets: {x_offset: 0, y_offset: 0}
-    activate_gcode_note: "Limit nozzle to about 150C before probing to avoid marking the bed
-      (Voron Tap guide)."
+    activate_gcode_note: "Limit nozzle to about 150C before probing to avoid marking the bed."
+    docs:
+      - {title: "Voron Tap", url: "https://github.com/VoronDesign/Voron-Tap"}
     unverified: ["supply_v per version", "activate_gcode details"]
 
   - id: klicky
     name: Klicky / Euclid (dockable microswitch)
     kind: dockable_switch
     z_endstop_capable: true
-    needs_macros: true              # attach/dock macros (Klicky-macros / klicky-probe.cfg)
+    needs_macros: true
+    docs:
+      - {title: "Klicky probe", url: "https://github.com/jlas1/Klicky-Probe"}
     unverified: ["macro package choice"]
 
-  - id: beacon
-    name: Beacon (eddy current)
-    kind: eddy_external_module
+  - id: btt-eddy-usb
+    name: BTT Eddy USB
+    kind: eddy_native
     interface: usb
     z_endstop_capable: true
-    klipper_module: {repo: https://github.com/beacon3d/beacon_klipper, install: required}
-    unverified: ["config keys - generated from vendor docs at build time"]
+    offsets: {x_offset: 0, y_offset: 21.42}     # BTT sample: standard Voron Stealthburner mount
+    mcu: {name: eddy, chip: rp2040, serial_hint: "usb-Klipper_rp2040_eddy-if00"}
+    eddy:
+      section_name: btt_eddy        # BTT sample; temperature_probe must use the same name
+      i2c_mcu: eddy
+      i2c_bus: i2c0f
+    temperature_probe: {sensor_type: Generic 3950, sensor_pin: "gpio26", horizontal_move_z: 2}
+    mesh: {horizontal_move_z: 2, probe_count: [9, 9], speed: 200}
+    docs:
+      - {title: "BTT Eddy manual and sample configs", url: "https://github.com/bigtreetech/Eddy"}
+      - {title: "Klipper: eddy current probe setup and calibration", url: "https://www.klipper3d.org/Eddy_Probe.html"}
+    notes:
+      - "BTT's own samples target an older Klipper (z_offset, custom G28 macro). This config
+        follows Klipper's Eddy_Probe.md for the pinned Klipper version (descend_z)."
+    sources:
+      - {repo: https://github.com/bigtreetech/Eddy, path: sample-bigtreetech-eddy.cfg, commit: 4e8ebf225c53554d74b70cfd6a9e201220b07554}
+      - {repo: https://github.com/Klipper3d/klipper, path: docs/Eddy_Probe.md, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
 
-  - id: cartographer
-    name: Cartographer (eddy current)
-    kind: eddy_external_module
+  - id: btt-eddy-coil
+    name: BTT Eddy Coil (on a toolhead board I2C port)
+    kind: eddy_native
+    interface: toolboard_i2c
+    z_endstop_capable: true
+    offsets: {x_offset: 0, y_offset: 21.42}
+    requires_toolboard_i2c: true    # none of our toolboard records have I2C pins yet
+    docs:
+      - {title: "BTT Eddy manual and sample configs", url: "https://github.com/bigtreetech/Eddy"}
+
+  - id: cartographer-v3
+    name: Cartographer V3 (Klipper native)
+    kind: eddy_native
     interface: [usb, can]
     z_endstop_capable: true
-    klipper_module: {repo: https://github.com/Cartographer3D/cartographer-klipper, install: required}
-    sources: [{repo: https://github.com/Klipper3d/klipper, path: config/sample-cartographer-v3.cfg}]
-    unverified: ["module-specific keys"]
+    offsets: null                   # depends on the mount; user must measure
+    mcu: {name: carto, chip: stm32f042, crystal_mhz: 24, serial_hint: "usb-Klipper_stm32f042x6_<id>-if00",
+          usb_pins: PA9/PA10, can_pins: PA9/PA10, can_note: "CAN requires GPIO PA1 set at micro-controller start-up"}
+    eddy:
+      frequency: 24000000
+      i2c_address: 42
+      i2c_mcu: carto
+      i2c_bus: i2c1_PB6_PB7
+    extra_sections: |
+      [thermistor 50k]
+      temperature1: 25
+      resistance1: 50000
+      temperature2: 50
+      resistance2: 17940
+      temperature3: 100
+      resistance3: 3090
 
-  - id: btt-eddy
-    name: BTT Eddy (LDC1612)
-    kind: eddy_native
-    interface: [usb, i2c]
+      [temperature_probe carto]
+      pullup_resistor: 10000
+      sensor_type: 50k
+      sensor_pin: carto:PA4
+      min_temp: 0
+      max_temp: 125
+
+      [led carto_led]
+      white_pin: carto:PB5
+      initial_WHITE: 0.03
+
+      [output_pin _LDC1612_en]
+      pin: carto:PA15
+      value: 0
+
+      [static_pwm_clock ldc1612_clk_in]
+      pin: carto:PB4
+      frequency: 24000000
+    mesh: {horizontal_move_z: 2, probe_count: [9, 9], speed: 200}
+    docs:
+      - {title: "Klipper sample config for Cartographer V3", url: "https://github.com/Klipper3d/klipper/blob/master/config/sample-cartographer-v3.cfg"}
+      - {title: "Klipper: eddy current probe setup and calibration", url: "https://www.klipper3d.org/Eddy_Probe.html"}
+      - {title: "Cartographer documentation", url: "https://docs.cartographer3d.com/"}
+    notes:
+      - "Uses Klipper's built-in eddy support. Cartographer's own plugin (survey/touch) is an
+        alternative the generator does not write yet."
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: config/sample-cartographer-v3.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+
+  - id: beacon
+    name: Beacon (vendor module)
+    kind: eddy_plugin
+    interface: usb
     z_endstop_capable: true
-    klipper_section: probe_eddy_current   # native in Klipper (docs/Eddy_Probe.md)
-    sources: [{repo: https://github.com/Klipper3d/klipper, path: docs/Eddy_Probe.md}]
+    offsets: null
+    plugin: {repo: "https://github.com/beacon3d/beacon_klipper", install: "install.sh from the repo", python_deps: [numpy, scipy]}
+    serial_hint: "usb-Beacon_Beacon_RevH_<id>-if00"
+    klipper_check: false            # Beacon firmware is not Klipper's, so no data dictionary can be built
+    docs:
+      - {title: "Beacon documentation", url: "https://docs.beacon3d.com"}
+      - {title: "beacon_klipper module", url: "https://github.com/beacon3d/beacon_klipper"}
+    notes:
+      - "Beacon homing (home_xy_position) cannot be combined with [safe_z_home] or
+        [homing_override] (beacon.py), so sensorless X/Y + Beacon homing is not generated yet."
+    sources:
+      - {repo: https://github.com/beacon3d/beacon_klipper, path: beacon.py, commit: 3eb0134607664734ccf5cd94cb51840e1c8b27b3}
 
   - id: bltouch
     name: BLTouch / CR-Touch
     kind: servo_pin
     z_endstop_capable: true
-    uses_board_port: bltouch        # sensor_pin + control_pin from board/toolboard data
+    uses_board_port: bltouch
+    docs:
+      - {title: "Klipper: BLTouch", url: "https://www.klipper3d.org/BLTouch.html"}
+
+# Pin modifier rules for inductive probes (Voron electrical guide):
+#   NPN outputs pull the signal to ground; the MCU input needs a pull-up (or the board's
+#   probe-port circuit). NC = conducting when idle, so "triggered" reads high.
+#   Board probe ports carry a `modifier` for the NC reference probe when a source gives one
+#   (Octopus ~!, Leviathan ^); otherwise '^' is used. An NO probe flips the '!'.
+#   PNP outputs drive the supply voltage: only allowed on ports marked pnp_capable.
+#   Unprotected inputs need the BAT85 diode (black band toward the probe).

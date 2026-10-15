@@ -41,14 +41,25 @@ export interface Build {
   };
   probe?: string;
   probeOffset?: { x: number; y: number };
+  probeOutput?: 'npn-nc' | 'npn-no' | 'pnp-nc' | 'pnp-no';   // inductive probes with unknown output
+  probeConnection?: 'usb' | 'can';                           // probes with their own MCU (Cartographer)
   toolhead?: string;
   extruder: string;
   hotend: string;
   thermistors: { hotend: string; bed: string; chamber?: string };
   bed?: { maxPower?: number; maxTemp?: number };
   fans: FanSpec[];
+  nevermore?: {
+    model: string;                           // filters.yaml id
+    voltage?: 12 | 24;                       // fan voltage (sets the port jumper reminder)
+    port?: string;                           // mainboard fan port; auto when omitted
+    mode?: 'always' | 'hot_bed';             // hot_bed: only when the bed target is above the threshold
+    speed?: number;                          // 0-1
+    postPrintMinutes?: number;               // keep filtering after the print
+  };
   leds?: boolean;
   autotune?: boolean;
+  webUi?: 'mainsail' | 'fluidd' | 'none';    // default mainsail: its cfg provides PAUSE/RESUME/CANCEL_PRINT
   nozzleDiameter?: number;
   slotOverrides?: Record<string, string>;    // klipper stepper name -> slot id
 }
@@ -69,11 +80,28 @@ export interface WireConnection {
   note?: string;
 }
 
+// A documentation link for the user. The web UI opens these in a new tab
+// (target="_blank" rel="noopener noreferrer").
+export interface Link {
+  title: string;
+  url: string;
+  topic: string;              // what it helps with, e.g. "probe", "mainboard", "tuning"
+}
+
+export interface McuInfo {
+  name: string;               // klipper mcu name: "mcu", "toolhead", "carto", ...
+  chip: string;               // data dictionary / firmware target, e.g. stm32f446
+  what: string;               // human label
+  klipperCheck: boolean;      // false when no Klipper data dictionary can exist (Beacon)
+}
+
 export interface Result {
   ok: boolean;
   files: Record<string, string>;
   issues: Issue[];
   wiring: { connections: WireConnection[]; jumpers: string[] };
+  links: Link[];
+  mcus: McuInfo[];
 }
 
 // The data files are hand-maintained YAML. They're typed loosely here on
@@ -97,4 +125,6 @@ export interface Db {
   thermistors: Record<string, Rec>;
   fanRoles: Record<string, Rec>;
   homing: Rec;
+  filters: Record<string, Rec>;
+  filterDefaults: Rec;
 }

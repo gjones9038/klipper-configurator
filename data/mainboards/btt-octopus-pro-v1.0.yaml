@@ -158,8 +158,10 @@ fans:
 probe_ports:
 - id: PROBE
   pin: PC5
-  note: 'Voron: Octopus Pro PROBE port; NPN/PNP selectable by jumper. Use ~!PC5 for a typical NPN-NO inductive
-    probe.'
+  modifier: ~!
+  pnp_capable: true
+  protected: true
+  note: 'Voron: Octopus Pro PROBE port; NPN and PNP proximity switch types can be set by jumper.'
 bltouch:
   sensor_pin: PB7
   control_pin: PB6

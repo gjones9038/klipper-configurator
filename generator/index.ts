@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import type { Build, Db, Result } from './types.ts';
 import { plan, PlanError } from './plan.ts';
 import { emit } from './emit.ts';
-import { wiring, wiringMarkdown, firmwareMarkdown } from './wiring.ts';
+import { wiring, wiringMarkdown, firmwareMarkdown, linksMarkdown, slicerMarkdown, linkSection } from './wiring.ts';
 
 export { loadDb } from './db.ts';
 export type { Build, Db, Result } from './types.ts';
@@ -14,22 +14,25 @@ export function generate(build: Build, db: Db, dataRev = dataRevision()): Result
     p = plan(build, db);
   } catch (e) {
     if (e instanceof PlanError) {
-      return { ok: false, files: {}, issues: [{ level: 'error', code: e.code, message: e.message }], wiring: { connections: [], jumpers: [] } };
+      return { ok: false, files: {}, issues: [{ level: 'error', code: e.code, message: e.message }], wiring: { connections: [], jumpers: [] }, links: [], mcus: [] };
     }
     throw e;
   }
   const errors = p.issues.filter((i) => i.level === 'error');
   const w = wiring(p);
-  if (errors.length) return { ok: false, files: {}, issues: p.issues, wiring: w };
+  if (errors.length) return { ok: false, files: {}, issues: p.issues, wiring: w, links: p.links, mcus: p.mcus };
 
   const files = emit(p, db, dataRev);
   files['WIRING.md'] = wiringMarkdown(p, w);
   files['FIRMWARE.md'] = firmwareMarkdown(p);
+  files['SLICER.md'] = slicerMarkdown(p);
+  files['LINKS.md'] = linksMarkdown(p);
+  files['mcus.json'] = JSON.stringify(p.mcus, null, 2) + '\n';
   const warnings = p.issues.filter((i) => i.level === 'warning');
   if (warnings.length) {
-    files['WARNINGS.md'] = ['# Check these before powering on', '', ...warnings.map((i) => `- **${i.code}**: ${i.message}`), ''].join('\n');
+    files['WARNINGS.md'] = ['# Check these before powering on', '', ...warnings.map((i) => `- **${i.code}**: ${i.message}`), '', ...linkSection(p)].join('\n');
   }
-  return { ok: true, files, issues: p.issues, wiring: w };
+  return { ok: true, files, issues: p.issues, wiring: w, links: p.links, mcus: p.mcus };
 }
 
 let rev: string | undefined;

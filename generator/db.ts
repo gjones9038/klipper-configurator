@@ -24,6 +24,7 @@ export function loadDb(dataDir: string = DATA_DIR): Db {
   const drivers = load(join(dataDir, 'drivers.yaml'));
   const extruders = load(join(dataDir, 'extruders.yaml'));
   const hotends = load(join(dataDir, 'hotends.yaml'));
+  const filters = load(join(dataDir, 'filters.yaml'));
   const motors = load(join(dataDir, 'motors', 'motors.yaml')).motors as Rec[];
   const motorIndex: Record<string, Rec> = {};
   for (const m of motors) {
@@ -47,5 +48,7 @@ export function loadDb(dataDir: string = DATA_DIR): Db {
     thermistors: byId(load(join(dataDir, 'thermistors.yaml')).user_choices),
     fanRoles: load(join(dataDir, 'fans.yaml')).roles,
     homing: load(join(dataDir, 'homing.yaml')),
+    filters: byId(filters.filters),
+    filterDefaults: filters.defaults,
   };
 }

@@ -15,18 +15,27 @@ npm test                       # unit tests + the 96-case build matrix
 A build file (see `generator/types.ts` → `Build`) names the printer, size, variant (incl. AWD),
 mainboard and connection, toolhead board, driver modules (UART or SPI), motors, homing
 (physical or sensorless), probe, extruder, hotend, thermistors, fans and whether to use
-klipper_tmc_autotune. Output:
+klipper_tmc_autotune, the web UI (Mainsail / Fluidd / none) and an optional Nevermore filter.
+Probes: Omron TL-Q5MC2, PL-08N or any inductive probe (NPN/PNP, NO/NC), Voron Tap, Klicky, BLTouch,
+BTT Eddy USB and Cartographer V3 (Klipper's native `[probe_eddy_current]`), Beacon (vendor module).
+Output:
 
 | File | Contents |
 |---|---|
-| `printer.cfg` | includes, kinematics, leveling, mesh, safe_z_home, input shaper / resonance tester |
-| `mainboard.cfg`, `toolhead.cfg` | MCUs, steppers + TMC sections, heaters, sensors, fans, probe, accelerometer, LEDs |
+| `printer.cfg` | web UI include, kinematics, every `[safe_z_home]` / `[quad_gantry_level]` or `[z_tilt]` / `[bed_mesh]` setting, input shaper / resonance tester, doc links |
+| `mainboard.cfg`, `toolhead.cfg` | MCUs, steppers + TMC sections, heaters, sensors, fans (incl. Nevermore), probe, accelerometer, LEDs |
+| `probe.cfg` | eddy probes: probe MCU, `[probe_eddy_current]` + temperature probe (BTT Eddy, Cartographer V3) or `[beacon]` |
 | `autotune.cfg` | `[autotune_tmc]` per motor (when enabled) |
 | `homing.cfg` | sensorless homing override with reduced homing current (when sensorless) |
-| `macros/` | `PRINT_START/END`, `PREFLIGHT*`, `TUNE_*` / `CALC_*` tuning flow |
-| `WIRING.md`, `wiring.json` | every connection with connector + pins, and jumpers to set |
-| `FIRMWARE.md` | `make menuconfig` settings per MCU |
-| `WARNINGS.md` | data caveats for the chosen parts (unreviewed boards, source conflicts) |
+| `macros/print.cfg` | `PRINT_START` (flow of jontek2's "better print_start": soak, level, adaptive mesh, purge), `PURGE_LINE`, `PRINT_END`, Nevermore run-on |
+| `macros/leveling.cfg` | `G32`, `LEVEL_IF_NEEDED`, `LEVEL_BED`, `_HOME_IF_NEEDED` |
+| `macros/preflight.cfg`, `macros/tuning.cfg` | `PREFLIGHT*`; `TUNE_*` / `CALC_*` incl. eddy / Beacon calibration |
+| `WIRING.md`, `wiring.json` | every connection with connector + pins, jumpers to set, reference links |
+| `FIRMWARE.md` | `make menuconfig` settings per MCU (incl. probe MCUs) |
+| `SLICER.md` | start / end G-code for OrcaSlicer, SuperSlicer, PrusaSlicer, Cura |
+| `LINKS.md` | every documentation link for the build, by topic (the web UI opens these in a new tab) |
+| `WARNINGS.md` | data caveats for the chosen parts (unreviewed boards, source conflicts, probe wiring) |
+| `mcus.json` | MCU name -> chip, used by the Klipper check |
 
 How it decides: `generator/plan.ts` resolves the build (slot assignment, drivers, currents,
 ports, homing, probe) and collects errors/warnings; `emit.ts`, `macros.ts` and `wiring.ts` only

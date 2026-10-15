@@ -8,7 +8,7 @@
     "generate": "node generator/cli.ts",
     "test": "node --test \"generator/test/*.test.ts\"",
     "validate-data": "python3 tools/validate.py --matrix",
-    "klipper-check": "python3 -I tools/klipper_check.py --klipper .cache/klipper-check/klipper --dicts .cache/klipper-check/dicts --autotune .cache/klipper-check/autotune --site .cache/klipper-check/site",
+    "klipper-check": "python3 -I tools/klipper_check.py --klipper .cache/klipper-check/klipper --dicts .cache/klipper-check/dicts --autotune .cache/klipper-check/autotune --site .cache/klipper-check/site --ui-configs .cache/klipper-check/ui",
     "matrix": "node generator/test/write-matrix.ts out/matrix",
     "setup-klipper-check": "bash tools/setup_klipper_check.sh"
   },

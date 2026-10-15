@@ -1,7 +1,22 @@
 // Resolve a Build against the Db into a Plan: every stepper on a slot with a
 // driver, every heater/sensor/fan on a port, with issues collected on the way.
 // Rendering (emit.ts) only formats a Plan; all decisions happen here.
-import type { Build, Db, Issue, Rec, Interface } from './types.ts';
+import type { Build, Db, Issue, Rec, Interface, Link, McuInfo } from './types.ts';
+
+const KD = 'https://www.klipper3d.org/';
+// Klipper documentation pages the generated files refer to.
+export const KLIPPER_DOCS = {
+  configChecks: { title: 'Klipper: configuration checks (first power-on)', url: `${KD}Config_checks.html` },
+  tmcSensorless: { title: 'Klipper: TMC drivers and sensorless homing', url: `${KD}TMC_Drivers.html#sensorless-homing` },
+  pressureAdvance: { title: 'Klipper: tuning pressure advance', url: `${KD}Pressure_Advance.html` },
+  resonances: { title: 'Klipper: measuring resonances (input shaper)', url: `${KD}Measuring_Resonances.html` },
+  inputShaper: { title: 'Klipper: resonance compensation', url: `${KD}Resonance_Compensation.html` },
+  bedLevel: { title: 'Klipper: bed level and the paper test', url: `${KD}Bed_Level.html` },
+  probeCalibrate: { title: 'Klipper: probe calibration (offsets)', url: `${KD}Probe_Calibrate.html` },
+  eddy: { title: 'Klipper: eddy current probes', url: `${KD}Eddy_Probe.html` },
+  canbus: { title: 'Klipper: CAN bus setup', url: `${KD}CANBUS.html` },
+  configRef: { title: 'Klipper: config reference', url: `${KD}Config_Reference.html` },
+};
 
 export const TOOLHEAD_MCU = 'toolhead';
 type BoardKind = 'mainboard' | 'toolboard';
@@ -50,6 +65,7 @@ export interface PortUse {
 
 export interface FanPlan extends PortUse {
   role: string;
+  voltage?: number;
   section: string;            // full section header
   defaults: Rec;
 }
@@ -74,13 +90,16 @@ export interface Plan {
   thermistor: { hotend: Rec; bed: Rec; chamber?: Rec };
   maxTemp: number;
   fans: FanPlan[];
-  probe?: Rec & { port?: PortUse; offset: { x: number; y: number } };
+  probe?: Rec & { port?: PortUse; offset: { x: number; y: number }; output?: string; connection?: string };
   bltouch?: { board: BoardKind; sensor: string; control: string };
   accel?: Rec & { board: BoardKind };
   leds?: PortUse & { chain: number; order: string };
   paBaseline: number;
+  nevermore?: { model: Rec; mode: 'always' | 'hot_bed'; threshold: number; speed: number; postMinutes: number; fan: FanPlan };
   homingCurrent: Record<string, number>;
   issues: Issue[];
+  links: Link[];
+  mcus: McuInfo[];
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -100,6 +119,14 @@ export function qpin(board: BoardKind, raw: string, extraMods = ''): string {
 
 export function plan(build: Build, db: Db): Plan {
   const issues: Issue[] = [];
+  const links: Link[] = [];
+  function addLinks(docs: Array<{ title: string; url: string }> | undefined, topic: string) {
+    for (const d of docs ?? []) if (!links.some((l) => l.url === d.url)) links.push({ ...d, topic });
+  }
+  const repoLink = (rec: Rec, what: string) => {
+    const repo = rec.sources?.find((s: Rec) => !/Klipper3d|VoronDesign/.test(s.repo))?.repo ?? rec.sources?.[0]?.repo;
+    return repo ? [{ title: `${rec.name} ${rec.revisions?.join('/') ?? ''}: ${what}`.replace(/\s+:/, ':'), url: repo }] : [];
+  };
   const err = (code: string, message: string) => issues.push({ level: 'error', code, message });
   const warn = (code: string, message: string) => issues.push({ level: 'warning', code, message });
   const need = <T>(v: T | undefined, code: string, what: string): T => {
@@ -125,6 +152,11 @@ export function plan(build: Build, db: Db): Plan {
   const extruder = need(db.extruders[build.extruder], 'unknown_extruder', `Unknown extruder "${build.extruder}"`);
   const hotend = need(db.hotends[build.hotend], 'unknown_hotend', `Unknown hotend "${build.hotend}"`);
 
+  addLinks(printer.docs, 'printer');
+  addLinks(repoLink(board, 'manufacturer docs, pinout and sample configs'), 'mainboard');
+  if (toolboard) addLinks(repoLink(toolboard, 'manufacturer docs and pinout'), 'toolhead board');
+  addLinks(extruder.docs, 'extruder');
+  addLinks([KLIPPER_DOCS.configChecks], 'first power-on');
   if (board.status !== 'reviewed') {
     warn('board_needs_review', `${board.name} pin data is marked "${board.status}". Verify pins against the board before powering on.`);
   }
@@ -357,8 +389,10 @@ export function plan(build: Build, db: Db): Plan {
   // --- homing ------------------------------------------------------------
   const homingCurrent: Record<string, number> = {};
   const usedEndstops = new Set<string>();
+  // Endstop headers that share a pin with a DIAG line in use for sensorless homing.
+  const sensorlessSlots = new Set<string>();
   const pickEndstop = (stepper: StepperPlan, axis: string) => {
-    const eps: Rec[] = board.endstops ?? [];
+    const eps: Rec[] = (board.endstops ?? []).filter((e: Rec) => !(e.diag_of && sensorlessSlots.has(e.diag_of)));
     const ep = eps.find((e) => e.diag_of === stepper.slot && !usedEndstops.has(e.id))
       ?? eps.find((e) => e.id.toUpperCase().startsWith(axis) && !usedEndstops.has(e.id))
       ?? eps.find((e) => !usedEndstops.has(e.id));
@@ -376,6 +410,7 @@ export function plan(build: Build, db: Db): Plan {
       if (!chip.sensorless) err('sensorless_unsupported', `${s.driver.chip} on ${s.slot} has no StallGuard; sensorless homing is not possible for ${name}.`);
       else if (!s.driver.diag) err('sensorless_no_diag', `${board.name} ${s.slot} has no DIAG pin in the data; sensorless homing is not possible for ${name}.`);
       s.endstop = 'virtual';
+      sensorlessSlots.add(s.slot);
       homingCurrent[name] = r2(s.runCurrent * 0.7);
     }
   }
@@ -470,17 +505,65 @@ export function plan(build: Build, db: Db): Plan {
       pin: qpin(kind, port.pin), tach: f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined,
     });
   }
+  // Nevermore filter: a fan_generic on the mainboard plus print start/end behaviour.
+  let nevermore: Plan['nevermore'];
+  if (build.nevermore) {
+    const nm = build.nevermore;
+    const model = db.filters[nm.model];
+    if (!model) err('unknown_filter', `Unknown filter "${nm.model}"`);
+    else if (fans.some((f) => f.section === 'fan_generic nevermore')) err('nevermore_twice', 'Nevermore is configured both as a fan entry and as build.nevermore; keep one.');
+    else {
+      addLinks(model.docs, 'filter');
+      const port = nm.port ? board.fans.find((p: Rec) => p.id === nm.port) : board.fans.find((p: Rec) => !usedFans.mainboard.has(p.id));
+      if (!port || usedFans.mainboard.has(port.id)) err('no_fan_port', `No ${nm.port ? `free port ${nm.port}` : 'free fan port'} on the mainboard for the ${model.name}.`);
+      else {
+        usedFans.mainboard.add(port.id);
+        const voltage = nm.voltage ?? model.voltage_options[0];
+        if (!model.voltage_options.includes(voltage)) err('filter_voltage', `${model.name} fans run at ${model.voltage_options.join(' or ')} V, not ${voltage} V.`);
+        if (port.voltage_options && !port.voltage_options.includes(voltage)) {
+          err('fan_port_voltage', `${port.id} on ${board.name} can be set to ${port.voltage_options.join('/')} V only; the ${model.name} needs ${voltage} V. Use an external ${voltage} V supply switched by a MOSFET, or another port.`);
+        }
+        if (model.min_supply_a) warn('filter_current', `${model.name} needs a ${voltage} V supply of at least ${model.min_supply_a} A (manufacturer). Most board fan ports are rated well below that (e.g. Leviathan 0.5 A): check your port's rating or drive it through a MOSFET.`);
+        const d = db.filterDefaults;
+        const fan: FanPlan = { role: 'nevermore', section: 'fan_generic nevermore', defaults: db.fanRoles.nevermore.defaults, board: 'mainboard', port: port.id, pin: qpin('mainboard', port.pin), voltage };
+        fans.push(fan);
+        nevermore = { model, mode: nm.mode ?? d.mode, threshold: d.hot_bed_threshold_c, speed: nm.speed ?? d.speed, postMinutes: nm.postPrintMinutes ?? d.post_print_minutes, fan };
+      }
+    }
+  }
   if (!fans.some((f) => f.role === 'hotend')) err('no_hotend_fan', 'No hotend fan configured. A heater_fan for the hotend is required to avoid heat creep.');
 
   // --- probe ---------------------------------------------------------------
   let probe: Plan['probe'];
   let bltouch: Plan['bltouch'];
+  const extraMcus: McuInfo[] = [];
   if (build.probe) {
     const p = need(db.probes[build.probe], 'unknown_probe', `Unknown probe "${build.probe}"`);
-    const offset = build.probeOffset ?? { x: p.defaults?.x_offset ?? p.offsets?.x_offset ?? 0, y: p.defaults?.y_offset ?? p.offsets?.y_offset ?? 0 };
-    if (!build.probeOffset && !p.defaults && !p.offsets) warn('probe_offset_default', `No offset known for ${p.name}; using 0,0. Measure it and set probeOffset.`);
-    if (['eddy_external_module', 'eddy_native'].includes(p.kind)) {
-      err('probe_not_supported', `${p.name} needs vendor modules or extra hardware sections that the generator does not write yet.`);
+    addLinks(p.docs, 'probe');
+    const known = p.defaults ?? p.offsets;
+    const offset = build.probeOffset ?? { x: known?.x_offset ?? 0, y: known?.y_offset ?? 0 };
+    if (!build.probeOffset && !known) warn('probe_offset_default', `No offset is known for ${p.name} (it depends on the mount); using 0, 0. Measure it (Klipper Probe_Calibrate.md) and set probeOffset, then recalibrate.`);
+    if (p.kind === 'eddy_native') {
+      if (p.requires_toolboard_i2c) {
+        err('probe_needs_i2c_data', `${p.name} connects to a toolhead board I2C port, and no toolhead board in the data has I2C pins recorded yet.`);
+      } else {
+        const conn = build.probeConnection ?? (Array.isArray(p.interface) ? p.interface[0] : p.interface);
+        const ifaces = Array.isArray(p.interface) ? p.interface : [p.interface];
+        if (!ifaces.includes(conn)) err('probe_connection', `${p.name} supports ${ifaces.join(', ')}, not ${conn}.`);
+        if (conn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
+          err('no_can_path', `${p.name} on CAN needs the mainboard in USB-CAN bridge mode or a USB-CAN adapter.`);
+        }
+        extraMcus.push({ name: p.mcu.name, chip: p.mcu.chip, what: p.name, klipperCheck: true });
+        probe = { ...p, offset, connection: conn };
+        addLinks([KLIPPER_DOCS.eddy], 'probe');
+      }
+    } else if (p.kind === 'eddy_plugin') {
+      extraMcus.push({ name: 'beacon', chip: 'beacon', what: p.name, klipperCheck: false });
+      if (build.homing.z === 'probe_virtual_endstop' && build.homing.xy === 'sensorless') {
+        err('beacon_sensorless', `${p.name} homing cannot be combined with sensorless X/Y homing yet (Beacon's home_xy_position excludes [homing_override]).`);
+      }
+      warn('plugin_required', `${p.name} needs its Klipper module installed (${p.plugin.repo}) and cannot be checked with Klipper's offline tools.`);
+      probe = { ...p, offset };
     } else if (p.kind === 'servo_pin') {
       const src = toolboard?.bltouch ? { b: 'toolboard' as BoardKind, d: toolboard.bltouch } : board.bltouch ? { b: 'mainboard' as BoardKind, d: board.bltouch } : undefined;
       if (!src) err('no_bltouch_port', 'No BLTouch port on the selected boards.');
@@ -493,8 +576,25 @@ export function plan(build: Build, db: Db): Plan {
       const mPort = board.probe_ports?.[0];
       const use = preferTool && tPort ? { b: 'toolboard' as BoardKind, port: tPort } : mPort ? { b: 'mainboard' as BoardKind, port: mPort } : tPort ? { b: 'toolboard' as BoardKind, port: tPort } : undefined;
       if (!use) err('no_probe_port', `No probe input for ${p.name}.`);
-      const mods = use?.port.modifier ?? p.pin_modifier ?? '^';
-      probe = { ...p, offset, port: use && { board: use.b, port: use.port.id, pin: qpin(use.b, use.port.pin, mods) } };
+      let mods: string;
+      let output: string | undefined;
+      if (p.kind === 'inductive') {
+        output = p.output ?? build.probeOutput;
+        if (!output) err('probe_output_needed', `Choose the output type of your inductive probe (probeOutput: npn-nc, npn-no, pnp-nc or pnp-no). It is printed on the probe or its listing.`);
+        if (output?.startsWith('pnp') && use && !use.port.pnp_capable) {
+          err('pnp_unsupported_port', `${p.name} is a PNP probe; its output sits at supply voltage (12-24 V) when active. ${use.port.id} on the ${use.b} is not marked PNP-capable. Use an NPN probe or a board with a PNP-selectable probe port.`);
+        }
+        // Port modifier is for the NC reference probe; NO flips the inversion.
+        const base = use?.port.modifier ?? '^';
+        mods = output?.endsWith('-no') ? (base.includes('!') ? base.replace('!', '') : base + '!') : base;
+        if (output?.endsWith('-no')) warn('probe_no', `${p.name} is normally open: if its wire breaks Klipper sees "not triggered" and the nozzle can crash. Voron recommends NC probes.`);
+        if (use && !use.port.modifier) warn('probe_modifier_default', `No source gives the pin polarity for ${use.port.id} on the ${use.b}; using ${mods}. Confirm with QUERY_PROBE (open when away from the bed, TRIGGERED near metal) before homing.`);
+        if (use && !use.port.protected) warn('probe_voltage', `${use.port.id} is not marked as 12-24 V tolerant. Inductive probes output their supply voltage: add a BAT85 diode (black band toward the probe) as in Voron's wiring guide, or use a protected probe port.`);
+        if (use?.port.pnp_capable) warn('probe_port_jumper', `Set the ${use.port.id} jumper to ${output?.startsWith('pnp') ? 'PNP' : 'NPN'} to match the probe.`);
+      } else {
+        mods = use?.port.modifier ?? p.pin_modifier ?? '^';
+      }
+      probe = { ...p, offset, output, port: use && { board: use.b, port: use.port.id, pin: qpin(use.b, use.port.pin, mods) } };
       if (p.needs_macros) warn('probe_macros', `${p.name} needs its attach/dock macros installed separately.`);
     }
     if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
@@ -531,8 +631,25 @@ export function plan(build: Build, db: Db): Plan {
     bedHeater: { board: 'mainboard', port: bedHeaterRec.id, pin: qpin('mainboard', bedHeaterRec.pin) },
     bedSensor: { board: 'mainboard', port: bedThermRec.id, pin: qpin('mainboard', bedThermRec.pin), pullup: bedThermRec.pullup_ohms ?? 4700 },
     chamberSensor, thermistor: { hotend: thermHotend, bed: thermBed, chamber: thermChamber }, maxTemp,
-    fans, probe, bltouch, accel, leds, paBaseline, homingCurrent, issues,
+    fans, probe, bltouch, accel, leds, paBaseline, nevermore, homingCurrent, issues,
+    links: finishLinks(),
+    mcus: [
+      { name: 'mcu', chip: mcu.chip, what: board.name, klipperCheck: true },
+      ...(toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, what: toolboard.name, klipperCheck: true }] : []),
+      ...extraMcus,
+    ],
   };
+
+  function finishLinks(): Link[] {
+    if (build.homing.xy === 'sensorless') addLinks([KLIPPER_DOCS.tmcSensorless], 'homing');
+    if (build.autotune) addLinks([{ title: 'klipper_tmc_autotune (install + options)', url: 'https://github.com/andrewmcgr/klipper_tmc_autotune' }], 'drivers');
+    if (toolboard && (build.toolboard!.connection ?? 'can') === 'can') addLinks([KLIPPER_DOCS.canbus], 'wiring');
+    if (build.probe) addLinks([KLIPPER_DOCS.probeCalibrate], 'probe');
+    addLinks([KLIPPER_DOCS.bedLevel], 'z offset');
+    addLinks([KLIPPER_DOCS.pressureAdvance], 'tuning');
+    addLinks([accel ? KLIPPER_DOCS.resonances : KLIPPER_DOCS.inputShaper], 'tuning');
+    return links;
+  }
 }
 
 export class PlanError extends Error {

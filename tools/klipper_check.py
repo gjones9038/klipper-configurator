@@ -14,6 +14,7 @@ Setup (once):
 Usage: klipper_check.py --klipper K --dicts D [--autotune A] [--site S] OUT_DIR [OUT_DIR ...]
 """
 import argparse
+import json
 import os
 import re
 import shutil
@@ -27,19 +28,30 @@ PREFLIGHT
 G28
 G90
 G1 X100 Y100 Z30 F6000
+G32
+LEVEL_BED
+LEVEL_IF_NEEDED
 CALC_E_STEPS REMAINING=20
 CALC_PA HEIGHT=12.5
 PRINT_END
+"""
+
+# Eddy probes cannot probe (or home Z) before PROBE_EDDY_CURRENT_CALIBRATE, which
+# needs real hardware; check config loading and everything that does not probe.
+GCODE_EDDY = """
+PREFLIGHT
+G28 X Y
+CALC_E_STEPS REMAINING=20
+CALC_PA HEIGHT=12.5
 """
 
 ERROR_MARKERS = ("Config error", "Internal error", "Error evaluating", "Traceback",
                  "Move out of range", "Unknown command", "Must home", "Option '")
 
 
-def chips_for(outdir):
-    fw = open(os.path.join(outdir, "FIRMWARE.md")).read()
-    chips = re.findall(r"Micro-controller: (\w+)", fw)
-    return [c.lower() for c in chips]
+def mcus_for(outdir):
+    with open(os.path.join(outdir, "mcus.json")) as f:
+        return json.load(f)
 
 
 def prepare_klipper(klipper, autotune, workdir):
@@ -53,14 +65,34 @@ def prepare_klipper(klipper, autotune, workdir):
     return dst
 
 
-def check(outdir, klipper, dicts, site, work):
-    chips = chips_for(outdir)
+def stage(outdir, work, ui_configs):
+    """Copy the output and add the web UI cfg it includes (mainsail.cfg / fluidd.cfg)."""
+    dst = os.path.join(work, "cfg")
+    shutil.rmtree(dst, ignore_errors=True)
+    shutil.copytree(outdir, dst)
+    printer = open(os.path.join(dst, "printer.cfg")).read()
+    for ui in ("mainsail", "fluidd"):
+        if f"[include {ui}.cfg]" in printer:
+            src = os.path.join(ui_configs, f"{ui}-config", "client.cfg")
+            shutil.copy(src, os.path.join(dst, f"{ui}.cfg"))
+    return dst
+
+
+def check(outdir, klipper, dicts, site, work, ui_configs):
+    mcus = mcus_for(outdir)
+    if not all(m["klipperCheck"] for m in mcus):
+        return None, 0, "", []
+    cfg = stage(outdir, work, ui_configs)
+    eddy = os.path.exists(os.path.join(cfg, "probe.cfg")) and \
+        "[probe_eddy_current" in open(os.path.join(cfg, "probe.cfg")).read()
+    with open(os.path.join(work, "test.gcode"), "w") as f:
+        f.write(GCODE_EDDY if eddy else GCODE)
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
-            os.path.join(outdir, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
-            "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log"),
-            "-d", os.path.join(dicts, f"{chips[0]}.dict")]
-    if len(chips) > 1:
-        args += ["-d", f"toolhead={os.path.join(dicts, chips[1] + '.dict')}"]
+            os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
+            "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]
+    for m in mcus:
+        d = os.path.join(dicts, f"{m['chip']}.dict")
+        args += ["-d", d if m["name"] == "mcu" else f"{m['name']}={d}"]
     log_path = os.path.join(work, "klippy.log")
     if os.path.exists(log_path):
         os.remove(log_path)  # klippy appends; a stale log would leak errors into this case
@@ -80,17 +112,20 @@ def main():
     ap.add_argument("--dicts", required=True)
     ap.add_argument("--autotune")
     ap.add_argument("--site")
+    ap.add_argument("--ui-configs", help="dir containing mainsail-config/ and fluidd-config/ checkouts")
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("outdirs", nargs="+")
     a = ap.parse_args()
 
-    failures = 0
+    failures = skipped = 0
     with tempfile.TemporaryDirectory() as tmp:
         klipper = prepare_klipper(a.klipper, a.autotune, tmp)
-        with open(os.path.join(tmp, "test.gcode"), "w") as f:
-            f.write(GCODE)
         for outdir in a.outdirs:
-            ok, code, text, bad = check(outdir, klipper, a.dicts, a.site, tmp)
+            ok, code, text, bad = check(outdir, klipper, a.dicts, a.site, tmp, a.ui_configs)
+            if ok is None:
+                skipped += 1
+                print(f"SKIP  {outdir}  (an MCU without a Klipper data dictionary, e.g. Beacon)")
+                continue
             print(f"{'PASS' if ok else 'FAIL'}  {outdir}")
             if not ok:
                 failures += 1
@@ -99,7 +134,8 @@ def main():
                     print("      " + ln)
             elif a.verbose:
                 print(text[-2000:])
-    print(f"\n{len(a.outdirs) - failures}/{len(a.outdirs)} passed")
+    checked = len(a.outdirs) - skipped
+    print(f"\n{checked - failures}/{checked} passed, {skipped} skipped")
     return 1 if failures else 0
 
 

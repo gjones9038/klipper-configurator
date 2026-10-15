@@ -3,6 +3,9 @@ id: voron-trident
 name: Voron Trident
 manufacturer: Voron Design
 status: reviewed
+docs:
+  - {title: "Voron Trident documentation", url: "https://docs.vorondesign.com/build/"}
+  - {title: "Voron initial startup checks", url: "https://docs.vorondesign.com/build/startup/"}
 kinematics: corexy
 z_leveling: z_tilt
 

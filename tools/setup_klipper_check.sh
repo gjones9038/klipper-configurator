@@ -8,7 +8,7 @@ set -euo pipefail
 
 KLIPPER_COMMIT=9cb99754c035b90206ef0a02660f674fc9517e9b
 AUTOTUNE_REPO=https://github.com/andrewmcgr/klipper_tmc_autotune.git
-CHIPS="stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
+CHIPS="stm32f042 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C="$ROOT/.cache/klipper-check"
@@ -19,6 +19,9 @@ if [ ! -d "$C/klipper" ]; then
 fi
 git -C "$C/klipper" fetch -q origin "$KLIPPER_COMMIT" && git -C "$C/klipper" checkout -q "$KLIPPER_COMMIT"
 [ -d "$C/autotune" ] || git clone -q --depth 1 "$AUTOTUNE_REPO" "$C/autotune"
+# web UI client configs, so [include mainsail.cfg] / [include fluidd.cfg] resolve in checks
+[ -d "$C/ui/mainsail-config" ] || git clone -q --depth 1 https://github.com/mainsail-crew/mainsail-config.git "$C/ui/mainsail-config"
+[ -d "$C/ui/fluidd-config" ] || git clone -q --depth 1 https://github.com/fluidd-core/fluidd-config.git "$C/ui/fluidd-config"
 
 GCC_BIN="$(ls -d "$HOME"/.local/xPacks/@xpack-dev-tools/arm-none-eabi-gcc/*/.content/bin 2>/dev/null | tail -1 || true)"
 if [ -z "$GCC_BIN" ]; then
@@ -32,6 +35,14 @@ for chip in $CHIPS; do
   [ -f "$C/dicts/$chip.dict" ] && continue
   make clean >/dev/null 2>&1 || true
   cp "test/configs/$chip.config" .config
+  # Per-chip overrides (e.g. Cartographer's F042 needs the LDC1612 driver). Override keys
+  # are removed from the base config first so Kconfig sees each key once.
+  OVR="$ROOT/tools/klipper-check/$chip.overrides"
+  if [ -f "$OVR" ]; then
+    keys="$(grep -oE '^CONFIG_[A-Z0-9_]+' "$OVR" | paste -sd'|')"
+    grep -vE "^($keys)=" "test/configs/$chip.config" > .config
+    grep -v '^#' "$OVR" >> .config
+  fi
   make olddefconfig >/dev/null
   make -j"$(nproc)" >/dev/null
   cp out/klipper.dict "$C/dicts/$chip.dict"

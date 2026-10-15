@@ -32,7 +32,16 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
   for (const f of p.fans) {
     add({ component: `Fan: ${f.role.replace('_', ' ')}`, board: f.board, connector: f.port, pins: bare(f.pin) + (f.tach ? ` (tach ${bare(f.tach)})` : ''), note: `[${f.section}]` });
   }
-  if (p.probe?.port) add({ component: `Probe: ${p.probe.name}`, board: p.probe.port.board, connector: p.probe.port.port, pins: bare(p.probe.port.pin) });
+  if (p.probe?.port) {
+    const out = p.probe.output ? ` (${p.probe.output.toUpperCase()})` : '';
+    add({ component: `Probe: ${p.probe.name}${out}`, board: p.probe.port.board, connector: p.probe.port.port, pins: bare(p.probe.port.pin),
+      note: p.probe.kind === 'inductive' ? `power the probe from ${p.probe.supply_v?.join('-') ?? '12-24'} V${p.probe.port.board === 'mainboard' && !(p.board.probe_ports?.[0]?.protected) ? '; BAT85 diode on the signal (black band toward the probe)' : ''}` : undefined });
+  }
+  if (p.probe?.kind === 'eddy_native' || p.probe?.kind === 'eddy_plugin') {
+    const conn = p.probe.connection ?? 'usb';
+    add({ component: `Probe: ${p.probe.name}`, board: 'mainboard', connector: conn === 'can' ? 'CAN bus' : 'host USB',
+      pins: conn === 'can' ? 'CAN-H / CAN-L + 24V / GND' : 'USB cable to the host (Pi/CB1)', note: 'own MCU; mount it per the vendor guide and measure x/y offsets' });
+  }
   if (p.bltouch) add({ component: 'BLTouch', board: p.bltouch.board, connector: 'BLTouch', pins: `sensor ${bare(p.bltouch.sensor)} / servo ${bare(p.bltouch.control)}` });
   if (p.leds) add({ component: 'Toolhead LEDs', board: 'toolboard', connector: p.leds.port, pins: bare(p.leds.pin), note: `${p.leds.chain} LEDs, ${p.leds.order}` });
   if (p.toolboard) {
@@ -59,7 +68,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     }
     if (diagRemove.size) j.push(`DIAG jumper OFF under ${[...diagRemove].join(', ')}: those DIAG headers are used for physical switches.`);
   }
-  const fanPorts = p.fans.map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}`);
+  const fanPorts = p.fans.map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`);
   if (fanPorts.length) j.push(`Fan voltage: set the voltage jumper for ${fanPorts.join(', ')} to match each fan.`);
   if (p.probe?.kind === 'inductive' && p.probe.port?.board === 'mainboard') {
     j.push(`Probe port ${p.probe.port.port}: set it for an ${p.probe.output === 'npn-no' ? 'NPN' : 'PNP'} probe if the board has a selector jumper, and check its voltage setting.`);
@@ -91,6 +100,45 @@ export function wiringMarkdown(p: Plan, w: ReturnType<typeof wiring>): string {
     '| # | Component | Board | Connector | Pins | Note |',
     '|---|---|---|---|---|---|',
     ...rows,
+    '',
+    ...linkSection(p, ['mainboard', 'toolhead board', 'probe', 'filter', 'wiring']),
+  ].join('\n');
+}
+
+/** Markdown "References" list. Links are absolute; the web UI opens them in a new tab. */
+export function linkSection(p: Plan, topics?: string[]): string[] {
+  const ls = p.links.filter((l) => !topics || topics.includes(l.topic));
+  if (!ls.length) return [];
+  return ['## References', '', ...ls.map((l) => `- [${l.title}](${l.url})`), ''];
+}
+
+export function linksMarkdown(p: Plan): string {
+  const topics = [...new Set(p.links.map((l) => l.topic))];
+  const out = ['# Documentation for this build', '', 'Everything referenced by the generated files, grouped by topic.', ''];
+  for (const t of topics) {
+    out.push(`## ${t[0].toUpperCase()}${t.slice(1)}`, '');
+    for (const l of p.links.filter((x) => x.topic === t)) out.push(`- [${l.title}](${l.url})`);
+    out.push('');
+  }
+  return out.join('\n');
+}
+
+export function slicerMarkdown(p: Plan): string {
+  const chamber = p.chamberSensor ? '' : '\n> No chamber sensor configured: CHAMBER is ignored and PRINT_START soaks for SOAK minutes instead (default 10 for beds at 90C+).\n';
+  const block = (name: string, where: string, line: string) =>
+    [`## ${name}`, '', `${where}:`, '', '```', `M104 S0 ; stop the slicer sending its own temperature waits`, 'M140 S0', line, '```', ''];
+  return [
+    '# Slicer start G-code',
+    '',
+    'PRINT_START takes the temperatures from the slicer. Replace your start G-code with the block for your slicer.',
+    chamber,
+    ...block('OrcaSlicer', 'Printer settings -> Machine G-code -> Machine start G-code', 'PRINT_START EXTRUDER=[first_layer_temperature] BED=[first_layer_bed_temperature] CHAMBER=[chamber_temperature]'),
+    ...block('SuperSlicer', 'Printer settings -> Custom G-code -> Start G-code', 'PRINT_START EXTRUDER=[first_layer_temperature] BED=[first_layer_bed_temperature] CHAMBER=[chamber_temperature]'),
+    ...block('PrusaSlicer', 'Printer settings -> Custom G-code -> Start G-code', 'PRINT_START EXTRUDER=[first_layer_temperature[initial_extruder]] BED=[first_layer_bed_temperature] CHAMBER=[chamber_temperature] CHAMBER_MINIMAL=[chamber_minimal_temperature]'),
+    ...block('Cura', 'Preferences -> Printers -> Machine Settings -> Start G-code', 'PRINT_START EXTRUDER={material_print_temperature_layer_0} BED={material_bed_temperature_layer_0} CHAMBER={build_volume_temperature}'),
+    'End G-code for all slicers: `PRINT_END`',
+    '',
+    'Placeholder names follow "A better print_start macro" by jontek2: https://github.com/jontek2/A-better-print_start-macro',
     '',
   ].join('\n');
 }
@@ -129,5 +177,22 @@ export function firmwareMarkdown(p: Plan): string {
       ...(conn === 'can' ? ['- CAN bus speed: 1000000 (must match the mainboard / adapter)'] : []),
       '');
   }
+  const pr = p.probe;
+  if (pr?.kind === 'eddy_native' && pr.mcu) {
+    const m = pr.mcu;
+    const conn = pr.connection ?? 'usb';
+    lines.push(`## ${pr.name}`, '',
+      '- Enable extra low-level configuration options',
+      `- Micro-controller: ${m.chip.toUpperCase()}`,
+      ...(m.crystal_mhz ? [`- Clock reference: ${m.crystal_mhz} MHz crystal`] : []),
+      `- Communication interface: ${conn === 'can' ? `CAN bus (on ${m.can_pins ?? 'see vendor docs'})` : `USB${m.usb_pins ? ` (on ${m.usb_pins})` : ''}`}`,
+      ...(conn === 'can' && m.can_note ? [`- ${m.can_note}`] : []),
+      '- Bootloader and flashing: follow the vendor guide (links below); many ship with Katapult or a pre-flashed Klipper',
+      '');
+  }
+  if (pr?.kind === 'eddy_plugin') {
+    lines.push(`## ${pr.name}`, '', `Beacon runs its own firmware (not Klipper). Install the Klipper module from ${pr.plugin.repo}; it updates the probe firmware itself.`, '');
+  }
+  lines.push(...linkSection(p, ['mainboard', 'toolhead board', 'probe', 'wiring']));
   return lines.join('\n');
 }

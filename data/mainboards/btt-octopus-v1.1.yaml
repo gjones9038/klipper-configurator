@@ -159,6 +159,7 @@ fans:
 probe_ports:
 - id: PROBE
   pin: PB7
+  modifier: ~!
   note: 'Voron: may need a pull-up to 24V for inductive probes; alternatively use DIAG_7 (PG15) with a
     BAT85 diode.'
 bltouch:

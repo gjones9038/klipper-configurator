@@ -3,7 +3,7 @@ import { CfgFile, Section } from './cfg.ts';
 import type { Plan, StepperPlan, FanPlan } from './plan.ts';
 import { TOOLHEAD_MCU } from './plan.ts';
 import type { Db, Rec } from './types.ts';
-import { homingMacros, preflightMacros, printMacros, tuningMacros } from './macros.ts';
+import { homingMacros, levelingMacros, preflightMacros, printMacros, tuningMacros } from './macros.ts';
 
 export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const b = p.build;
@@ -18,15 +18,25 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const sensorless = b.homing.xy === 'sensorless';
 
   // ---------------------------------------------------------------- printer.cfg
-  const pc = new CfgFile(header('printer.cfg'));
-  pc.add('# [include mainsail.cfg]   # or fluidd.cfg: uncomment for your web UI');
+  const eddy = p.probe?.kind === 'eddy_native';
+  const beacon = p.probe?.kind === 'eddy_plugin';
+  const probeHoming = b.homing.z === 'probe_virtual_endstop';
+  const webUi = b.webUi ?? 'mainsail';
+  const pc = new CfgFile([
+    ...header('printer.cfg'),
+    '',
+    'Start here after wiring:',
+    ...p.links.filter((l) => ['first power-on', 'printer'].includes(l.topic)).map((l) => `  ${l.title}: ${l.url}`),
+  ]);
+  if (webUi !== 'none') {
+    pc.add(new Section(`include ${webUi}.cfg`, `${webUi === 'mainsail' ? 'Mainsail' : 'Fluidd'} client macros: PAUSE / RESUME / CANCEL_PRINT, virtual_sdcard`));
+  }
   pc.add(new Section('include mainboard.cfg'));
   if (p.toolboard) pc.add(new Section('include toolhead.cfg'));
+  if (eddy || beacon) pc.add(new Section('include probe.cfg'));
   if (sensorless) pc.add(new Section('include homing.cfg'));
   if (b.autotune) pc.add(new Section('include autotune.cfg'));
-  pc.add(new Section('include macros/print.cfg'));
-  pc.add(new Section('include macros/preflight.cfg'));
-  pc.add(new Section('include macros/tuning.cfg'));
+  for (const m of ['print', 'leveling', 'preflight', 'tuning']) pc.add(new Section(`include macros/${m}.cfg`));
 
   const d = p.printer.defaults;
   const pr = new Section('printer').set('kinematics', p.printer.kinematics);
@@ -34,18 +44,35 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   pc.add(pr);
   pc.add(new Section('idle_timeout').set('timeout', d.idle_timeout));
   pc.add(new Section('respond'));
-  pc.add(new Section('exclude_object'));
+  pc.add(new Section('exclude_object', 'needed for adaptive meshes and object cancelling'));
+  if (webUi === 'none') {
+    pc.add(new Section('virtual_sdcard').set('path', '~/printer_data/gcodes').set('on_error_gcode', 'CANCEL_PRINT'));
+    pc.add(new Section('pause_resume'));
+    pc.add(new Section('display_status'));
+  }
+  // force_move: sensorless homing macros and the first eddy calibration when homing with it
+  // (Klipper Eddy_Probe.md) both need SET_KINEMATIC_POSITION.
+  if (sensorless || (eddy && probeHoming)) {
+    pc.add(new Section('force_move', sensorless ? 'used by homing.cfg' : 'first eddy calibration (Klipper Eddy_Probe.md)')
+      .set('enable_force_move', true));
+  }
 
   const [bedX, bedY] = p.size.bed_mm;
-  if (!sensorless) {
-    const xy = b.homing.z === 'probe_virtual_endstop' ? [bedX / 2, bedY / 2] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
+  const center = `${bedX / 2}, ${bedY / 2}`;
+  // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
+  // sensorless homing uses homing_override, which also excludes it.
+  if (!sensorless && !(beacon && probeHoming)) {
+    const xy = probeHoming ? [bedX / 2, bedY / 2] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
     pc.add(new Section('safe_z_home')
       .set('home_xy_position', `${xy[0]}, ${xy[1]}`, b.homing.z === 'nozzle_switch' ? 'nozzle switch position' : 'bed center')
-      .set('speed', d.safe_z_home.speed).set('z_hop', d.safe_z_home.z_hop));
+      .set('speed', d.safe_z_home.speed)
+      .set('z_hop', d.safe_z_home.z_hop)
+      .set('z_hop_speed', 15, 'Klipper default')
+      .set('move_to_previous', false));
   }
   if (p.printer.z_leveling === 'quad_gantry_level' && p.size.quad_gantry_level) {
     const q = p.size.quad_gantry_level;
-    const s = new Section('quad_gantry_level')
+    const s = new Section('quad_gantry_level', `${p.printer.name} ${p.size.id} (Voron reference geometry)`)
       .set('gantry_corners', q.gantry_corners.map((c: number[]) => c.join(', ')))
       .set('points', q.points.map((c: number[]) => c.join(', ')));
     for (const [k, v] of Object.entries(d.quad_gantry_level)) s.set(k, v as number);
@@ -53,22 +80,36 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   if (p.printer.z_leveling === 'z_tilt' && p.size.z_tilt) {
     const z = p.size.z_tilt;
-    const s = new Section('z_tilt')
+    const s = new Section('z_tilt', `${p.printer.name} ${p.size.id} (Voron reference geometry)`)
       .set('z_positions', z.z_positions.map((c: number[]) => c.join(', ')))
       .set('points', z.points.map((c: number[]) => c.join(', ')));
     for (const [k, v] of Object.entries(d.z_tilt)) s.set(k, v as number);
     pc.add(s);
   }
   if (p.probe || p.bltouch) {
+    // Mesh limits are probe coordinates: nozzle travel shifted by the probe offset, with a margin.
     const off = p.probe!.offset;
-    const margin = 30;
+    const margin = eddy || beacon ? 15 : 30;
     const lo = (o: number) => Math.max(0, o) + margin;
     const hi = (size: number, o: number) => Math.min(size, size + o) - margin;
-    pc.add(new Section('bed_mesh')
-      .set('speed', 300).set('horizontal_move_z', 10)
-      .set('mesh_min', `${lo(off.x)}, ${lo(off.y)}`, 'probe coordinates, 30 mm margin')
+    const mesh = p.probe?.mesh ?? {};
+    const scan = eddy || beacon;
+    const bm = new Section('bed_mesh')
+      .set('speed', mesh.speed ?? 300)
+      .set('horizontal_move_z', mesh.horizontal_move_z ?? 10, scan ? 'scan height for eddy probes (vendor sample)' : undefined)
+      .set('mesh_min', `${lo(off.x)}, ${lo(off.y)}`, `probe coordinates (offset ${off.x}, ${off.y}), ${margin} mm margin`)
       .set('mesh_max', `${hi(bedX, off.x)}, ${hi(bedY, off.y)}`)
-      .set('probe_count', '5, 5').set('algorithm', 'bicubic'));
+      .set('probe_count', (mesh.probe_count ?? [5, 5]).join(', '))
+      .set('algorithm', 'bicubic')
+      .set('bicubic_tension', 0.2, 'Klipper default')
+      .set('mesh_pps', '2, 2', 'Klipper default')
+      .set('fade_start', 1.0)
+      .set('fade_end', 10.0, 'Klipper recommends 10 when using fade; set 0 to disable')
+      .set('split_delta_z', 0.025, 'Klipper default')
+      .set('move_check_distance', 5.0, 'Klipper default')
+      .set('adaptive_margin', 5, 'extra mm around the print area for BED_MESH_CALIBRATE ADAPTIVE=1');
+    if (probeHoming) bm.set('zero_reference_position', center, 'Z=0 where Z is homed (bed center)');
+    pc.add(bm);
   }
   if (p.accel) {
     pc.add(new Section('resonance_tester')
@@ -186,6 +227,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
 
   files['mainboard.cfg'] = mb.render();
+  if (eddy || beacon) files['probe.cfg'] = probeFile(p, header('probe.cfg'));
   if (tb) files['toolhead.cfg'] = tb.render();
 
   // ------------------------------------------------------------- autotune.cfg
@@ -211,6 +253,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
 
   if (sensorless) files['homing.cfg'] = homingMacros(p, header('homing.cfg'));
   files['macros/print.cfg'] = printMacros(p, header('macros/print.cfg'));
+  files['macros/leveling.cfg'] = levelingMacros(p, header('macros/leveling.cfg'));
   files['macros/preflight.cfg'] = preflightMacros(p, header('macros/preflight.cfg'));
   files['macros/tuning.cfg'] = tuningMacros(p, header('macros/tuning.cfg'));
   return files;
@@ -290,4 +333,51 @@ function fanSection(f: FanPlan): Section {
   if (f.tach) s.set('tachometer_pin', f.tach);
   for (const [k, v] of Object.entries(f.defaults)) s.set(k, v as any);
   return s;
+}
+
+// Eddy current probes: their own MCU (or Beacon's module) and calibration notes.
+function probeFile(p: Plan, header: string[]): string {
+  const pr = p.probe!;
+  const docs = (pr.docs ?? []).map((d: Rec) => `${d.title}: ${d.url}`);
+  const f = new CfgFile([...header, '', 'Calibrate before the first print (see macros/tuning.cfg TUNE_EDDY / vendor docs):', ...docs.map((d: string) => `  ${d}`)]);
+  if (pr.kind === 'eddy_plugin') {
+    f.add(`# Requires the Beacon Klipper module: ${pr.plugin.repo} (${pr.plugin.install}).`);
+    const s = new Section('beacon').set('serial', `/dev/serial/by-id/${pr.serial_hint}`, 'ls /dev/serial/by-id/*')
+      .set('x_offset', pr.offset.x).set('y_offset', pr.offset.y);
+    if (p.build.homing.z === 'probe_virtual_endstop') {
+      const [bx, by] = p.size.bed_mm;
+      s.set('home_xy_position', `${bx / 2}, ${by / 2}`, 'Beacon homes Z here; replaces [safe_z_home]')
+        .set('home_z_hop', 5).set('home_z_hop_speed', 30);
+    }
+    f.add(s);
+    return f.render();
+  }
+  const m = pr.mcu;
+  const conn = pr.connection ?? 'usb';
+  const mcu = new Section(`mcu ${m.name}`, pr.name);
+  if (conn === 'usb') mcu.set('serial', `/dev/serial/by-id/${m.serial_hint}`, 'ls /dev/serial/by-id/*').set('restart_method', 'command');
+  else mcu.set('canbus_uuid', `REPLACE_WITH_${m.name.toUpperCase()}_UUID`, '~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0');
+  f.add(mcu);
+  f.add(new Section(`temperature_sensor ${m.name}_mcu`).set('sensor_type', 'temperature_mcu').set('sensor_mcu', m.name));
+  if (pr.extra_sections) f.add(pr.extra_sections.trimEnd());
+  const e = pr.eddy;
+  const name = e.section_name ?? m.name;
+  const s = new Section(`probe_eddy_current ${name}`).set('sensor_type', 'ldc1612');
+  if (e.frequency) s.set('frequency', e.frequency);
+  if (e.i2c_address) s.set('i2c_address', e.i2c_address);
+  s.set('i2c_mcu', e.i2c_mcu).set('i2c_bus', e.i2c_bus)
+    .set('descend_z', 0.5, 'Klipper Eddy_Probe.md recommendation')
+    .set('x_offset', pr.offset.x).set('y_offset', pr.offset.y)
+    .set('speed', 5).set('lift_speed', 10)
+    .set('samples', 3).set('samples_result', 'median').set('sample_retract_dist', 2.0)
+    .set('samples_tolerance', 0.01).set('samples_tolerance_retries', 3);
+  f.add(s);
+  if (pr.temperature_probe) {
+    const t = pr.temperature_probe;
+    const ts = new Section(`temperature_probe ${name}`, 'coil temperature for drift compensation')
+      .set('sensor_type', t.sensor_type).set('sensor_pin', `${m.name}:${t.sensor_pin}`);
+    if (t.horizontal_move_z) ts.set('horizontal_move_z', t.horizontal_move_z);
+    f.add(ts);
+  }
+  return f.render();
 }
