@@ -10,7 +10,10 @@ toolchangers:
     applies_to: [voron-2.4]       # flying gantry with fixed docks; Trident needs a liftbar (not modelled)
     toolhead: stealthchanger-sb   # toolheads.yaml entry every tool uses
     dock: fixed
-    z_probe: per_tool             # each tool's Tap / OptoTap sensor homes Z and detects the tool
+    z_probe: per_tool             # default: each tool's Tap / OptoTap sensor homes Z and detects the tool
+    z_probe_modes:                # examples/README.md, "Z probing"
+      per_tool: "Each tool has a separate Z probe, used for both tool detection and homing/probing."
+      shuttle: "Shuttle mounted cartographer probe or other eddy current probe; each toolhead has a basic switch to detect if the tool is mounted. Example: examples/z probe/cartographer_probe_on_shuttle/homing.cfg." 
     module:
       repo: https://github.com/viesturz/klipper-toolchanger
       commit: 94756dfde9b729fd69f9b8780067821c5c99a528

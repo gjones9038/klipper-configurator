@@ -85,7 +85,7 @@ export interface ToolPlan {
   maxTemp: number;
   paBaseline: number;
   fans: FanPlan[];            // part cooling (fan_generic Tn_partfan) and hotend (heater_fan Tn_hotend_fan)
-  probe: PortUse;             // Tap / OptoTap: [tool_probe Tn] pin and [tool Tn] detection_pin
+  probe: PortUse;             // Tap / OptoTap or mount switch: [tool Tn] detection_pin (and [tool_probe Tn] pin when per-tool)
   accel?: Rec;
   leds?: PortUse & { chain: number; order: string };
   dock?: { x: number; y: number; z: number };
@@ -122,7 +122,7 @@ export interface Plan {
   links: Link[];
   mcus: McuInfo[];
   tools?: ToolPlan[];         // toolchanger: T0..Tn
-  toolchanger?: { rec: Rec; safeY?: number; closeY?: number; yMin?: number; zMax?: number };
+  toolchanger?: { rec: Rec; safeY?: number; closeY?: number; yMin?: number; zMax?: number; zProbe: 'per_tool' | 'shuttle' };
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -232,6 +232,7 @@ export function plan(build: Build, db: Db): Plan {
 
   // --- toolchanger: checks that shape the rest of the plan ----------------
   const tcSpec = build.toolchanger;
+  const shuttle = tcSpec?.zProbe === 'shuttle';
   const tcRec: Rec | undefined = tcSpec
     ? need(db.toolchangers[tcSpec.system], 'unknown_toolchanger', `Unknown toolchanger "${tcSpec.system}"`)
     : undefined;
@@ -241,8 +242,15 @@ export function plan(build: Build, db: Db): Plan {
     }
     if (build.toolhead !== tcRec.toolhead) err('toolchanger_toolhead', `${tcRec.name} tools are "${db.toolheads[tcRec.toolhead]?.name}"; set the toolhead to it.`);
     if (!toolboard) err('toolchanger_needs_toolboard', `Every ${tcRec.name} tool carries its own toolhead board; T0 has none.`);
-    if (build.probe) err('toolchanger_probe', `${tcRec.name} homes and probes with each tool's own Tap sensor ([tool_probe]); remove the separate probe.`);
-    if (build.homing.z !== 'probe_virtual_endstop') err('toolchanger_z_homing', `${tcRec.name} homes Z with the tool probe; set Z homing to "Probe as Z endstop".`);
+    if (!shuttle && build.probe) err('toolchanger_probe', `${tcRec.name} homes and probes with each tool's own Tap sensor ([tool_probe]); remove the separate probe, or choose a shuttle-mounted eddy probe.`);
+    if (shuttle) {
+      const sp = build.probe ? db.probes[build.probe] : undefined;
+      if (!sp || !['eddy_native', 'eddy_plugin'].includes(sp.kind) || sp.interface === 'toolboard_i2c') {
+        err('toolchanger_shuttle_probe', `A shuttle-mounted probe must be an eddy probe with its own MCU (USB or CAN), such as a Cartographer, Beacon or BTT Eddy USB (klipper-toolchanger examples). ${sp ? `${sp.name} is not.` : 'Choose one.'}`);
+      }
+      warn('toolchanger_z_offsets', `With the probe on the shuttle, no tool touches the bed during homing: measure each tool's gcode_z_offset against T0 (StealthChanger wiki: Offsets) before printing with it.`);
+    }
+    if (build.homing.z !== 'probe_virtual_endstop') err('toolchanger_z_homing', `${tcRec.name} homes Z with the ${shuttle ? 'shuttle probe' : 'tool probe'}; set Z homing to "Probe as Z endstop".`);
     if (!tcSpec.tools.length) err('toolchanger_one_tool', 'A toolchanger needs at least two tools; add T1.');
     for (const k of tcRec.module.known_issues ?? []) {
       warn('toolchanger_module', k.text);
@@ -715,7 +723,7 @@ export function plan(build: Build, db: Db): Plan {
     if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
       err('probe_not_z_endstop', `${p.name} is not suitable as the Z endstop. Use a nozzle switch for Z.`);
     }
-  } else if (tcRec) {
+  } else if (tcRec && !shuttle) {
     // Each tool's Tap sensor is the probe; Klipper sees one probe object (tool_probe_endstop).
     probe = { id: 'tool_probe', name: 'Tap sensor on each tool ([tool_probe])', kind: 'tool_probe', z_endstop_capable: true, offset: { x: 0, y: 0 } };
   } else if (build.homing.z === 'probe_virtual_endstop') {
@@ -863,7 +871,7 @@ export function plan(build: Build, db: Db): Plan {
     if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y ${tcSpec.safeY} is beyond the ${size.position_max.y} mm Y travel.`);
     const docked = tools.filter((t) => t.dock).map((t) => t.dock!.y);
     toolchanger = {
-      rec: tcRec, safeY: tcSpec.safeY, yMin: tcSpec.travel?.yMin, zMax: tcSpec.travel?.zMax,
+      rec: tcRec, safeY: tcSpec.safeY, yMin: tcSpec.travel?.yMin, zMax: tcSpec.travel?.zMax, zProbe: shuttle ? 'shuttle' : 'per_tool',
       closeY: docked.length === tools.length ? r2(Math.max(...docked) + tcRec.close_y_offset) : undefined,
     };
     if (tools.some((t) => t.connection === 'can')) addLinks([KLIPPER_DOCS.canbus], 'wiring');

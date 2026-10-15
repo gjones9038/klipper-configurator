@@ -72,6 +72,7 @@ export interface ToolchangerSpec {
   tools: ToolSpec[];
   docks?: Array<Dock | null>;                // index = tool number (T0 first); measured with TC_DOCK_* macros
   safeY?: number;                            // StealthChanger wiki: park_y + thickest tool + buffer
+  zProbe?: 'per_tool' | 'shuttle';           // per_tool: each tool's Tap ([tool_probe]); shuttle: one eddy probe (build.probe) on the shuttle
   travel?: { yMin?: number; zMax?: number };  // stepper_y position_min / stepper_z position_max that reach the docks
 }
 

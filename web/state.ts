@@ -100,7 +100,11 @@ export function normalize(input: Build, db: Db): Build {
       if (t.hotend && !db.hotends[t.hotend]) delete t.hotend;
     }
     if (b.toolchanger.docks) b.toolchanger.docks = b.toolchanger.docks.slice(0, b.toolchanger.tools.length + 1);
-    for (const k of ['probe', 'probeOffset', 'probeOutput', 'probeConnection'] as const) delete b[k];
+    if (b.toolchanger.zProbe !== 'shuttle') {
+      for (const k of ['probe', 'probeOffset', 'probeOutput', 'probeConnection'] as const) delete b[k];
+    } else if (b.probe && (!['eddy_native', 'eddy_plugin'].includes(db.probes[b.probe]?.kind) || db.probes[b.probe]?.interface === 'toolboard_i2c')) {
+      delete b.probe;
+    }
     b.homing.z = 'probe_virtual_endstop';
   } else {
     delete b.toolchanger;

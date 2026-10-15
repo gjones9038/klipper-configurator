@@ -140,6 +140,12 @@ function toolchangerCases(db: Db, start: number): Case[] {
     };
     out.push({ name: `${String(start + out.length).padStart(3, '0')}-${boardId}-stealthchanger-${tb.length}tools${docked ? '-docked' : ''}`, build });
   });
+  // Shuttle-mounted eddy probe (klipper-toolchanger examples): Cartographer on CAN.
+  const sh = structuredClone(out[1].build);
+  sh.toolchanger!.zProbe = 'shuttle';
+  Object.assign(sh, { probe: 'cartographer-v3', probeConnection: 'can', probeOffset: { x: 0, y: 20 } });
+  sh.homing = { xy: 'physical', z: 'probe_virtual_endstop' };
+  out.push({ name: `${String(start + out.length).padStart(3, '0')}-stealthchanger-shuttle-cartographer`, build: sh });
   return out;
 }
 

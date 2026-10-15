@@ -100,3 +100,25 @@ test('docks: unreachable docks are errors; measured docks enable tool changes', 
   assert.equal(value(section(r.files['mainboard.cfg'], 'stepper_z'), 'position_max'), '330');
   assert.ok(!r.issues.some((i) => i.code === 'tool_dock_unset'));
 });
+
+test('shuttle eddy probe: no tool probes, detection switches only, eddy homes Z', () => {
+  const b = example();
+  b.toolchanger!.zProbe = 'shuttle';
+  b.probe = 'cartographer-v3'; b.probeConnection = 'usb'; b.probeOffset = { x: 0, y: 20 };
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  for (const n of [0, 1, 2]) {
+    const f = r.files[`tools/T${n}.cfg`];
+    assert.doesNotMatch(f, /^\[tool_probe /m);
+    const tool = section(f, `tool T${n}`);
+    assert.doesNotMatch(tool, /^tool_probe:/m);
+    assert.ok(value(tool, 'detection_pin'));
+  }
+  assert.ok(r.files['probe.cfg']);
+  assert.match(section(r.files['mainboard.cfg'], 'stepper_z'), /endstop_pin: probe:z_virtual_endstop/);
+  assert.doesNotMatch(r.files['homing.cfg'], /ADJUST_Z_AFTER_TOOL_NOZZLE_HOME/);
+  assert.doesNotMatch(r.files['toolchanger.cfg'], /_TC_PROBE_TEMP/);
+  assert.ok(r.issues.some((i) => i.code === 'toolchanger_z_offsets'));
+  const bad = example(); bad.toolchanger!.zProbe = 'shuttle'; bad.probe = 'omron-tl-q5mc2';
+  assert.ok(errors(bad).includes('toolchanger_shuttle_probe'));
+});

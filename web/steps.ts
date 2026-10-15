@@ -343,7 +343,29 @@ function toolchangerHoming(db: Db, build: Build, update: Ctx['update'], tc: Rec)
     h('div', { class: 'grid' },
       segmented('X / Y homing', build.homing.xy, Object.entries(db.homing.xy_methods).map(([id, m]: [string, any]) => ({ value: id as 'physical' | 'sensorless', label: m.name })),
         (v) => update((b) => { b.homing.xy = v; }), db.homing.xy_methods[build.homing.xy]?.description)),
-    h('p', { class: 'hint', style: 'margin:0' }, `Z: the mounted tool's Tap sensor homes Z and probes ([tool_probe] on each tool). PRINT_START levels and meshes with T0, then picks up the first tool.`),
+    segmented('Z probe', spec.zProbe ?? 'per_tool', [
+      { value: 'per_tool', label: 'Tap on every tool' }, { value: 'shuttle', label: 'Eddy probe on the shuttle' }],
+    (v) => update((b) => { b.toolchanger!.zProbe = v as 'per_tool' | 'shuttle'; }),
+    (spec.zProbe ?? 'per_tool') === 'per_tool'
+      ? "The mounted tool's Tap sensor homes Z and probes ([tool_probe] on each tool). PRINT_START levels and meshes with T0, then picks up the first tool."
+      : 'One eddy probe on the shuttle homes Z and probes; each tool keeps a switch (its Tap/OptoTap) only to detect that it is mounted. Measure each tool\'s Z offset against T0.'),
+    spec.zProbe === 'shuttle' ? h('div', { class: 'grid' },
+      select('Shuttle probe', build.probe ?? '', [{ value: '', label: 'Choose an eddy probe' },
+        ...Object.values(db.probes).filter((p) => ['eddy_native', 'eddy_plugin'].includes(p.kind) && p.interface !== 'toolboard_i2c').map((p) => ({ value: p.id, label: p.name }))],
+        (v) => update((b) => { if (v) b.probe = v; else delete b.probe; delete b.probeOffset; })),
+      ...(() => {
+        const sp = build.probe ? db.probes[build.probe] : undefined;
+        if (!sp) return [];
+        const known = sp.defaults ?? sp.offsets;
+        return [
+          Array.isArray(sp.interface) ? segmented('Probe connection', build.probeConnection ?? sp.interface[0],
+            sp.interface.map((i: string) => ({ value: i as 'usb' | 'can', label: i.toUpperCase() })), (v) => update((b) => { b.probeConnection = v; })) : null,
+          numberField('Probe X offset (mm)', build.probeOffset?.x, (v) => update((b) => { b.probeOffset = { x: v ?? 0, y: b.probeOffset?.y ?? known?.y_offset ?? 0 }; }),
+            { step: 0.1, placeholder: String(known?.x_offset ?? 0), hint: 'From the nozzle of the tools, as mounted on the shuttle.' }),
+          numberField('Probe Y offset (mm)', build.probeOffset?.y, (v) => update((b) => { b.probeOffset = { x: b.probeOffset?.x ?? known?.x_offset ?? 0, y: v ?? 0 }; }),
+            { step: 0.1, placeholder: String(known?.y_offset ?? 0) }),
+        ];
+      })()) : null,
     h('div', { class: 'section' }, h('h2', null, 'Docks'),
       h('p', { class: 'hint', style: 'margin:0' }, 'Measure each dock on the printer (TC_DOCK_ALIGN_START, jog, TC_DOCK_ALIGN_SAVE), or enter known positions. ',
         `${tc.dock_z_rule}. Tool changes are refused until a tool's dock and the safe Y are set.`),

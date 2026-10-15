@@ -122,7 +122,10 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
         with open(os.path.join(cfg, "printer.cfg"), "a") as f:
             f.write("\n[kc_test_tool_detect]\n")
     with open(os.path.join(work, "test.gcode"), "w") as f:
-        if tc:
+        if tc and eddy:
+            # Shuttle eddy probe: Z cannot home before calibration, so no tool changes either.
+            f.write("PREFLIGHT\nG28 X Y\nCALC_E_STEPS REMAINING=20\nCALC_PA HEIGHT=12.5\n")
+        elif tc:
             f.write(GCODE_TOOLCHANGER + (GCODE_TOOLCHANGES if docked else "PRINT_END\n"))
         else:
             f.write(GCODE_EDDY if eddy else GCODE)

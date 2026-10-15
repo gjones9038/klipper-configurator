@@ -200,7 +200,7 @@ gcode:${p.tools ? '\n    INITIALIZE_TOOLCHANGER' : ''}
     {% endfor %}
     QUERY_ENDSTOPS
     RESPOND MSG="Endstops should read 'open'. Press each switch by hand and run QUERY_ENDSTOPS again: it must read 'TRIGGERED'."
-${p.tools ? '    QUERY_PROBE\n    RESPOND MSG="QUERY_PROBE reads the mounted tool\'s Tap sensor. Lift the tool off its Tap by hand and query again: it must change state."' : ''}
+${p.tools && p.toolchanger!.zProbe === 'per_tool' ? '    QUERY_PROBE\n    RESPOND MSG="QUERY_PROBE reads the mounted tool\'s Tap sensor. Lift the tool off its Tap by hand and query again: it must change state."' : ''}
 ${(p.probe?.port || p.bltouch) ? '    QUERY_PROBE\n    RESPOND MSG="Probe should be open; trigger it by hand and run QUERY_PROBE again."' : ''}
     {% if ns.ok %}
         RESPOND MSG="Sensors look sane. Next: PREFLIGHT_MOTORS with the toolhead centered, then PREFLIGHT_FANS."
@@ -357,7 +357,8 @@ ${setAll(run)}
 `);
   const intro = [
     sensorless ? '# Sensorless X/Y. homing_override replaces safe_z_home, so Z homing lives here too.\n# CoreXY moves both A and B motors for either axis, so every A/B motor drops current together.' : '# homing_override replaces safe_z_home, so Z homing lives here too.',
-    tc ? '# Toolchanger: the mounted tool\'s Tap sensor homes Z. INITIALIZE_TOOLCHANGER detects which tool\n# is mounted (require_tool_present: homing stops if none is), and ADJUST_Z_AFTER_TOOL_NOZZLE_HOME\n# applies that tool\'s Z offset after homing (klipper-toolchanger toolchanger.md).' : '',
+    tc && p.toolchanger!.zProbe === 'per_tool' ? '# Toolchanger: the mounted tool\'s Tap sensor homes Z. INITIALIZE_TOOLCHANGER detects which tool\n# is mounted (require_tool_present: homing stops if none is), and ADJUST_Z_AFTER_TOOL_NOZZLE_HOME\n# applies that tool\'s Z offset after homing (klipper-toolchanger toolchanger.md).'
+      : tc ? '# Toolchanger with a shuttle-mounted eddy probe: the probe homes Z whichever tool is mounted;\n# INITIALIZE_TOOLCHANGER detects the mounted tool (require_tool_present: homing stops if none is).' : '',
   ].filter(Boolean).join('\n');
   return `${hdr(header)}
 ${intro}
@@ -371,7 +372,7 @@ ${block(`
 gcode:
     G90
     G0 X${zxy[0]} Y${zxy[1]} F6000
-    G28 Z${tc ? '\n    ADJUST_Z_AFTER_TOOL_NOZZLE_HOME' : ''}
+    G28 Z${tc && p.toolchanger!.zProbe === 'per_tool' ? '\n    ADJUST_Z_AFTER_TOOL_NOZZLE_HOME' : ''}
     G0 Z10 F1200
 `)}
 

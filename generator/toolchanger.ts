@@ -43,22 +43,26 @@ export function toolFile(p: Plan, t: ToolPlan, db: Db, header: string[]): string
       .set('chain_count', t.leds.chain).set('color_order', t.leds.order)
       .set('initial_RED', 0.2).set('initial_GREEN', 0.2).set('initial_BLUE', 0.2).set('initial_WHITE', t.leds.order.length === 4 ? 0.2 : undefined));
   }
-  const tp = new Section(`tool_probe T${t.n}`, `Tap sensor, ${t.probe.port} on ${t.toolboard.name}`)
-    .set('pin', t.probe.pin)
-    .set('z_offset', 0, `probe offset of this tool, not the tool offset: PROBE_CALIBRATE with T${t.n} mounted`);
-  for (const [k, v] of Object.entries(tc.tool_probe)) tp.set(k, v as number | string);
-  tp.set('activate_gcode', [`_TC_PROBE_TEMP HEATER=${t.extruderSection}`]);
-  f.add(tp);
+  const perTool = p.toolchanger!.zProbe === 'per_tool';
+  if (perTool) {
+    const tp = new Section(`tool_probe T${t.n}`, `Tap sensor, ${t.probe.port} on ${t.toolboard.name}`)
+      .set('pin', t.probe.pin)
+      .set('z_offset', 0, `probe offset of this tool, not the tool offset: PROBE_CALIBRATE with T${t.n} mounted`);
+    for (const [k, v] of Object.entries(tc.tool_probe)) tp.set(k, v as number | string);
+    tp.set('activate_gcode', [`_TC_PROBE_TEMP HEATER=${t.extruderSection}`]);
+    f.add(tp);
+  }
 
   const tool = new Section(`tool T${t.n}`)
     .set('tool_number', t.n)
     .set('extruder', t.extruderSection)
     .set('fan', `T${t.n}_partfan`)
-    .set('tool_probe', `tool_probe T${t.n}`)
-    .set('detection_pin', t.probe.pin, 'same pin as the Tap sensor (klipper-toolchanger 2026.2.8 semantics)')
+    .set('tool_probe', perTool ? `tool_probe T${t.n}` : undefined)
+    .set('detection_pin', t.probe.pin, perTool ? 'same pin as the Tap sensor (klipper-toolchanger 2026.2.8 semantics)'
+      : `mount switch on ${t.probe.port}: triggered = tool absent (klipper-toolchanger 2026.2.8 semantics)`)
     .set('gcode_x_offset', 0, t.n === 0 ? 'T0 is the reference tool' : 'measured against T0 (StealthChanger wiki: Offsets)')
     .set('gcode_y_offset', 0)
-    .set('gcode_z_offset', 0);
+    .set('gcode_z_offset', 0, !perTool && t.n > 0 ? 'shuttle probe: measure this against T0' : undefined);
   const d = t.dock;
   tool.set('params_park_x', d?.x ?? 0, d ? 'dock position' : 'not measured: TC_DOCK_ALIGN_START')
     .set('params_park_y', d?.y ?? 0)
@@ -192,7 +196,7 @@ export function toolchangerFile(p: Plan, header: string[]): string {
       'EXIT_DOCKING_MODE',
       'RESPOND MSG="Dock of {printer.toolchanger.tool} stored. Run SAVE_CONFIG. Set params_close_y to the largest park_y + 30 once all docks are measured."',
     ]));
-  f.add(new Section('gcode_macro _TC_PROBE_TEMP')
+  if (tc.zProbe === 'per_tool') f.add(new Section('gcode_macro _TC_PROBE_TEMP')
     .set('description', `Keep the probing nozzle at or below ${rec.probe_max_temp_c}C so Tap does not mark the bed.`)
     .set('gcode', [
       '{% set heater = params.HEATER %}',
