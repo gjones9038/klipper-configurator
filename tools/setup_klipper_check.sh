@@ -13,7 +13,7 @@ AUTOTUNE_REPO=https://github.com/andrewmcgr/klipper_tmc_autotune.git
 TOOLCHANGER_REPO=https://github.com/viesturz/klipper-toolchanger.git
 TOOLCHANGER_REF=pull/174/head
 TOOLCHANGER_COMMIT=0bded502b27dae5b9261789e03b0c8a0b84f48fb
-CHIPS="stm32f042 stm32f072 stm32f103 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
+CHIPS="stm32f042 stm32f072 stm32f103 stm32f401 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C="$ROOT/.cache/klipper-check"

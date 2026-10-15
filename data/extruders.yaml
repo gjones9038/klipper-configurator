@@ -37,6 +37,19 @@ extruders:
       - {repo: https://github.com/Klipper3d/klipper, path: config/printer-creality-ender3pro-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
     unverified: ["pa_baseline is the generic Bowden starting range (as for the Voron M4), not measured on this extruder"]
 
+  - id: creality-sprite
+    name: Creality Sprite (Ender 3 S1 / S1 Pro, direct drive)
+    drive: direct
+    rotation_distance: 26.359
+    gear_ratio: "42:12"
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.04, range: [0.02, 0.08]}
+    confidence: medium
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: config/printer-creality-ender3-s1-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ["pa_baseline is the generic direct-drive starting range, not measured on this extruder"]
+
   - id: clockwork1
     name: Voron Clockwork (Afterburner)
     drive: direct

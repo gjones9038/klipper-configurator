@@ -1,0 +1,117 @@
+schema: mainboard/1
+id: creality-v24s1-301
+name: Creality
+manufacturer: Creality
+revisions:
+- v24S1_301
+status: reviewed
+# Stock board of the Ender 3 S1 / S1 Pro. Two MCU versions exist; the F4 board's
+# Marlin pin file includes the F1 one unchanged (Marlin pins_CREALITY_V24S1_301F4.h).
+mcu_variants:
+- chip: stm32f103
+  crystal_mhz: 8
+  bootloader_kib: 28
+- chip: stm32f401
+  crystal_mhz: 8
+  bootloader_kib: 64
+interfaces:
+- usb-serial
+usb_serial:
+  chip: CH340
+  serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+firmware:
+  interface: Serial (on USART1 PA10/PA9)
+  flash: >-
+    Copy out/klipper.bin to an SD card as firmware.bin and power the printer on with the card
+    inserted. The STM32F401 board may need the file in a folder named STM32F4_UPDATE.
+power:
+  vin_v: [24, 24]
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC2
+  dir_pin: PB9
+  enable_pin: '!PC3'
+  onboard_driver: &drv
+    chip: null
+    standalone: true
+    microsteps: 16
+    note: Standalone driver (no UART/SPI); current is set by the board.
+- id: Y
+  step_pin: PB8
+  dir_pin: PB7
+  enable_pin: '!PC3'
+  onboard_driver: *drv
+- id: Z
+  step_pin: PB6
+  dir_pin: PB5
+  enable_pin: '!PC3'
+  onboard_driver: *drv
+- id: E
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PC3'
+  onboard_driver: *drv
+endstops:
+- id: X-STOP
+  pin: PA5
+  modifier: '!'
+- id: Y-STOP
+  pin: PA6
+  modifier: '!'
+- id: Z-STOP
+  pin: PA15
+heaters:
+- id: HEATER
+  pin: PA1
+  role: hotend
+- id: HOTBED
+  pin: PA7
+  role: bed
+  drive: dc
+thermistors:
+- id: TH0
+  pin: PC5
+  typical_use: hotend
+- id: TB
+  pin: PC4
+  typical_use: bed
+fans:
+- id: FAN
+  pin: PA0
+  typical_use: part_cooling
+- id: FAN1
+  pin: PC0
+  typical_use: hotend
+probe_ports: []
+bltouch:
+  sensor_pin: PC14
+  control_pin: PC13
+filament_sensor_ports:
+- id: FIL
+  pin: PC15
+  modifier: '!'
+notes:
+- All four drivers share one enable pin (PC3); Klipper allows that.
+- Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible.
+- The hotend fan is switched (FAN1, PC0), unlike the v4.2.x boards.
+unverified:
+- crystal_mhz 8 is Klipper's default; neither source states the board's crystal.
+- The Z-STOP pull-up/polarity is not given by either source (stock S1 homes Z with its CR Touch); a pull-up is used.
+discrepancies:
+- 'MCU: STM32F103 (28KiB bootloader) or STM32F401 (64KiB bootloader); check the chip marking (Klipper printer-creality-ender3-s1-2021.cfg).'
+sources:
+- repo: https://github.com/Klipper3d/klipper
+  path: config/printer-creality-ender3-s1-2021.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/MarlinFirmware/Marlin
+  path: Marlin/src/pins/stm32f1/pins_CREALITY_V24S1_301.h
+  commit: f5fa1edb9461c402dda88da01cc421d1e485675c
+  note: 'Z_STOP PA15, BLTouch PC13/PC14, FIL_RUNOUT PC15, HEATER_BED PA7, FAN1 PC0 ("extruder fan"); the rest from pins_CREALITY_V4.h'
+- repo: https://github.com/MarlinFirmware/Marlin
+  path: Marlin/src/pins/stm32f4/pins_CREALITY_V24S1_301F4.h
+  commit: f5fa1edb9461c402dda88da01cc421d1e485675c
+  note: includes the F1 pin file unchanged
+- repo: https://github.com/MarlinFirmware/Marlin
+  path: Marlin/src/pins/stm32f1/pins_CREALITY_V4.h
+  commit: f5fa1edb9461c402dda88da01cc421d1e485675c

@@ -531,7 +531,8 @@ export function plan(build: Build, db: Db): Plan {
       ?? eps.find((e) => !usedEndstops.has(e.id));
     if (!ep) { err('no_endstop_port', `No free endstop input on ${board.name} for ${axis}.`); return undefined; }
     usedEndstops.add(ep.id);
-    return { port: ep.id, pin: qpin('mainboard', ep.pin, '^'), board: 'mainboard' as BoardKind };
+    // Board data gives the polarity when a source states it (Ender 3 S1: !PA5); else a pull-up.
+    return { port: ep.id, pin: qpin('mainboard', ep.pin, ep.modifier ?? '^'), board: 'mainboard' as BoardKind };
   };
   const byName = (n: string) => steppers.find((s) => s.name === n);
   for (const [name, axis] of [['stepper_x', 'X'], ['stepper_y', 'Y']] as const) {
@@ -621,7 +622,9 @@ export function plan(build: Build, db: Db): Plan {
     let kind: BoardKind = f.board ?? (role.prefer_board === 'toolboard' && toolboard ? 'toolboard' : 'mainboard');
     if (kind === 'toolboard' && !toolboard) { err('no_toolboard', `Fan "${f.role}" is set to the toolhead board, but none is selected.`); kind = 'mainboard'; }
     const ports: Rec[] = kind === 'toolboard' ? toolboard!.fans : board.fans;
-    const port = f.port ? ports.find((p) => p.id === f.port) : ports.find((p) => !usedFans[kind].has(p.id));
+    // A port meant for this role (stock wiring, e.g. Ender 3 S1 hotend fan on PC0) comes first.
+    const port = f.port ? ports.find((p) => p.id === f.port)
+      : ports.find((p) => p.typical_use === f.role && !usedFans[kind].has(p.id)) ?? ports.find((p) => !p.typical_use && !usedFans[kind].has(p.id)) ?? ports.find((p) => !usedFans[kind].has(p.id));
     if (!port) { err('no_fan_port', `No ${f.port ? `port ${f.port}` : 'free fan port'} on the ${kind} for "${f.role}".`); continue; }
     if (usedFans[kind].has(port.id)) { err('fan_port_taken', `${port.id} on the ${kind} is used twice.`); continue; }
     usedFans[kind].add(port.id);

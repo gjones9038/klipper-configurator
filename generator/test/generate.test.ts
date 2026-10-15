@@ -397,3 +397,23 @@ test('sensorless homing is refused on standalone drivers', () => {
   const p = plan(b, db);
   assert.ok(p.issues.some((i) => i.code === 'sensorless_unsupported' && /standalone/.test(i.message)));
 });
+
+test('Ender 3 S1: inverted endstops at negative positions, switched hotend fan, CR Touch homing', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/ender3-s1-stock.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  // printer-creality-ender3-s1-2021.cfg
+  assert.match(mb, /\[stepper_x\][^[]*endstop_pin: !PA5[^[]*position_min: -15\nposition_endstop: -10/);
+  assert.match(mb, /\[stepper_y\][^[]*endstop_pin: !PA6[^[]*position_min: -13\nposition_endstop: -8\nposition_max: 238/);
+  assert.match(mb, /\[extruder\][^[]*rotation_distance: 26\.359\ngear_ratio: 42:12[^[]*max_temp: 260/);
+  assert.match(mb, /\[heater_bed\][^[]*heater_pin: PA7[^[]*max_temp: 100/);
+  assert.match(mb, /\[heater_fan hotend_fan\][^[]*pin: PC0/);
+  assert.match(mb, /\[fan\][^[]*pin: PA0/);
+  assert.match(r.files['printer.cfg'], /\[bed_screws\]\s*#[^\n]*\nscrew1: 20, 29/);
+  // nozzle at bed centre minus the probe offset (Klipper's file uses 147, 154)
+  assert.match(r.files['printer.cfg'], /home_xy_position: 149\.3, 158/);
+  const pro = generate({ ...b, printer: 'creality-ender3-s1-pro', hotend: 'creality-sprite-s1-pro' }, db, 'test').files['mainboard.cfg'];
+  assert.match(pro, /\[extruder\][^[]*max_temp: 300/);
+  assert.match(pro, /\[heater_bed\][^[]*max_temp: 110/);
+});

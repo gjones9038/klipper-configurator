@@ -180,6 +180,34 @@ hotends:
       - "Retailers list a 255 °C maximum nozzle temperature for the Ender 3 V2; Klipper's configs use 250. Using 250: the PTFE liner runs up to the heat block."
     unverified: ["Creality's own spec page could not be retrieved; the temperature figure is from Klipper and retailers"]
 
+  - id: creality-sprite-s1
+    name: Creality Sprite hotend (Ender 3 S1)
+    maker: Creality
+    flow_class: standard
+    max_temp: 260
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    pid_seed: {pid_kp: 23.561, pid_ki: 1.208, pid_kd: 114.859}
+    sources:
+      - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-creality-ender3-s1-2021.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+         note: "[extruder] max_temp: 260 # Set to 300 for S1 Pro"}
+    unverified: ["Why the S1 rating is lower than the S1 Pro's is not stated in the source"]
+
+  - id: creality-sprite-s1-pro
+    name: Creality Sprite hotend (Ender 3 S1 Pro)
+    maker: Creality
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    pid_seed: {pid_kp: 23.561, pid_ki: 1.208, pid_kd: 114.859}
+    sources:
+      - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-creality-ender3-s1-2021.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+         note: "[extruder] max_temp: 260 # Set to 300 for S1 Pro"}
+    unverified: ["The PID seed is the S1's (the source gives one set for both)"]
+
 defaults:
   min_temp: 10
   min_extrude_temp: 170

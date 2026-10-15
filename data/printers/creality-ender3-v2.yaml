@@ -16,6 +16,7 @@ sizes:
   - id: stock
     bed_mm: [235, 235]
     position_max: {x: 235, y: 235, z: 250}
+    bed_screws: [[30, 25], [200, 25], [200, 195], [30, 195]]   # Klipper printer-creality-ender3-v2-neo-2022.cfg
 
 steppers:
   - {klipper: stepper_x, role: X, rotation_distance: 40}

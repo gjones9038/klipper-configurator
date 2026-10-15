@@ -68,13 +68,21 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // sensorless homing uses homing_override, which also excludes it.
   // A Z endstop switch (bed-slingers) homes anywhere: no safe_z_home needed.
   if (!sensorless && !p.tools && !(beacon && probeHoming) && b.homing.z !== 'physical_min') {
-    const xy = probeHoming ? [bedX / 2, bedY / 2] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
+    // Probe homing: put the probe (not the nozzle) over the bed centre, within travel.
+    const off = p.probe?.offset ?? { x: 0, y: 0 };
+    const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
+    const xy = probeHoming ? [clamp(bedX / 2 - off.x, 'x'), clamp(bedY / 2 - off.y, 'y')] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
     pc.add(new Section('safe_z_home')
-      .set('home_xy_position', `${xy[0]}, ${xy[1]}`, b.homing.z === 'nozzle_switch' ? 'nozzle switch position' : 'bed center')
+      .set('home_xy_position', `${xy[0]}, ${xy[1]}`, b.homing.z === 'nozzle_switch' ? 'nozzle switch position' : off.x || off.y ? 'probe over the bed centre' : 'bed center')
       .set('speed', d.safe_z_home.speed)
       .set('z_hop', d.safe_z_home.z_hop)
       .set('z_hop_speed', 15, 'Klipper default')
       .set('move_to_previous', false));
+  }
+  if (p.size.bed_screws) {
+    const s = new Section('bed_screws', 'BED_SCREWS_ADJUST: level the bed by hand (paper test at each screw)');
+    p.size.bed_screws.forEach((xy: number[], i: number) => s.set(`screw${i + 1}`, xy.join(', ')));
+    pc.add(s);
   }
   if (p.printer.z_leveling === 'quad_gantry_level' && p.size.quad_gantry_level) {
     const q = p.size.quad_gantry_level;
@@ -330,14 +338,14 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
     .set('gear_ratio', s.gearRatio).set('full_steps_per_rotation', s.fullSteps);
   if (s.name === 'stepper_x' || s.name === 'stepper_y') {
     const axis = s.name === 'stepper_x' ? 'x' : 'y';
-    const xy = d.stepper_xy;
+    const xy = { ...d.stepper_xy, ...d.axes?.[axis] };   // per-axis overrides (Ender 3 S1 homes X at -10)
     const max = p.size.position_max[axis];
     const sensorless = s.endstop === 'virtual';
     sec.set('endstop_pin', sensorless ? `${s.driver.section}_${s.name}:virtual_endstop` : (s.endstop as any).pin,
       sensorless ? 'sensorless' : (s.endstop as any).port)
       .set('position_min', axis === 'y' && p.toolchanger?.yMin !== undefined ? p.toolchanger.yMin : xy.position_min,
         axis === 'y' && p.toolchanger?.yMin !== undefined ? 'reaches the tool docks' : undefined)
-      .set('position_endstop', xy.endstop_at_max ? max : 0).set('position_max', max)
+      .set('position_endstop', xy.endstop_at_max ? max : xy.position_endstop ?? 0).set('position_max', max)
       .set('homing_speed', sensorless ? (p.build.autotune ? Math.max(50, s.rotationDistance + 10) : s.rotationDistance / 2) : xy.homing_speed,
         sensorless ? (p.build.autotune ? 'autotune: must exceed rotation_distance' : 'Klipper: rotation_distance / 2') : undefined)
       .set('homing_retract_dist', sensorless ? 0 : xy.homing_retract_dist)
