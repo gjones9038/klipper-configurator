@@ -161,6 +161,25 @@ hotends:
       - "A 2019 E3D V6 datasheet is quoted elsewhere as 285°C with the E3D thermistor; it could not be retrieved first-hand (the link is dead). Using E3D's current support page (300°C)."
       - "Clones vary; check yours."
 
+  - id: creality-mk8
+    name: Creality stock MK8 hotend (PTFE-lined; Ender 3 / 3 Pro / 3 V2)
+    maker: Creality
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    pid_seed: {pid_kp: 21.527, pid_ki: 1.063, pid_kd: 108.982}   # Klipper's Ender 3 V2 / 3 Pro configs
+    sources:
+      - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-creality-ender3-v2-2020.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+         note: "[extruder] max_temp: 250, sensor_type: EPCOS 100K B57560G104F"}
+      - {repo: "https://github.com/Klipper3d/klipper", path: "config/printer-creality-ender3pro-2020.cfg", commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+      - {url: "https://www.getfpv.com/discontinued/creality3d-ender-3-v2-3d-printer.html", accessed: 2026-10-15, retailer: true,
+         quote: "Nozzle Temperature: 255 C"}
+    discrepancies:
+      - "Retailers list a 255 °C maximum nozzle temperature for the Ender 3 V2; Klipper's configs use 250. Using 250: the PTFE liner runs up to the heat block."
+    unverified: ["Creality's own spec page could not be retrieved; the temperature figure is from Klipper and retailers"]
+
 defaults:
   min_temp: 10
   min_extrude_temp: 170

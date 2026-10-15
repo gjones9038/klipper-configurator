@@ -3,7 +3,7 @@
 import type { Build, Db, Rec, Result, Issue, ToolSpec } from '../generator/types.ts';
 import type { Plan } from '../generator/plan.ts';
 import { h, select, segmented, numberField, checkbox, pill, extLink, type Child, type Option } from './dom.ts';
-import { canDevices, driversNeeded, toolchangerFor } from './state.ts';
+import { canDevices, driversNeeded, toolchangerFor, switchPrinter } from './state.ts';
 import { mainboardFor } from '../generator/dbcore.ts';
 
 export interface Ctx {
@@ -60,18 +60,25 @@ const printerStep: Step = {
     const zDrives = Object.values(db.zDrives).filter((z) => z.applies_to.includes(build.printer));
     return [
       h('div', { class: 'grid' },
-        segmented('Printer', build.printer, Object.values(db.printers).map((p) => ({ value: p.id, label: p.name })), (v) => update((b) => { b.printer = v; })),
-        segmented('Size', build.size, printer.sizes.map((s: Rec) => ({ value: s.id, label: `${s.id} mm` })), (v) => update((b) => { b.size = v; })),
-        segmented('Drive', build.variant ?? 'standard', printer.variants.map((v: Rec) => ({ value: v.id, label: v.name })), (v) => update((b) => { b.variant = v; }))),
+        select('Printer', build.printer, Object.values(db.printers).sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ value: p.id, label: p.name })),
+          (v) => update((b) => {
+            const n = switchPrinter(structuredClone(b), db, v);
+            for (const k of Object.keys(b)) delete (b as any)[k];
+            Object.assign(b, n);
+          })),
+        printer.sizes.length < 2 ? null : segmented('Size', build.size, printer.sizes.map((s: Rec) => ({ value: s.id, label: `${s.id} mm` })), (v) => update((b) => { b.size = v; })),
+        printer.variants.length < 2 ? null : segmented('Drive', build.variant ?? 'standard', printer.variants.map((v: Rec) => ({ value: v.id, label: v.name })), (v) => update((b) => { b.variant = v; }))),
       h('div', { class: 'grid' },
-        select('Toolhead', build.toolhead ?? '', Object.values(db.toolheads).filter((t) => t.applies_to.includes(build.printer)).map((t) => ({ value: t.id, label: t.name })),
-          (v) => update((b) => { b.toolhead = v || undefined; })),
+        Object.values(db.toolheads).some((t) => t.applies_to.includes(build.printer))
+          ? select('Toolhead', build.toolhead ?? '', Object.values(db.toolheads).filter((t) => t.applies_to.includes(build.printer)).map((t) => ({ value: t.id, label: t.name })),
+            (v) => update((b) => { b.toolhead = v || undefined; })) : null,
         zDrives.length ? select('Z drive', build.zDrive ?? '', [{ value: '', label: 'Printer default' }, ...zDrives.map((z) => ({ value: z.id, label: `${z.id} · gear ${z.gear_ratio}` }))],
           (v) => update((b) => { if (v) b.zDrive = v; else delete b.zDrive; })) : null,
         printer.leadscrew_options ? segmented('Lead screw', build.leadscrew ?? printer.leadscrew_options.find((l: Rec) => l.default)?.id,
           printer.leadscrew_options.map((l: Rec) => ({ value: l.id, label: `${l.id.toUpperCase()} (${l.rotation_distance} mm)` })), (v) => update((b) => { b.leadscrew = v; })) : null),
       (db.printers[build.printer].variants.find((v: Rec) => v.id === build.variant)?.notes ?? []).length
         ? h('ul', { class: 'hint' }, db.printers[build.printer].variants.find((v: Rec) => v.id === build.variant).notes.map((n: string) => h('li', null, n))) : null,
+      printer.notes?.length ? h('ul', { class: 'hint' }, printer.notes.map((n: string) => h('li', null, n))) : null,
       sources(printer),
     ];
   },
@@ -91,11 +98,12 @@ const mainboardStep: Step = {
     const fit = (n: number): HTMLElement => n >= need ? pill('Fits', 'ok')
       : n >= need - 1 ? (build.toolboard ? pill('Fits (extruder on toolhead)', 'ok') : pill('Extruder → toolhead board', 'warn'))
       : pill(`${n} of ${need} drivers`, 'bad');
-    const boards = Object.values(db.mainboards).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    const stock: string[] = db.printers[build.printer].stock?.mainboards ?? [];
+    const boards = Object.values(db.mainboards).sort((a, b) => Number(stock.includes(b.id)) - Number(stock.includes(a.id)) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const variant = db.printers[build.printer].variants.find((v: Rec) => v.id === (build.variant ?? 'standard'));
     return [
       pickTable(['Board', 'Rev', 'Drivers', 'Pin data', `${db.printers[build.printer].name}${variant.id === 'awd' ? ' AWD' : ''} fit`], boards.map((b) => ({
-        id: b.id, picked: b.id === build.mainboard.id, name: b.name, sub: b.manufacturer,
+        id: b.id, picked: b.id === build.mainboard.id, name: b.name, sub: stock.includes(b.id) ? `${b.manufacturer} · stock on this printer` : b.manufacturer,
         onPick: () => update((x) => { x.mainboard = { id: b.id, connection: x.mainboard.connection }; }),
         cells: [h('span', { class: 'mono' }, b.revisions.join(' / ')), `${b.driver_slots.length} × ${b.driver_mount === 'onboard' ? 'onboard' : b.driver_mount === 'ez' ? 'EZ socket' : 'stepstick'}`, statusPill(b.status), b.driver_slots.length >= need || !extSlots(b.id) ? fit(b.driver_slots.length)
           : b.id === build.mainboard.id && build.mainboard.extensions?.length ? fit(mainboardFor(db, build.mainboard).driver_slots.length)
@@ -105,9 +113,9 @@ const mainboardStep: Step = {
         select('MCU on your board', mcu.chip, board.mcu_variants.map((m: Rec) => ({ value: m.chip, label: `${m.chip.toUpperCase()} · ${m.crystal_mhz} MHz${m.bootloader_kib ? ` · ${m.bootloader_kib} KiB bootloader` : ''}` })),
           (v) => update((b) => { b.mainboard.mcu = v; })),
         segmented('Host connection', build.mainboard.connection,
-          (['usb', 'usb-can-bridge', 'can'] as const).map((c) => ({ value: c, label: c === 'usb' ? 'USB' : c === 'can' ? 'CAN' : 'USB-CAN bridge', disabled: !board.interfaces.includes(c) })),
+          (board.interfaces.includes('usb-serial') ? ['usb-serial'] as const : ['usb', 'usb-can-bridge', 'can'] as const).map((c) => ({ value: c, label: c === 'usb' ? 'USB' : c === 'can' ? 'CAN' : c === 'usb-serial' ? `USB (${board.usb_serial?.chip ?? 'serial'} chip)` : 'USB-CAN bridge', disabled: !board.interfaces.includes(c) })),
           (v) => update((b) => { b.mainboard.connection = v; }),
-          'USB-CAN bridge: the board talks to the host over USB and forwards CAN to the toolhead board.'),
+          board.interfaces.includes('usb-serial') ? `The board's ${board.usb_serial?.chip ?? 'USB-serial'} chip links its serial port to the host over USB.` : 'USB-CAN bridge: the board talks to the host over USB and forwards CAN to the toolhead board.'),
         numberField('Bootloader offset (KiB)', build.mainboard.bootloaderKib, (v) => update((b) => { if (v === undefined) delete b.mainboard.bootloaderKib; else b.mainboard.bootloaderKib = v; }),
           { min: 0, step: 1, placeholder: String(mcu.bootloader_kib ?? 0), hint: 'Only if your board was reflashed (e.g. Katapult).' })),
       exts.length ? h('div', { class: 'section' }, h('h2', null, 'Extension boards'), exts.map((e) =>
@@ -235,14 +243,15 @@ const motorsStep: Step = {
               chip.interfaces.map((i: string) => ({ value: i, label: i.toUpperCase() })),
               (v) => update((b) => { b.drivers[g] = { ...(b.drivers[g] ?? b.drivers.xy), interface: v as 'uart' | 'spi' }; })) : null);
         }))),
-      h('div', { class: 'section' }, h('h2', null, 'Motors'), h('div', { class: 'grid' }, GROUPS.map(([g, label]) => {
+      h('div', { class: 'section' }, h('h2', null, 'Motors'), h('div', { class: 'grid' }, GROUPS.map(([g, label0]) => {
+        const label = g === 'xy' && db.printers[build.printer].kinematics !== 'corexy' ? 'X/Y' : label0;
         const s = stepperOf(g);
         return h('div', { class: 'section' },
           g === 'extruder'
-            ? select(`${label} motor`, build.motors.extruder ?? '', [{ value: '', label: `Recommended for ${extruder.name}: ${String(extruder.recommended_motor ?? 'none').toUpperCase()}` }, ...mOpts],
+            ? select(`${label} motor`, build.motors.extruder ?? '', [{ value: '', label: extruder.recommended_motor ? `Recommended for ${extruder.name}: ${String(extruder.recommended_motor).toUpperCase()}` : 'Stock / not listed' }, ...mOpts],
               (v) => update((b) => { if (v) b.motors.extruder = v; else delete b.motors.extruder; }))
-            : select(`${label} motor`, build.motors[g], mOpts, (v) => update((b) => { b.motors[g] = v; })),
-          numberField(`${label} run current (A)`, build.runCurrent?.[g], (v) => update((b) => {
+            : select(`${label} motor`, build.motors[g], [{ value: '', label: 'Stock / not listed' }, ...mOpts], (v) => update((b) => { b.motors[g] = v; })),
+          s?.driver.standalone ? h('p', { class: 'hint' }, 'Standalone driver: the current is set on the board, not in Klipper.') : numberField(`${label} run current (A)`, build.runCurrent?.[g], (v) => update((b) => {
             b.runCurrent = { ...b.runCurrent };
             if (v === undefined) delete b.runCurrent[g]; else b.runCurrent[g] = v;
             if (!Object.keys(b.runCurrent).length) delete b.runCurrent;
@@ -258,8 +267,8 @@ const motorsStep: Step = {
           h('tbody', null, plan.steppers.map((s) => h('tr', null,
             h('td', { class: 'mono' }, s.name), h('td', null, s.position ?? ''),
             h('td', { class: 'mono' }, s.board === 'toolboard' ? `toolhead · ${s.slot}` : slotPicker(board, plan, s.name, s.slot, update)),
-            h('td', { class: 'mono' }, `${s.driver.chip.toUpperCase()} ${s.driver.iface.toUpperCase()}${s.driver.hv ? ' · HV' : ''}`),
-            h('td', { class: 'mono' }, `${s.runCurrent} A`))))))) : null,
+            h('td', { class: 'mono' }, s.driver.standalone ? 'standalone' : `${s.driver.chip.toUpperCase()} ${s.driver.iface.toUpperCase()}${s.driver.hv ? ' · HV' : ''}`),
+            h('td', { class: 'mono' }, s.driver.standalone ? 'set on board' : `${s.runCurrent} A`))))))) : null,
     ];
   },
 };
@@ -281,7 +290,7 @@ function slotPicker(board: Rec, plan: Plan, stepper: string, current: string, up
     const other = holder(d.id);
     const od = d.onboard_driver;
     return h('option', { value: d.id, selected: d.id === current },
-      `${d.id}${od ? ` · ${od.chip}${od.motor_power ? ' HV' : ''}` : ''}${other && other !== stepper ? ` (${other})` : ''}`);
+      `${d.id}${od ? ` · ${od.standalone ? 'standalone' : od.chip}${od.motor_power ? ' HV' : ''}` : ''}${other && other !== stepper ? ` (${other})` : ''}`);
   }));
 }
 

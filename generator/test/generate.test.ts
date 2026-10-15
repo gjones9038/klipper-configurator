@@ -45,7 +45,9 @@ test('no physical pin is used twice in a generated config', () => {
         const prev = seen.get(key);
         // A toolchanger tool's Tap pin is both [tool_probe] pin and [tool] detection_pin (tool_probe.py allows it).
         const tapShare = (m[1] === 'detection_pin' && prev?.includes('[tool_probe')) ?? false;
-        assert.ok(!prev || tapShare || (m[1].startsWith('diag') && prev.includes('endstop')),
+        // Klipper allows one enable line shared by several steppers (Creality boards).
+        const sharedEnable = m[1] === 'enable_pin' && !!prev?.endsWith('enable_pin');
+        assert.ok(!prev || tapShare || sharedEnable || (m[1].startsWith('diag') && prev.includes('endstop')),
           `${c.name} ${name}: ${key} in [${section}] ${m[1]} and ${prev}`);
         seen.set(key, `[${section}] ${m[1]}`);
       }
@@ -338,4 +340,60 @@ test('slot overrides and pinned fan ports are honoured', () => {
   const dup = example();
   dup.slotOverrides = { stepper_z: 'STEPPER-1', stepper_z1: 'STEPPER-1' };
   assert.ok(generate(dup, db, 'test').issues.some((i) => i.code === 'slot_taken'));
+});
+
+// --- stock printers (fixed board, cartesian) ---------------------------------
+const ender = (): Build => JSON.parse(readFileSync(new URL('../../examples/ender3-v2-stock.json', import.meta.url), 'utf8'));
+
+test('Ender 3 V2 stock: Klipper reference pins, no TMC sections, no leveling', () => {
+  const r = generate(ender(), db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  // printer-creality-ender3-v2-2020.cfg
+  assert.match(mb, /\[stepper_x\][^[]*step_pin: PC2\ndir_pin: PB9[^\n]*\nenable_pin: !PC3/);
+  assert.match(mb, /\[stepper_z\][^[]*dir_pin: !PB5[^[]*endstop_pin: \^PA7/);
+  assert.match(mb, /\[extruder\][^[]*rotation_distance: 34\.406[^[]*max_temp: 250/);
+  assert.match(mb, /serial: \/dev\/serial\/by-id\/usb-1a86_USB_Serial-if00-port0/);
+  assert.match(mb, /\[heater_bed\][^[]*max_power: 1\b/);
+  assert.doesNotMatch(mb, /\[tmc/);
+  const pc = r.files['printer.cfg'];
+  assert.match(pc, /kinematics: cartesian/);
+  assert.doesNotMatch(pc, /safe_z_home|z_tilt|quad_gantry|bed_mesh/);
+  assert.doesNotMatch(r.files['macros/print.cfg'], /BED_MESH|Z_TILT|QUAD_GANTRY/);
+  assert.match(r.files['FIRMWARE.md'], /Serial \(on USART1 PA10\/PA9\)[\s\S]*28KiB bootloader|28KiB bootloader[\s\S]*Serial \(on USART1 PA10\/PA9\)/);
+  assert.match(r.files['FIRMWARE.md'], /SD card/);
+});
+
+test('Creality v4.2.7 swaps step and dir against the v4.2.2 (Klipper generic-creality-v4.2.7.cfg)', () => {
+  const b = ender();
+  b.mainboard.id = 'creality-v4.2.7';
+  const mb = generate(b, db, 'test').files['mainboard.cfg'];
+  assert.match(mb, /\[stepper_x\][^[]*step_pin: PB9\ndir_pin: PC2/);
+  assert.match(mb, /\[extruder\][^[]*step_pin: PB3\ndir_pin: PB4/);
+});
+
+test('GD32F103 v4.2.2: built as STM32F103 with SWD disabled', () => {
+  const b = ender();
+  b.mainboard.mcu = 'gd32f103';
+  const r = generate(b, db, 'test');
+  assert.match(r.files['FIRMWARE.md'], /Micro-controller: STM32F103 \(the GD32F103 is built as STM32F103\)[\s\S]*Disable SWD at startup/);
+});
+
+test('Ender 3 V2 Neo: CR Touch homes Z at the bed centre with its stock offset', () => {
+  const b = ender();
+  b.probe = 'bltouch';
+  b.probeOffset = { x: -45, y: -10 };
+  b.homing.z = 'probe_virtual_endstop';
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  assert.match(r.files['mainboard.cfg'] + r.files['printer.cfg'], /\[bltouch\][^[]*sensor_pin: \^PB1\ncontrol_pin: PB0/);
+  assert.match(r.files['printer.cfg'], /\[safe_z_home\]/);
+  assert.match(r.files['macros/print.cfg'], /BED_MESH_CALIBRATE ADAPTIVE=1/);
+});
+
+test('sensorless homing is refused on standalone drivers', () => {
+  const b = ender();
+  b.homing.xy = 'sensorless';
+  const p = plan(b, db);
+  assert.ok(p.issues.some((i) => i.code === 'sensorless_unsupported' && /standalone/.test(i.message)));
 });

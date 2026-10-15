@@ -13,6 +13,31 @@ export function defaultBuild(): Build {
   return structuredClone(example) as Build;
 }
 
+/**
+ * Switch printer. A printer that ships with a fixed board (stock.mainboards) starts
+ * from its stock parts; leaving one for a kit printer starts from the example build.
+ */
+export function switchPrinter(b: Build, db: Db, id: string): Build {
+  const next = db.printers[id];
+  const prev = db.printers[b.printer];
+  const st = next.stock;
+  if (st?.mainboards?.length) {
+    const board = db.mainboards[st.mainboards[0]];
+    return {
+      printer: id, size: next.sizes[0].id, variant: 'standard',
+      mainboard: { id: board.id, connection: board.interfaces[0] },
+      drivers: b.drivers, motors: { xy: '', z: '' },
+      homing: { xy: 'physical', z: 'physical_min' },
+      extruder: st.extruder, hotend: st.hotend,
+      thermistors: { hotend: st.thermistors.hotend, bed: st.thermistors.bed },
+      fans: (st.fans ?? ['part_cooling']).map((role: string) => ({ role })),
+      autotune: false, webUi: b.webUi,
+    };
+  }
+  if (prev?.stock?.mainboards?.length) return { ...defaultBuild(), printer: id, webUi: b.webUi };
+  return { ...b, printer: id };
+}
+
 export function loadSaved(): { build?: Build; step?: number } {
   try {
     const b = localStorage.getItem(KEY);

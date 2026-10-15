@@ -1,0 +1,90 @@
+schema: printer/1
+id: creality-ender3-v2
+name: Creality Ender 3 V2 / V2 Neo
+manufacturer: Creality
+status: reviewed
+docs:
+  - {title: "Klipper: Ender 3 V2 reference config", url: "https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-ender3-v2-2020.cfg"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: cartesian
+z_leveling: null                 # one Z leadscrew; level the bed with its screws
+bed_heater: dc                   # 24 V bed driven by the board's HOTBED MOSFET
+hotend_fan: always_on            # wired to 24 V, not to a board fan output
+display: unsupported             # the DWIN display needs third-party firmware/modules; not configured
+
+sizes:
+  - id: stock
+    bed_mm: [235, 235]
+    position_max: {x: 235, y: 235, z: 250}
+
+steppers:
+  - {klipper: stepper_x, role: X, rotation_distance: 40}
+  - {klipper: stepper_y, role: Y, rotation_distance: 40}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 300
+    max_accel: 3000
+    max_z_velocity: 5
+    max_z_accel: 100
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 50
+    homing_retract_dist: 5
+    homing_positive_dir: false
+    position_min: 0
+    endstop_at_max: false
+    position_endstop: 0
+    run_current: 0.58
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: 0
+    homing_speed: 5               # Klipper defaults (the reference config sets none)
+    second_homing_speed: 2.5
+    homing_retract_dist: 5
+    run_current: 0.58
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.5
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 54.027, pid_ki: 0.770, pid_kd: 948.182}
+  safe_z_home:
+    home_xy_position: user
+    speed: 150
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [creality-v4.2.2, creality-v4.2.7]
+  toolhead: null
+  extruder: creality-mk8-bowden
+  hotend: creality-mk8
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [bltouch]
+  probe_offsets: {bltouch: {x: -45.0, y: -10.0}}   # V2 Neo stock CR Touch mount (Klipper v2-neo config)
+  fans: [part_cooling]
+
+notes:
+  - "The V2 Neo ships with a CR Touch (choose BLTouch / CR-Touch as the probe); the V2 homes Z on its endstop switch."
+  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+unverified:
+  - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: config/printer-creality-ender3-v2-2020.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+  - repo: https://github.com/Klipper3d/klipper
+    path: config/printer-creality-ender3-v2-neo-2022.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

@@ -6,7 +6,7 @@ schema: homing/1
 xy_methods:
   physical:
     name: Physical endstop switch
-    description: Microswitch or Hall sensor at the max end of the axis (Voron stock).
+    description: Microswitch or Hall sensor at the end of the axis (Voron, Ender and most stock printers).
     needs:
       - "a free endstop input for each axis, on the mainboard (`endstops`) or the toolhead
         board (Stealthburner X endstop is often wired to the toolhead board)"
@@ -73,7 +73,7 @@ z_methods:
       - "Beacon/Cartographer use their own homing integration; see probes.yaml."
   physical_min:
     name: Physical switch at Z min
-    description: Bed-side switch; uncommon on Voron.
+    description: Switch at the bottom of Z travel (stock on most bed-slingers, e.g. Ender 3); uncommon on Voron.
     emits: {endstop_pin: "<port pin>"}
 
 sources:

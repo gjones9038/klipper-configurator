@@ -31,9 +31,13 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({ component: 'Hotend heater', board: p.hotendHeater.board, connector: p.hotendHeater.port, pins: bare(p.hotendHeater.pin) });
     add({ component: 'Hotend thermistor', board: p.hotendSensor.board, connector: p.hotendSensor.port, pins: bare(p.hotendSensor.pin), note: p.thermistor.hotend.label });
   }
-  add({ component: 'Bed heater (SSR control input)', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'mains goes through the SSR, never the board' });
+  if (p.printer.bed_heater === 'dc') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: '24 V bed, wired straight to the board output' });
+  else add({ component: 'Bed heater (SSR control input)', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'mains goes through the SSR, never the board' });
   add({ component: 'Bed thermistor', board: 'mainboard', connector: p.bedSensor.port, pins: bare(p.bedSensor.pin), note: p.thermistor.bed.label });
   if (p.chamberSensor) add({ component: 'Chamber thermistor', board: p.chamberSensor.board, connector: p.chamberSensor.port, pins: bare(p.chamberSensor.pin) });
+  if (p.printer.hotend_fan === 'always_on' && !p.fans.some((f) => f.role === 'hotend')) {
+    add({ component: 'Fan: hotend', board: 'mainboard', connector: '24 V (always on)', pins: '-', note: 'stock wiring: runs whenever the printer is on' });
+  }
   for (const f of p.fans) {
     add({ component: `Fan: ${f.role.replace('_', ' ')}`, board: f.board, connector: f.port, pins: bare(f.pin) + (f.tach ? ` (tach ${bare(f.tach)})` : ''), note: `[${f.section}]` });
   }
@@ -96,8 +100,10 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     const ports = p.fans.filter((f) => extFan(f) === e.id);
     if (ports.length) j.push(`${e.name} fan voltage: ${e.fans[0].voltage_select}; it applies to ${e.fans.map((x: any) => x.id).join(' and ')} together, so the fans on ${ports.map((f) => `${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`).join(', ')} must all run at the same voltage.`);
   }
+  // Only ports with a voltage selector need a jumper (stock Creality boards have none).
+  const portRec = (f: { board: string; port: string }) => (f.board === 'toolboard' ? p.toolboard?.fans : p.board.fans)?.find((x: any) => x.id === f.port);
   const fanPorts = [
-    ...p.fans.filter((f) => !extFan(f)).map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`),
+    ...p.fans.filter((f) => !extFan(f) && (f.board === 'toolboard' || portRec(f)?.voltage_options)).map((f) => `${f.board === 'toolboard' ? 'toolhead ' : ''}${f.port}${f.voltage ? ` (${f.voltage} V)` : ''}`),
     ...(p.tools ?? []).flatMap((t) => t.fans.map((f) => `T${t.n} ${f.port}`)),
   ];
   if (fanPorts.length) j.push(`Fan voltage: set the voltage jumper for ${fanPorts.join(', ')} to match each fan.`);
@@ -181,7 +187,8 @@ export function slicerMarkdown(p: Plan): string {
 export function firmwareMarkdown(p: Plan): string {
   const b = p.build.mainboard;
   const boot = b.bootloaderKib ?? p.mcu.bootloader_kib;
-  const iface = b.connection === 'usb' ? 'USB (on PA11/PA12)'
+  const iface = b.connection === 'usb-serial' ? (p.board.firmware?.interface ?? 'Serial (see the board manual for the USART)')
+    : b.connection === 'usb' ? 'USB (on PA11/PA12)'
     : b.connection === 'usb-can-bridge' ? `USB to CAN bus bridge (USB on PA11/PA12), CAN bus on ${p.board.can_pins ?? 'the board CAN pins (see manual)'}`
     : `CAN bus (on ${p.board.can_pins ?? 'the board CAN pins'})`;
   const lines = [
@@ -190,12 +197,14 @@ export function firmwareMarkdown(p: Plan): string {
     `## ${p.board.name} ${p.board.revisions.join('/')}`,
     '',
     '- Enable extra low-level configuration options',
-    `- Micro-controller: ${p.mcu.chip.toUpperCase()}`,
+    `- Micro-controller: ${(p.mcu.build_as ?? p.mcu.chip).toUpperCase()}${p.mcu.build_as ? ` (the ${p.mcu.chip.toUpperCase()} is built as ${p.mcu.build_as.toUpperCase()})` : ''}`,
     `- Bootloader offset: ${boot ? `${boot}KiB bootloader` : 'No bootloader'}`,
     `- Clock reference: ${p.mcu.crystal_mhz} MHz crystal`,
     `- Communication interface: ${iface}`,
-    ...(b.connection !== 'usb' ? ['- CAN bus speed: 1000000'] : []),
+    ...(['can', 'usb-can-bridge'].includes(b.connection) ? ['- CAN bus speed: 1000000'] : []),
+    ...(p.mcu.menuconfig_extra ?? []).map((x: string) => `- ${x}`),
     '',
+    ...(p.board.firmware?.flash ? [`Flashing: ${p.board.firmware.flash}`, ''] : []),
   ];
   if (p.board.discrepancies?.some((d: string) => /bootloader/i.test(d))) {
     lines.push('> Sources disagree on this board\'s bootloader. If yours was flashed with Katapult or a stock bootloader, use that offset.', '');

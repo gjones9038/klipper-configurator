@@ -33,6 +33,8 @@ export interface DriverPlan {
   onboard: boolean;
   moduleId?: string;
   hv: boolean;
+  standalone?: boolean;       // no UART/SPI: no TMC section, current set on the board
+  microsteps?: number;        // fixed by the board (standalone drivers)
 }
 
 export interface StepperPlan {
@@ -289,7 +291,8 @@ export function plan(build: Build, db: Db): Plan {
   // --- steppers and slots ------------------------------------------------
   const motionDefs: Rec[] = [...printer.steppers, ...(variant.extra_steppers ?? [])];
   const extruderOnToolboard = !!toolboard;
-  const roleOrder = variant.id === 'awd' ? ['B', 'A', 'B1', 'A1'] : ['B', 'A'];
+  // Motion roles in printer order (CoreXY: B, A [, B1, A1]; cartesian: X, Y), then Z.
+  const roleOrder = motionDefs.filter((d) => !d.role.startsWith('Z')).map((d) => d.role);
   const zRoles = motionDefs.filter((d) => d.role.startsWith('Z')).map((d) => d.role);
   const orderedRoles = [...roleOrder, ...zRoles, ...(extruderOnToolboard ? [] : ['E'])];
   const defByRole: Record<string, Rec> = Object.fromEntries(motionDefs.map((d) => [d.role, d]));
@@ -391,6 +394,7 @@ export function plan(build: Build, db: Db): Plan {
       rotationDistance = def.rotation_distance;
       microsteps = printer.defaults.stepper_xy.microsteps;
     }
+    if (driver.standalone && driver.microsteps) microsteps = driver.microsteps;   // set by the board's MS pins
     const fullSteps = motor?.step_angle_deg === 0.9 ? 400 : 200;
     const { current, note } = runCurrent(group, motor, driver, slot, extruder);
     return {
@@ -406,6 +410,10 @@ export function plan(build: Build, db: Db): Plan {
   function resolveDriver(slot: Rec, boardKind: BoardKind, group: 'xy' | 'z' | 'extruder', mcuName = TOOLHEAD_MCU): DriverPlan {
     const qpin = (b: BoardKind, raw: string, mods = '') => qpinBase(b, raw, mods, mcuName);
     const chips = db.drivers.chips;
+    if (slot.onboard_driver?.standalone) {
+      const od = slot.onboard_driver;
+      return { chip: od.chip ?? 'standalone', section: '', iface: 'standalone', pins: {}, onboard: true, hv: false, standalone: true, microsteps: od.microsteps };
+    }
     if (slot.onboard_driver) {
       const od = slot.onboard_driver;
       const iface: Interface = slot.uart_pin ? 'uart' : 'spi';
@@ -487,6 +495,7 @@ export function plan(build: Build, db: Db): Plan {
     // Published reference values first (extruder maker, Z drive maker, Voron),
     // never above the policy ceiling: fraction_of_rated x motor rating and the
     // driver/slot limits. The ceiling is shown so users know their headroom.
+    if (driver.standalone) return { current: 0, note: 'standalone driver: current is set on the board' };
     const chip = db.drivers.chips[driver.chip];
     const policy = db.drivers.run_current_policy.fraction_of_rated;
     const caps: Array<[number, string]> = [];
@@ -531,7 +540,8 @@ export function plan(build: Build, db: Db): Plan {
       s.endstop = pickEndstop(s, axis);
     } else {
       const chip = db.drivers.chips[s.driver.chip];
-      if (!chip.sensorless) err('sensorless_unsupported', `${s.driver.chip} on ${s.slot} has no StallGuard; sensorless homing is not possible for ${name}.`);
+      if (s.driver.standalone) err('sensorless_unsupported', `${board.name} ${s.slot} has a standalone driver (no UART/SPI), so sensorless homing is not possible for ${name}. Use the endstop switches.`);
+      else if (!chip.sensorless) err('sensorless_unsupported', `${s.driver.chip} on ${s.slot} has no StallGuard; sensorless homing is not possible for ${name}.`);
       else if (!s.driver.diag) err('sensorless_no_diag', `${board.name} ${s.slot} has no DIAG pin in the data; sensorless homing is not possible for ${name}.`);
       s.endstop = 'virtual';
       sensorlessSlots.add(s.slot);
@@ -654,7 +664,7 @@ export function plan(build: Build, db: Db): Plan {
       }
     }
   }
-  if (!fans.some((f) => f.role === 'hotend')) err('no_hotend_fan', 'No hotend fan configured. A heater_fan for the hotend is required to avoid heat creep.');
+  if (!fans.some((f) => f.role === 'hotend') && printer.hotend_fan !== 'always_on') err('no_hotend_fan', 'No hotend fan configured. A heater_fan for the hotend is required to avoid heat creep.');
 
   // --- probe ---------------------------------------------------------------
   let probe: Plan['probe'];
@@ -755,7 +765,9 @@ export function plan(build: Build, db: Db): Plan {
 
   // --- autotune and tuning baselines --------------------------------------
   if (build.autotune) {
+    if (steppers.every((s) => s.driver.standalone)) warn('autotune_standalone', 'klipper_tmc_autotune needs TMC drivers on UART/SPI; every driver here is standalone, so it is skipped.');
     for (const s of steppers) {
+      if (s.driver.standalone) continue;
       const at = db.drivers.chips[s.driver.chip].autotune;
       if (at !== 'supported') warn('autotune_untested', `klipper_tmc_autotune support for ${s.driver.chip} (${s.name}) is "${at}".`);
     }
@@ -899,7 +911,7 @@ export function plan(build: Build, db: Db): Plan {
     fans, probe, bltouch, accel, leds, paBaseline, nevermore, homingCurrent, issues,
     links: finishLinks(),
     mcus: [
-      { name: 'mcu', chip: mcu.chip, what: board.name, klipperCheck: true },
+      { name: 'mcu', chip: mcu.build_as ?? mcu.chip, what: board.name, klipperCheck: true },
       ...(tools
         ? tools.map((t) => ({ name: t.mcu, chip: t.toolboard.mcu.chip, what: `T${t.n}: ${t.toolboard.name}`, klipperCheck: true }))
         : toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, what: toolboard.name, klipperCheck: true }] : []),

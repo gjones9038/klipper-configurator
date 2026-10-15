@@ -6,8 +6,10 @@ const hdr = (lines: string[]) => lines.map((l) => `# ${l}`).join('\n');
 const block = (s: string) => s.replace(/^\n/, '').replace(/\n\s*$/, '');
 
 function levelCmd(p: Plan): string {
+  if (!p.printer.z_leveling) return '';
   return p.printer.z_leveling === 'quad_gantry_level' ? 'QUAD_GANTRY_LEVEL' : 'Z_TILT_ADJUST';
 }
+const hasProbe = (p: Plan) => !!(p.probe || p.bltouch);
 
 export function printMacros(p: Plan, header: string[]): string {
   const [bx, by] = p.size.bed_mm;
@@ -48,7 +50,7 @@ export function printMacros(p: Plan, header: string[]): string {
 
 ${block(`
 [gcode_macro PRINT_START]
-description: Home, heat and soak, level, adaptive mesh, heat nozzle, purge. Params: BED EXTRUDER [CHAMBER] [CHAMBER_MINIMAL] [SOAK]${tc ? ' [TOOL]' : ''}
+description: Home, heat and soak, ${levelCmd(p) ? 'level, ' : ''}${hasProbe(p) ? 'adaptive mesh, ' : ''}heat nozzle, purge. Params: BED EXTRUDER [CHAMBER] [CHAMBER_MINIMAL] [SOAK]${tc ? ' [TOOL]' : ''}
 gcode:
     {% set BED = params.BED|default(100)|int %}${tc ? '\n    {% set TOOL = params.TOOL|default(0)|int %}' : ''}
     {% set EXTRUDER = params.EXTRUDER|default(240)|int %}
@@ -57,8 +59,7 @@ gcode:
     {% set CHAMBER = CHAMBER_MIN if CHAMBER_MIN > 0 else CHAMBER_SET %}
     {% set HOT = BED >= ${threshold} %}
     {% set SOAK = params.SOAK|default(10 if HOT else 5)|int %}
-    SET_DISPLAY_TEXT MSG="Homing"
-    BED_MESH_CLEAR
+    SET_DISPLAY_TEXT MSG="Homing"${hasProbe(p) ? '\n    BED_MESH_CLEAR' : ''}
     G28
     G90${tc ? '\n    SET_DISPLAY_TEXT MSG="T0 levels and meshes (reference tool)"\n    T0' : ''}
 ${nevermoreOn}
@@ -73,11 +74,11 @@ ${chamberWait}
     {% endif %}
     SET_DISPLAY_TEXT MSG="Hotend: 150C"
     M109 S150
-    SET_DISPLAY_TEXT MSG="Leveling"
+${levelCmd(p) ? `    SET_DISPLAY_TEXT MSG="Leveling"
     ${levelCmd(p)}
     G28 Z
-    SET_DISPLAY_TEXT MSG="Bed mesh"
-    BED_MESH_CALIBRATE ADAPTIVE=1${scan}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
+` : ''}${hasProbe(p) ? `    SET_DISPLAY_TEXT MSG="Bed mesh"
+    BED_MESH_CALIBRATE ADAPTIVE=1${scan}` : ''}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
     SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
     G0 X${bx / 2} Y20 Z10 F6000
     M109 S{EXTRUDER}
@@ -114,8 +115,7 @@ gcode:
     G0 Z{z} F3000
     G0 X${bx / 2} Y${by - 10} F6000
     TURN_OFF_HEATERS
-    M107
-    BED_MESH_CLEAR${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}${beeps ? '\n    _BEEP_DONE' : ''}
+    M107${hasProbe(p) ? '\n    BED_MESH_CLEAR' : ''}${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}${beeps ? '\n    _BEEP_DONE' : ''}
 `)}
 ${beeps ? `
 ${block(`
@@ -171,7 +171,7 @@ gcode:
     {% endif %}
 `)}
 
-${block(`
+${lvl ? `${block(`
 [gcode_macro G32]
 description: Home, ${lvl === 'QUAD_GANTRY_LEVEL' ? 'level the gantry' : 'level the bed'}, home Z again and park in the middle (Voron standard).
 gcode:
@@ -193,15 +193,15 @@ gcode:
     {% endif %}
 `)}
 
-${block(`
+` : ''}${hasProbe(p) ? `${block(`
 [gcode_macro LEVEL_BED]
-description: Full leveling for a fresh start: level if needed, then a full bed mesh saved as "default".
+description: Full leveling for a fresh start: ${lvl ? 'level if needed, then ' : 'home, then '}a full bed mesh saved as "default".
 gcode:
-    LEVEL_IF_NEEDED
+    ${lvl ? 'LEVEL_IF_NEEDED' : '_HOME_IF_NEEDED'}
     BED_MESH_CALIBRATE${scan}
     BED_MESH_PROFILE SAVE=default
 `)}
-`;
+` : ''}`;
 }
 
 export function preflightMacros(p: Plan, header: string[]): string {
@@ -287,9 +287,7 @@ ${block(`
 [gcode_macro TUNE_SHAPER]
 description: Measure resonances with the toolhead accelerometer and pick input shapers.
 gcode:
-    G28
-    ${levelCmd(p)}
-    G28 Z
+    G28${levelCmd(p) ? `\n    ${levelCmd(p)}\n    G28 Z` : ''}
     SHAPER_CALIBRATE
     RESPOND MSG="Input shaper measured. Run SAVE_CONFIG to keep it."
 `)}

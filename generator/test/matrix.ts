@@ -98,6 +98,7 @@ export function matrix(db: Db): Case[] {
   cases.push(...eddyCoilCases(db, cases.length));
   cases.push(...everyToolboardCases(db, cases.length));
   cases.push(...extensionCases(db, cases.length));
+  cases.push(...stockPrinterCases(db, cases.length));
   return cases;
 }
 
@@ -221,6 +222,36 @@ function extensionCases(db: Db, start: number): Case[] {
         };
         out.push({ name: `${String(start + out.length).padStart(3, '0')}-${ext.id}-${printer}-${variant}${withToolboard ? '-toolboard' : ''}`, build });
       });
+    }
+  }
+  return out;
+}
+
+// Printers that ship with a fixed board (stock.mainboards): each stock board and MCU
+// variant, with the stock Z endstop and with a BLTouch-type probe homing Z.
+function stockPrinterCases(db: Db, start: number): Case[] {
+  const out: Case[] = [];
+  for (const printer of Object.values(db.printers).filter((p) => p.stock?.mainboards?.length).sort((a, b) => a.id.localeCompare(b.id))) {
+    for (const boardId of printer.stock.mainboards) {
+      const board = db.mainboards[boardId];
+      for (const mcu of board.mcu_variants) {
+        for (const probe of [undefined, ...printer.stock.probe_options]) {
+          const st = printer.stock;
+          const build: Build = {
+            printer: printer.id, size: printer.sizes[0].id, variant: 'standard',
+            mainboard: { id: boardId, mcu: mcu.chip, connection: board.interfaces[0] },
+            drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
+            motors: { xy: '', z: '' },
+            homing: probe ? { xy: 'physical', z: 'probe_virtual_endstop' } : { xy: 'physical', z: 'physical_min' },
+            ...(probe ? { probe, ...(st.probe_offsets?.[probe] ? { probeOffset: st.probe_offsets[probe] } : {}) } : {}),
+            extruder: st.extruder, hotend: st.hotend,
+            thermistors: { hotend: st.thermistors.hotend, bed: st.thermistors.bed },
+            fans: (st.fans ?? ['part_cooling']).map((role: string) => ({ role })),
+            autotune: false, webUi: out.length % 2 ? 'fluidd' : 'mainsail',
+          };
+          out.push({ name: `${String(start + out.length).padStart(3, '0')}-${printer.id}-${boardId}-${mcu.chip}${probe ? `-${probe}` : ''}`, build });
+        }
+      }
     }
   }
   return out;

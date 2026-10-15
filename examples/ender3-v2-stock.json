@@ -1,0 +1,15 @@
+{
+  "printer": "creality-ender3-v2",
+  "size": "stock",
+  "variant": "standard",
+  "mainboard": { "id": "creality-v4.2.2", "connection": "usb-serial" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "", "z": "" },
+  "homing": { "xy": "physical", "z": "physical_min" },
+  "extruder": "creality-mk8-bowden",
+  "hotend": "creality-mk8",
+  "thermistors": { "hotend": "epcos-b57560", "bed": "epcos-b57560" },
+  "fans": [{ "role": "part_cooling" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}

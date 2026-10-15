@@ -64,6 +64,9 @@ def board_pin_conflicts(b):
     for item in b.get("neopixel_ports", []):
         use(item["pin"], f"neopixel.{item['id']}")
     for pin, what in uses.items():
+        # One enable line shared by several drivers is normal (Creality boards: PC3).
+        if len(what) > 1 and all(w.endswith(".enable_pin") for w in what):
+            continue
         if len(what) > 1:
             errors.append(f"{b['id']}: pin {pin} used by {sorted(what)}")
 
@@ -102,18 +105,30 @@ def main():
         if h.get("common_thermistor") is not None and h.get("common_thermistor") not in therm_ids:
             errors.append(f"hotend {h['id']}: unknown thermistor {h.get('common_thermistor')}")
     for p in printers:
-        if p["stock"]["toolhead"] not in th_ids:
+        if p["stock"].get("toolhead") is not None and p["stock"]["toolhead"] not in th_ids:
             errors.append(f"printer {p['id']}: unknown toolhead")
         if p["stock"]["extruder"] not in ext_ids:
             errors.append(f"printer {p['id']}: unknown extruder")
         for pr in p["stock"]["probe_options"]:
             if pr not in probe_ids:
                 errors.append(f"printer {p['id']}: unknown probe {pr}")
+        board_ids = {b["id"] for b in boards}
+        for mb in p["stock"].get("mainboards", []):
+            if mb not in board_ids:
+                errors.append(f"printer {p['id']}: unknown stock mainboard {mb}")
+        hotend_ids = {h["id"] for h in hotends}
+        if p["stock"].get("hotend") and p["stock"]["hotend"] not in hotend_ids:
+            errors.append(f"printer {p['id']}: unknown hotend {p['stock']['hotend']}")
+        for t in (p["stock"].get("thermistors") or {}).values():
+            if t not in therm_ids:
+                errors.append(f"printer {p['id']}: unknown thermistor {t}")
 
     for b in boards:
         board_pin_conflicts(b)
         for s in b["driver_slots"]:
             od = s.get("onboard_driver")
+            if od and od.get("standalone") and od.get("chip") is None:
+                continue
             if od and od["chip"] not in drivers["chips"]:
                 errors.append(f"{b['id']}.{s['id']}: unknown driver chip {od['chip']}")
         for d in b.get("discrepancies", []):

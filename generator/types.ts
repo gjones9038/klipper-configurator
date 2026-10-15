@@ -1,8 +1,8 @@
 // Build spec: everything the user chooses in the wizard. Ids refer to records
 // in data/. Optional fields fall back to printer/toolhead defaults.
 
-export type Interface = 'uart' | 'spi';
-export type Connection = 'usb' | 'can' | 'usb-can-bridge';
+export type Interface = 'uart' | 'spi' | 'standalone';
+export type Connection = 'usb' | 'can' | 'usb-can-bridge' | 'usb-serial';   // usb-serial: USB through an on-board CH340-type chip
 
 export interface DriverChoice {
   module: string;            // drivers.yaml modules[].id, e.g. "btt-tmc2209"

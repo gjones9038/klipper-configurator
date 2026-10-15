@@ -108,6 +108,23 @@ def stage(outdir, work, ui_configs):
     return dst
 
 
+# Leveling macros exist only when the printer levels (QGL / Z-tilt) or has a probe.
+OPTIONAL_MACROS = {"G32", "LEVEL_BED", "LEVEL_IF_NEEDED"}
+
+
+def defined_macros(cfg):
+    names = set()
+    for root, _, files in os.walk(cfg):
+        for n in files:
+            if n.endswith(".cfg"):
+                names.update(m.upper() for m in re.findall(r"^\[gcode_macro (\S+)\]", open(os.path.join(root, n)).read(), re.M))
+    return names
+
+
+def script(text, macros):
+    return "".join(l + "\n" for l in text.strip().splitlines() if l.split()[0] not in OPTIONAL_MACROS or l.split()[0] in macros)
+
+
 def check(outdir, klipper, dicts, site, work, ui_configs):
     mcus = mcus_for(outdir)
     if not all(m["klipperCheck"] for m in mcus):
@@ -128,7 +145,7 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
         elif tc:
             f.write(GCODE_TOOLCHANGER + (GCODE_TOOLCHANGES if docked else "PRINT_END\n"))
         else:
-            f.write(GCODE_EDDY if eddy else GCODE)
+            f.write(GCODE_EDDY if eddy else script(GCODE, defined_macros(cfg)))
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
             "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]
