@@ -193,7 +193,12 @@ export function plan(build: Build, db: Db): Plan {
   function checkProbeSupply(p: Rec, port: Rec | undefined, kind: BoardKind, b: Rec | undefined) {
     const pv: number[] | undefined = port?.supply_v;
     const need: number[] | undefined = p.supply_v;
-    if (!pv || !need || !port) return;
+    if (!pv || !port) return;
+    if (!pv.length) {
+      warn('probe_power_elsewhere', `${port.id} on ${b?.name ?? `the ${kind}`} has no supply pin (signal and GND only): power ${p.name} from another connector${need ? ` at ${Math.min(...need)}-${Math.max(...need)} V` : ''}.`);
+      return;
+    }
+    if (!need) return;
     const [lo, hi] = [Math.min(...need), Math.max(...need)];
     if (!pv.some((v) => v >= lo && v <= hi)) {
       err('probe_supply', `${p.name} needs ${lo}-${hi} V, but ${port.id} on ${b?.name ?? `the ${kind}`} supplies ${pv.join(' or ')} V.`);

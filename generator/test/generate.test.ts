@@ -208,14 +208,26 @@ test('printer.cfg carries every bed mesh / leveling setting and the leveling mac
 });
 
 test('inductive probe cannot be powered from a 5 V toolboard port', () => {
+  // Every mainboard in the data has a probe port, so remove it to force the toolboard fallback.
+  const db2 = structuredClone(db);
+  delete db2.mainboards['ldo-leviathan-v1.2'].probe_ports;
   const b = example();
-  b.printer = 'voron-trident'; b.size = '300';                        // 5 drivers: fits the SKR 3
-  b.homing.zSwitchXY = [200, 300];
-  b.mainboard = { id: 'btt-skr-3', connection: 'usb-can-bridge' };   // no mainboard probe port in the data
   b.toolboard = { id: 'btt-ebb36-can-v1.2', connection: 'can' };
-  b.drivers = { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } };
-  const r = generate(b, db, 'test');
+  const r = generate(b, db2, 'test');
   const e = r.issues.find((i) => i.code === 'probe_supply');
   assert.ok(e, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
   assert.match(e.message, /needs \d+-\d+ V.*ENDSTOP.*5 V/);
+});
+
+test('SKR 3: inductive probe on PC13, powered from elsewhere (2-pin Probe connector)', () => {
+  const b = example();
+  b.printer = 'voron-trident'; b.size = '300';                        // 5 drivers: fits the SKR 3
+  b.homing.zSwitchXY = [200, 300];
+  b.mainboard = { id: 'btt-skr-3', connection: 'usb' };
+  b.canAdapter = 'u2c';
+  b.drivers = { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } };
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  assert.match(r.files['mainboard.cfg'], /^\[probe\][^\n]*\npin: [~^!]*PC13$/m);
+  assert.ok(r.issues.some((i) => i.code === 'probe_power_elsewhere' && /PROBE on BIGTREETECH SKR 3/.test(i.message)));
 });
