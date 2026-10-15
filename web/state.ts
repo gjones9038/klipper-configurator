@@ -126,8 +126,24 @@ export function normalize(input: Build, db: Db): Build {
   if (b.toolboard) delete b.drivers.extruder;
   if (!b.toolboard || !db.toolheads[b.toolhead ?? '']?.leds) b.leds = false;
 
-  // Fans: a fan pinned to the toolhead board falls back to auto when there is none.
+  // Fans: a fan pinned to the toolhead board falls back to auto when there is none,
+  // and a chosen port is dropped when the board it would be on does not have it.
   for (const f of b.fans) if (f.board === 'toolboard' && !b.toolboard) { delete f.board; delete f.port; }
+  for (const f of b.fans) {
+    if (!f.port) continue;
+    const kind = f.board ?? (db.fanRoles[f.role]?.prefer_board === 'toolboard' && b.toolboard ? 'toolboard' : 'mainboard');
+    const ports: Rec[] = kind === 'toolboard' ? db.toolboards[b.toolboard!.id]?.fans ?? [] : board.fans ?? [];
+    if (!ports.some((p) => p.id === f.port)) delete f.port;
+  }
+  if (b.nevermore?.port && !(board.fans ?? []).some((p: Rec) => p.id === b.nevermore!.port)) delete b.nevermore.port;
+  // Slot overrides: keep only steppers this build has and slots this board has.
+  if (b.slotOverrides) {
+    const variant = printer.variants.find((v: Rec) => v.id === (b.variant ?? 'standard'));
+    const steppers = new Set([...printer.steppers, ...(variant?.extra_steppers ?? [])].map((d: Rec) => d.klipper).concat(b.toolboard ? [] : ['extruder']));
+    const slots = new Set((board.driver_slots ?? []).map((d: Rec) => d.id));
+    for (const [st, sl] of Object.entries(b.slotOverrides)) if (!steppers.has(st) || !slots.has(sl)) delete b.slotOverrides[st];
+    if (!Object.keys(b.slotOverrides).length) delete b.slotOverrides;
+  }
   return b;
 }
 

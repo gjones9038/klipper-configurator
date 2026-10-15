@@ -273,3 +273,17 @@ test('hotend max_temp: sourced rating, thermistor cap, bare hotends, unknown rat
   assert.equal(ace.t, 300);
   assert.ok(ace.codes.includes('hotend_max_temp_unknown'));
 });
+
+test('slot overrides and pinned fan ports are honoured', () => {
+  const b = example();
+  b.slotOverrides = { stepper_z: 'HV-STEPPER-0', stepper_x: 'STEPPER-0' };
+  b.fans = b.fans.map((f) => (f.role === 'controller' ? { ...f, port: 'FAN2' } : f));
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  assert.match(r.files['mainboard.cfg'], /^\[stepper_z\]\s+# HV-STEPPER-0/m);
+  assert.match(r.files['mainboard.cfg'], /^\[stepper_x\]\s+# STEPPER-0/m);
+  assert.match(r.files['mainboard.cfg'], /^\[controller_fan controller_fan\]\s+# mainboard FAN2\npin: PF7$/m);
+  const dup = example();
+  dup.slotOverrides = { stepper_z: 'STEPPER-1', stepper_z1: 'STEPPER-1' };
+  assert.ok(generate(dup, db, 'test').issues.some((i) => i.code === 'slot_taken'));
+});

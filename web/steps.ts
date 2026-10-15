@@ -230,17 +230,42 @@ const motorsStep: Step = {
             if (!Object.keys(b.runCurrent).length) delete b.runCurrent;
           }), { min: 0.1, max: 3, step: 0.05, placeholder: s ? String(s.runCurrent) : '', hint: s?.currentNote }));
       }))),
-      plan ? h('div', { class: 'section' }, h('h2', null, 'Slot assignment'),
+      plan ? h('div', { class: 'section' },
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap' },
+          h('h2', null, 'Slot assignment'),
+          build.slotOverrides ? h('button', { type: 'button', class: 'btn', onClick: () => update((b) => { delete b.slotOverrides; }) }, 'Reset to automatic') : null),
+        h('p', { class: 'hint', style: 'margin:0' }, 'Automatic puts A/B on high-voltage slots when the board has them, then fills slots in order. Pick a slot to match your wiring; choosing one that is taken swaps the two motors.'),
         h('div', { class: 'table-wrap' }, h('table', null,
           h('thead', null, h('tr', null, ['Stepper', 'Position', 'Board · slot', 'Driver', 'Current'].map((c) => h('th', { scope: 'col' }, c)))),
           h('tbody', null, plan.steppers.map((s) => h('tr', null,
             h('td', { class: 'mono' }, s.name), h('td', null, s.position ?? ''),
-            h('td', { class: 'mono' }, `${s.board === 'toolboard' ? 'toolhead' : 'main'} · ${s.slot}`),
+            h('td', { class: 'mono' }, s.board === 'toolboard' ? `toolhead · ${s.slot}` : slotPicker(board, plan, s.name, s.slot, update)),
             h('td', { class: 'mono' }, `${s.driver.chip.toUpperCase()} ${s.driver.iface.toUpperCase()}${s.driver.hv ? ' · HV' : ''}`),
             h('td', { class: 'mono' }, `${s.runCurrent} A`))))))) : null,
     ];
   },
 };
+
+function slotPicker(board: Rec, plan: Plan, stepper: string, current: string, update: Ctx['update']): HTMLElement {
+  const holder = (slot: string) => plan.steppers.find((x) => x.board === 'mainboard' && x.slot === slot)?.name;
+  return h('select', {
+    'aria-label': `Driver slot for ${stepper}`, style: 'min-height:36px;padding:4px 8px;font-family:var(--mono);font-size:13px;width:auto',
+    onChange: (e: Event) => {
+      const slot = (e.target as HTMLSelectElement).value;
+      const other = holder(slot);
+      update((b) => {
+        const o = { ...b.slotOverrides, [stepper]: slot };
+        if (other && other !== stepper) o[other] = current;     // swap
+        b.slotOverrides = o;
+      });
+    },
+  }, (board.driver_slots as Rec[]).map((d) => {
+    const other = holder(d.id);
+    const od = d.onboard_driver;
+    return h('option', { value: d.id, selected: d.id === current },
+      `${d.id}${od ? ` · ${od.chip}${od.motor_power ? ' HV' : ''}` : ''}${other && other !== stepper ? ` (${other})` : ''}`);
+  }));
+}
 
 // --- 5. Homing and probe -----------------------------------------------------------
 const PROBE_KINDS: Record<string, string> = {
@@ -381,12 +406,23 @@ const FAN_LABELS: Record<string, string> = {
 };
 const fansStep: Step = {
   id: 'fans', name: 'Fans & filter', title: 'Fans and filter', preview: 'mainboard.cfg',
-  lead: 'Ports are picked automatically: toolhead fans go to the toolhead board when there is one.',
+  lead: 'Ports are picked automatically (toolhead fans go to the toolhead board when there is one); pick one yourself to match your wiring.',
   codes: ['no_fan_port', 'fan_port_', 'no_hotend_fan', 'toolchanger_fan_board', 'no_toolboard', 'two_part_fans', 'unknown_fan_role', 'nevermore_twice', 'no_tach', 'filter_', 'unknown_filter'],
   render({ db, build, plan, update }) {
     const nm = build.nevermore;
     const model = nm ? db.filters[nm.model] : undefined;
     const portOf = (role: string) => plan?.fans.filter((f) => f.role === role).map((f) => `${f.port} on the ${f.board === 'toolboard' ? 'toolhead board' : 'mainboard'}`).join(', ');
+    const boardFans = (kind: 'mainboard' | 'toolboard'): Rec[] =>
+      kind === 'toolboard' ? db.toolboards[build.toolboard?.id ?? '']?.fans ?? [] : db.mainboards[build.mainboard.id].fans ?? [];
+    // Which board a fan lands on when left on Auto (plan.ts: prefer_board, if that board exists).
+    const kindOf = (role: string, f: { board?: string }) => (f.board as 'mainboard' | 'toolboard' | undefined)
+      ?? (db.fanRoles[role]?.prefer_board === 'toolboard' && build.toolboard ? 'toolboard' : 'mainboard');
+    const usedBy = (kind: string, port: string, self: string) => plan?.fans.find((x) => x.board === kind && x.port === port && x.role !== self)?.role;
+    const portSelect = (label: string, kind: 'mainboard' | 'toolboard', value: string | undefined, self: string, set: (v: string | undefined) => void) =>
+      select(label, value ?? '', [{ value: '', label: 'Automatic (first free port)' }, ...boardFans(kind).map((p) => {
+        const other = usedBy(kind, p.id, self);
+        return { value: p.id, label: `${p.id} · ${p.pin}${p.voltage_options ? ` · ${p.voltage_options.join('/')} V` : ''}${other ? ` (now: ${FAN_LABELS[other] ?? other})` : ''}` };
+      })], (v) => set(v || undefined));
     return [
       h('div', { class: 'grid' }, Object.entries(db.fanRoles).filter(([r]) => r !== 'nevermore').map(([role, def]: [string, any]) => {
         const f = build.fans.find((x) => x.role === role);
@@ -395,7 +431,9 @@ const fansStep: Step = {
             [h('span', { class: 'mono' }, `[${def.klipper_section}]`), f && portOf(role) ? ` → ${portOf(role)}` : '', def.safety ? h('span', { style: 'display:block' }, def.safety) : null]),
           f && build.toolboard ? segmented('Board', f.board ?? 'auto', [
             { value: 'auto', label: 'Auto' }, { value: 'mainboard', label: 'Mainboard' }, { value: 'toolboard', label: 'Toolhead' }],
-          (v) => update((b) => { const x = b.fans.find((y) => y.role === role)!; delete x.port; if (v === 'auto') delete x.board; else x.board = v as 'mainboard' | 'toolboard'; })) : null);
+          (v) => update((b) => { const x = b.fans.find((y) => y.role === role)!; delete x.port; if (v === 'auto') delete x.board; else x.board = v as 'mainboard' | 'toolboard'; })) : null,
+          f ? portSelect(`${FAN_LABELS[role] ?? role} port`, kindOf(role, f), f.port, role,
+            (v) => update((b) => { const x = b.fans.find((y) => y.role === role)!; if (v) x.port = v; else delete x.port; })) : null);
       })),
       h('div', { class: 'section' }, h('h2', null, 'Nevermore filter'),
         h('div', { class: 'grid' },
@@ -404,6 +442,8 @@ const fansStep: Step = {
             model ? `${model.fans.count} × ${model.fans.size}; ${model.fans.wiring}.` : undefined),
           model ? segmented('Fan voltage', String(nm!.voltage ?? model.voltage_options[0]), model.voltage_options.map((v: number) => ({ value: String(v), label: `${v} V` })),
             (v) => update((b) => { b.nevermore!.voltage = Number(v) as 12 | 24; })) : null,
+          model ? portSelect('Nevermore port (mainboard)', 'mainboard', nm!.port, 'nevermore',
+            (v) => update((b) => { if (v) b.nevermore!.port = v; else delete b.nevermore!.port; })) : null,
           model ? segmented('Runs', nm!.mode ?? db.filterDefaults.mode, [{ value: 'hot_bed', label: `Bed ≥ ${db.filterDefaults.hot_bed_threshold_c} °C` }, { value: 'always', label: 'Every print' }],
             (v) => update((b) => { b.nevermore!.mode = v as 'always' | 'hot_bed'; })) : null),
         model ? h('div', { class: 'grid' },
