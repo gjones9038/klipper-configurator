@@ -1,8 +1,8 @@
 # klipper-configurator
 
 A tool that turns "my printer, board, toolhead, motors, hotend…" into a complete Klipper
-config plus wiring diagrams. This repo holds the **component data** and the **generator**;
-the web UI comes next.
+config plus wiring diagrams. This repo holds the **component data**, the **generator** and a
+**web app** that runs the generator in the browser.
 
 ## Generator
 
@@ -40,6 +40,26 @@ Output:
 How it decides: `generator/plan.ts` resolves the build (slot assignment, drivers, currents,
 ports, homing, probe) and collects errors/warnings; `emit.ts`, `macros.ts` and `wiring.ts` only
 format the plan.
+
+## Web app
+
+```sh
+npm run web:dev       # build into dist/web, rebuild on change, serve on http://localhost:8080
+npm run web:build     # one-off static build into dist/web (serve it from any static host)
+npm run typecheck     # tsc over generator/, web/ and tools/
+```
+
+A static, client-side app: `tools/build_web.ts` bundles `web/main.ts` with esbuild and writes
+`db.json` (the raw data files plus the data revision). The browser runs the same `plan()` /
+`generate()` as the CLI on every change, so the zip it downloads matches
+`npm run generate` for the same `build.json` byte for byte. Nothing leaves the browser; the build is
+remembered in localStorage and can be saved or opened as `build.json`.
+
+Steps: printer, mainboard, toolhead board, motors and drivers, homing and probe, hotend,
+fans and filter, software, export. The side panel shows errors (which block output), warnings,
+a live preview of the relevant file and the driver slot assignment. The export step lists every
+file, the wiring table, jumpers, MCUs and documentation links (opened in a new tab), and offers
+the config as a .zip.
 
 ### Checking output with real Klipper
 
@@ -79,7 +99,10 @@ tools/
   validate.py              pin-conflict + reference checks; --matrix prints compatibility
   klipper_check.py         run generated configs through Klipper (batch mode)
   setup_klipper_check.sh   one-time setup for klipper_check.py
+  build_web.ts             bundle the web app into dist/web
 generator/                 TypeScript, run directly by Node >= 23.6 (no build step)
+                           generate.ts / dbcore.ts have no Node imports and also run in the browser
+web/                       the web app (vanilla TypeScript, no framework)
 examples/                  sample build files
 ```
 
