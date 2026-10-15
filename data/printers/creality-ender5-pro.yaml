@@ -1,0 +1,87 @@
+schema: printer/1
+id: creality-ender5-pro
+name: Creality Ender 5 Pro (32-bit board)
+manufacturer: Creality
+status: reviewed
+docs:
+  - {title: "Klipper: Ender 5 Pro (4.2.2) reference config", url: "https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-ender5pro-2020.cfg"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: cartesian
+z_leveling: null                 # one Z leadscrew moving the bed; level it with its screws
+bed_heater: dc                   # 24 V bed driven by the board's HOTBED MOSFET
+hotend_fan: always_on            # wired to 24 V, not to a board fan output
+display: not_generated           # the 12864 LCD works in Klipper ([display] st7920); not generated yet
+
+sizes:
+  - id: stock
+    bed_mm: [220, 220]
+    position_max: {x: 220, y: 220, z: 300}
+
+steppers:
+  - {klipper: stepper_x, role: X, rotation_distance: 40}
+  - {klipper: stepper_y, role: Y, rotation_distance: 40}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 4}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 300
+    max_accel: 3000
+    max_z_velocity: 5
+    max_z_accel: 100
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 50
+    homing_retract_dist: 5
+    homing_positive_dir: true     # X/Y endstops at max (Klipper: position_endstop 220)
+    position_min: 0
+    endstop_at_max: true
+    run_current: 0.58
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: 0
+    homing_speed: 5               # Klipper defaults (the reference config sets none)
+    second_homing_speed: 2.5
+    homing_retract_dist: 5
+    run_current: 0.58
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.5
+  bed:
+    max_power: 1.0
+    max_temp: 135
+    pid: {pid_kp: 66.429, pid_ki: 1.197, pid_kd: 921.707}
+  safe_z_home:
+    home_xy_position: user
+    speed: 150
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [creality-v4.2.2]
+  toolhead: null
+  extruder: creality-ender5pro-bowden
+  hotend: creality-ender5pro
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [bltouch]
+  fans: [part_cooling]
+
+notes:
+  - "Covers the Ender 5 Pro with the 32-bit Creality v4.2.2 board (Klipper's reference). The 2019 Ender 5 with the 8-bit Melzi (ATmega1284P) board is not covered."
+  - "Older Ender 5 units used an 8 mm-lead Z screw (Klipper ender5-2019: rotation_distance 8, \"use 4 for Ender5 versions after late 2019\"); this uses 4."
+  - "A BLTouch / CR-Touch is an add-on; its offset depends on the mount, so measure it."
+  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+unverified:
+  - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: config/printer-creality-ender5pro-2020.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

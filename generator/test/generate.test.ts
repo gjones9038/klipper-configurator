@@ -441,3 +441,14 @@ test('Orbitool O2: heater capped at 99.5% for its short-circuit recovery; wrong 
   assert.match(r.files['toolhead.cfg'], /\[extruder\][^[]*heater_pin: toolhead:PA0[^[]*max_power: 0\.995/);
   assert.ok(r.issues.some((i) => i.code === 'toolboard_extruder' && /Orbiter 2\.0/.test(i.message)));
 });
+
+test('Ender 5 Pro: X/Y home at max, 4 mm Z lead, metal Bowden extruder (Klipper ender5pro-2020)', () => {
+  const b = { ...ender(), printer: 'creality-ender5-pro', extruder: 'creality-ender5pro-bowden', hotend: 'creality-ender5pro' };
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  assert.match(mb, /\[stepper_x\][^[]*position_endstop: 220\nposition_max: 220[^[]*homing_positive_dir: True/);
+  assert.match(mb, /\[stepper_z\][^[]*dir_pin: PB5[^[]*rotation_distance: 4\n/);
+  assert.match(mb, /\[extruder\][^[]*rotation_distance: 32\.342[^[]*max_temp: 260/);
+  assert.match(mb, /\[heater_bed\][^[]*max_temp: 135/);
+});
