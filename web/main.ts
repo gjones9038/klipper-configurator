@@ -160,7 +160,7 @@ function render() {
   if (step === EXPORT) {
     page.push(h('div', { class: 'layout' }, h('main', { class: 'main' },
       h('div', null, h('div', { class: 'eyebrow' }, `Step ${EXPORT + 1} / ${EXPORT + 1} · Export`), h('h1', null, buildTitle(build, db)), h('p', { class: 'lead' }, buildSummary(build, db))),
-      result.ok ? [statusBox(), renderExport({ db, build, result, file: exportFile, pickFile: (f) => { exportFile = f; render(); } })]
+      result.ok ? [statusBox(), renderExport({ db, build, result, file: exportFile, pickFile: (f) => { exportFile = f; render(); }, rerender: render })]
         : [statusBox(), issueList(result.issues.filter((i) => i.level === 'error'))],
       h('div', { class: 'foot-nav' }, h('button', { type: 'button', class: 'btn', onClick: () => goto(EXPORT - 1) }, `← ${STEPS[EXPORT - 1].name}`)))));
   } else {

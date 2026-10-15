@@ -161,6 +161,8 @@ pre.code { margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 
 .viewer pre.code { border: 0; border-radius: 0; max-height: 75vh; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cards .upload { grid-column: 1 / -1; }
+.upload .grid { max-width: 760px; }
 .jumper { background: var(--surface); border: 1px solid var(--warn-line); border-radius: 3px; padding: 10px 12px; font-size: 14px; }
 .wire-num { display: inline-flex; width: 24px; height: 22px; border-radius: 3px; background: var(--red); color: #fff; font-weight: 700; font-size: 12px; align-items: center; justify-content: center; }
 .links { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }

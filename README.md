@@ -82,6 +82,17 @@ a live preview of the relevant file and the driver slot assignment. The export s
 file, the wiring table, jumpers, MCUs and documentation links (opened in a new tab), and offers
 the config as a .zip.
 
+**Upload to the printer.** The export step can send the config straight to Moonraker
+(`web/moonraker.ts`, endpoints from Moonraker's `docs/external_api`): it checks the printer
+(`/server/info`, `/server/files/list`, print state), shows what will be replaced, zips those files
+into `config/klipper-configurator-backup-<time>.zip` (`/server/files/zip`), then uploads each file
+(`/server/files/upload`, SHA-256 checksum where the browser allows) and offers a firmware restart.
+Guides and JSON go to `config/klipper-configurator/`. The SAVE_CONFIG block of the existing
+`printer.cfg` is carried over (`generator/saveconfig.ts`): saved sections for hardware the new
+config lacks are dropped and listed, because Klipper refuses to start with them. Uploads are
+blocked while printing. The browser talks to Moonraker directly, so the page's origin must be in
+`cors_domains` under `[authorization]` in moonraker.conf; an API key is optional (`X-Api-Key`).
+
 ### Checking output with real Klipper
 
 `tools/klipper_check.py` runs Klipper itself in batch mode against generated configs

@@ -4,6 +4,7 @@ import type { Build, Db, Result } from '../generator/types.ts';
 import { h, extLink, download, type Child } from './dom.ts';
 import { cfgLines, markdown } from './text.ts';
 import { zip } from './zip.ts';
+import { renderUpload } from './upload.ts';
 
 export function buildTitle(b: Build, db: Db): string {
   const p = db.printers[b.printer];
@@ -44,7 +45,7 @@ export function fileView(name: string, text: string): Child {
   return h('pre', { class: 'code' }, name.endsWith('.cfg') ? cfgLines(text) : text);
 }
 
-export function renderExport(opts: { db: Db; build: Build; result: Result; file: string; pickFile(f: string): void }): Child {
+export function renderExport(opts: { db: Db; build: Build; result: Result; file: string; pickFile(f: string): void; rerender(): void }): Child {
   const { db, build, result } = opts;
   const names = fileOrder(Object.keys(result.files));
   const file = names.includes(opts.file) ? opts.file : 'printer.cfg';
@@ -71,6 +72,7 @@ export function renderExport(opts: { db: Db; build: Build; result: Result; file:
         h('button', { type: 'button', class: 'btn', onClick: () => download('build.json', new Blob([JSON.stringify(build, null, 2) + '\n'], { type: 'application/json' })) }, 'Save build.json'),
         h('p', { class: 'hint', style: 'margin:0' }, `${names.length} files plus wiring.json and build.json. ${warnings ? `Read WARNINGS.md (${warnings}) before powering on. ` : ''}`,
           'To run Klipper\'s own batch-mode check on this exact build: ', h('code', { class: 'mono' }, 'npm run generate -- build.json out/mine && npm run klipper-check -- out/mine'))),
+      renderUpload(result, build, opts.rerender),
       h('section', { class: 'card' }, h('h2', null, 'Microcontrollers'),
         h('ul', { class: 'links' }, result.mcus.map((m) => h('li', null, h('b', null, m.what), ' · ', h('span', { class: 'mono' }, `[${m.name === 'mcu' ? 'mcu' : `mcu ${m.name}`}] ${m.chip.toUpperCase()}`)))),
         h('p', { class: 'hint', style: 'margin:0' }, 'make menuconfig settings for each are in FIRMWARE.md.')),
