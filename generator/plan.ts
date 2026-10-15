@@ -188,6 +188,24 @@ export function plan(build: Build, db: Db): Plan {
   addLinks(extruder.docs, 'extruder');
   addLinks([KLIPPER_DOCS.configChecks], 'first power-on');
 
+  // A probe needs a supply voltage the port provides (toolboard v1.x Endstop
+  // connectors are 5 V only; inductive probes need 12-24 V).
+  function checkProbeSupply(p: Rec, port: Rec | undefined, kind: BoardKind, b: Rec | undefined) {
+    const pv: number[] | undefined = port?.supply_v;
+    const need: number[] | undefined = p.supply_v;
+    if (!pv || !need || !port) return;
+    const [lo, hi] = [Math.min(...need), Math.max(...need)];
+    if (!pv.some((v) => v >= lo && v <= hi)) {
+      err('probe_supply', `${p.name} needs ${lo}-${hi} V, but ${port.id} on ${b?.name ?? `the ${kind}`} supplies ${pv.join(' or ')} V.`);
+    }
+  }
+  // Voron-Tap OptoTap README (Sensor Logic): OPB9x0 sensors are totem pole and
+  // drive the signal to 5 V, which RP2040 toolhead boards' pins do not tolerate.
+  function tapSignalWarning(tb: Rec, label = '') {
+    if (tb.mcu?.chip !== 'rp2040') return;
+    warn('tap_5v_signal', `${label}${tb.name} has an RP2040, whose inputs are not 5 V tolerant. OptoTap boards with an Optek OPB9x0 sensor drive the signal to 5 V (Voron-Tap OptoTap README); check your sensor part number before connecting it.`);
+  }
+
   // --- toolchanger: checks that shape the rest of the plan ----------------
   const tcSpec = build.toolchanger;
   const tcRec: Rec | undefined = tcSpec
@@ -632,6 +650,8 @@ export function plan(build: Build, db: Db): Plan {
       const mPort = board.probe_ports?.[0];
       const use = preferTool && tPort ? { b: 'toolboard' as BoardKind, port: tPort } : mPort ? { b: 'mainboard' as BoardKind, port: mPort } : tPort ? { b: 'toolboard' as BoardKind, port: tPort } : undefined;
       if (!use) err('no_probe_port', `No probe input for ${p.name}.`);
+      checkProbeSupply(p, use?.port, use?.b ?? 'mainboard', use?.b === 'toolboard' ? toolboard : board);
+      if (p.id === 'voron-tap' && use?.b === 'toolboard') tapSignalWarning(toolboard!);
       let mods: string;
       let output: string | undefined;
       if (p.kind === 'inductive') {
@@ -695,6 +715,8 @@ export function plan(build: Build, db: Db): Plan {
         err('no_probe_port', `T${n}: ${tb.name} has no probe input for the Tap sensor.`);
         return { board: 'toolboard', port: '?', pin: '?' };
       }
+      checkProbeSupply(db.probes['voron-tap'], port, 'toolboard', tb);
+      tapSignalWarning(tb, `T${n}: `);
       return { board: 'toolboard', port: port.id, pin: qpin('toolboard', port.pin, port.modifier ?? tapMods, mcuName) };
     };
     const toolFan = (f: FanPlan, n: number): FanPlan => ({

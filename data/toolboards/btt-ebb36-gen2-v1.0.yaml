@@ -45,6 +45,14 @@ fans:
   pin: PD2
   tachometer_pin: PA4
   wires: 4
+probe_ports:
+- id: PROBE
+  pin: PB8
+  supply_v:
+  - 5
+  - 24
+  note: PROBE connector (GND, VPROBE, SERVOS PB5, GND, PROBE PB8); VPROBE is 5 V or VIN by jumper. Shared
+    with the BLTouch sensor input.
 bltouch:
   sensor_pin: PB8
   control_pin: PB5
@@ -59,10 +67,16 @@ accelerometer:
   cs_pin: PB1
   spi_bus: spi2_PB2_PB11_PB10
 notes:
+- 'Probe input: PROBE PB8 on the PROBE connector, whose supply (VPROBE) is jumper-selected 5 V or VIN
+  (BTT pin diagram). The sample config uses the same pin as the BLTouch sensor_pin. BTT notes the SERVOS
+  pin has no protection circuit.'
 - 'Sample config uses pullup_resistor: 2200 for the hotend thermistor.'
 unverified:
 - connector labels (taken from sample config order)
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB_GEN2/EBB36_GEN2/sample-bigtreetech-ebb36-gen2-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB_GEN2/EBB36_GEN2/Hardware/EBB36_GEN2_pin_en.jpg
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

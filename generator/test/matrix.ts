@@ -99,8 +99,8 @@ function toolchangerCases(db: Db, start: number): Case[] {
   const boards = ['ldo-leviathan-v1.2', 'btt-octopus-pro-v1.1', 'btt-manta-m8p-v2.0'];
   const toolSets = [
     ['btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2240-can-v1.0'],
-    ['btt-ebb-sb2209-rp2040-v1.0', 'btt-ebb-sb2209-can-v1.0'],
-    ['btt-ebb-sb2240-can-v1.0', 'btt-ebb-sb2209-rp2040-v1.0', 'btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2240-can-v1.0'],
+    ['btt-ebb-sb2209-rp2040-v1.0', 'btt-ebb36-can-v1.1', 'btt-ebb42-can-v1.2'],
+    ['btt-ebb-sb2240-can-v1.0', 'btt-ebb36-can-v1.2', 'btt-ebb36-gen2-v1.0', 'btt-ebb42-gen2-v1.0', 'btt-ebb42-can-v1.1'],
   ];
   const out: Case[] = [];
   boards.forEach((boardId, i) => {

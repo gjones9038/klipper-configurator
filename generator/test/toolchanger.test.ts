@@ -66,10 +66,22 @@ test('toolchanger rules: no separate probe, Z homes with the tool probe, 2.4 onl
   assert.ok(errors(b4).includes('toolchanger_toolhead'));
 });
 
-test('tool board without a recorded probe port is refused, not guessed', () => {
+test('EBB36/42 tools: Tap on the sourced probe input of each board', () => {
   const b = example();
-  b.toolchanger!.tools[0].toolboard.id = 'btt-ebb36-can-v1.2';
-  assert.ok(errors(b).includes('no_probe_port'));
+  b.toolchanger!.tools[0].toolboard.id = 'btt-ebb36-can-v1.2';      // Endstop connector PB6
+  b.toolchanger!.tools[1].toolboard.id = 'btt-ebb42-gen2-v1.0';     // PROBE connector PA5
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  assert.equal(value(section(r.files['tools/T1.cfg'], 'tool_probe T1'), 'pin'), '^toolhead1:PB6');
+  assert.equal(value(section(r.files['tools/T2.cfg'], 'tool_probe T2'), 'pin'), '^toolhead2:PA5');
+});
+
+test('Tap on an RP2040 tool board warns about 5 V sensor outputs', () => {
+  const b = example();
+  b.toolchanger!.tools[0].toolboard.id = 'btt-ebb-sb2209-rp2040-v1.0';
+  const issues = generate(b, db, 'test').issues;
+  assert.ok(issues.some((i) => i.code === 'tap_5v_signal' && i.message.startsWith('T1:')));
+  assert.ok(!issues.some((i) => i.code === 'tap_5v_signal' && i.message.startsWith('T0:')));
 });
 
 test('docks: unreachable docks are errors; measured docks enable tool changes', () => {

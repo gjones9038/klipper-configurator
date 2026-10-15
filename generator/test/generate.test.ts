@@ -12,7 +12,7 @@ const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24
 // Errors a matrix case may legitimately end in; anything else is a bug.
 const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
   // matrix deliberately includes combinations the generator must refuse:
-  'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path']);
+  'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path', 'probe_supply']);
 
 test('matrix: every case generates or fails with an expected reason', () => {
   const cases = matrix(db);
@@ -205,4 +205,17 @@ test('printer.cfg carries every bed mesh / leveling setting and the leveling mac
   const n = generate(b, db, 't');
   for (const s of ['virtual_sdcard', 'pause_resume', 'display_status']) assert.match(n.files['printer.cfg'], new RegExp(`\\[${s}\\]`));
   assert.ok(n.files['SLICER.md'].includes('PRINT_START EXTRUDER='));
+});
+
+test('inductive probe cannot be powered from a 5 V toolboard port', () => {
+  const b = example();
+  b.printer = 'voron-trident'; b.size = '300';                        // 5 drivers: fits the SKR 3
+  b.homing.zSwitchXY = [200, 300];
+  b.mainboard = { id: 'btt-skr-3', connection: 'usb-can-bridge' };   // no mainboard probe port in the data
+  b.toolboard = { id: 'btt-ebb36-can-v1.2', connection: 'can' };
+  b.drivers = { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } };
+  const r = generate(b, db, 'test');
+  const e = r.issues.find((i) => i.code === 'probe_supply');
+  assert.ok(e, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  assert.match(e.message, /needs \d+-\d+ V.*ENDSTOP.*5 V/);
 });

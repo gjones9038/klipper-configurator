@@ -45,6 +45,14 @@ fans:
   pin: PB4
   tachometer_pin: PB9
   wires: 4
+probe_ports:
+- id: PROBE
+  pin: PA5
+  supply_v:
+  - 5
+  - 24
+  note: PROBE connector (GND, VPROBE, SERVOS PA4, GND, PROBE PA5); VPROBE is 5 V or VIN by jumper. Shared
+    with the BLTouch sensor input.
 bltouch:
   sensor_pin: PA5
   control_pin: PA4
@@ -64,4 +72,7 @@ unverified:
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB_GEN2/EBB42_GEN2/sample-bigtreetech-ebb42-gen2-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB_GEN2/EBB42_GEN2/Hardware/EBB42_GEN2_pin_en.jpg
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
