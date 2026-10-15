@@ -627,7 +627,11 @@ export function plan(build: Build, db: Db): Plan {
         // Eddy Coil: an LDC1612 on the toolhead board's I2C header, driven by that board's MCU.
         const port = toolboard?.i2c_ports?.[0];
         if (!toolboard) err('probe_needs_toolboard', `${p.name} connects to a toolhead board's I2C header; select a toolhead board.`);
-        else if (!port) err('probe_needs_i2c_data', `${p.name} connects to a toolhead board's I2C header, and ${toolboard.name} has no I2C header recorded.`);
+        else if (!port) {
+          err('probe_needs_i2c', Array.isArray(toolboard.i2c_ports)
+            ? `${toolboard.name} has no I2C header, so the ${p.name} cannot connect to it (manufacturer pin diagram). Use the BTT Eddy USB, or a toolhead board with an I2C header.`
+            : `${p.name} connects to a toolhead board's I2C header, and ${toolboard.name} has no I2C header recorded yet.`);
+        }
         else {
           probe = { ...p, offset, connection: 'toolboard_i2c', i2c: { mcu: TOOLHEAD_MCU, bus: port.bus, port } };
           addLinks([KLIPPER_DOCS.eddy], 'probe');

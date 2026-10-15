@@ -248,10 +248,11 @@ test('BTT Eddy Coil: probe_eddy_current on the toolhead board I2C bus, no MCU of
   assert.ok(r.wiring.connections.some((c) => c.connector === 'I2C' && c.pins.startsWith('SCL PB3 / SDA PB4')));
 });
 
-test('BTT Eddy Coil needs a toolhead board with a recorded I2C header', () => {
+test('BTT Eddy Coil needs a toolhead board with an I2C header', () => {
   const b = example();
-  b.probe = 'btt-eddy-coil';                                          // SB2209: no I2C header in the data
-  assert.ok(generate(b, db, 'test').issues.some((i) => i.code === 'probe_needs_i2c_data'));
+  b.probe = 'btt-eddy-coil';                                          // SB2209 CAN: no I2C header (BTT pin diagram)
+  const e = generate(b, db, 'test').issues.find((i) => i.code === 'probe_needs_i2c');
+  assert.match(e!.message, /has no I2C header, so/);
   delete b.toolboard;
   assert.ok(generate(b, db, 'test').issues.some((i) => i.code === 'probe_needs_toolboard'));
 });

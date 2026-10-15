@@ -45,6 +45,7 @@ fans:
 probe_ports:
 - id: PROBE
   pin: gpio6
+i2c_ports: []   # no I2C header on this board (see notes)
 bltouch:
   sensor_pin: gpio21
   control_pin: gpio22
@@ -64,4 +65,7 @@ unverified:
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB SB2209 CAN (RP2040)/sample-bigtreetech-ebb-sb-rp2040-canbus-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: "EBB SB2209 CAN (RP2040)/Hardware/EBB SB2209 CAN V1.0\uFF08RP2040\uFF09-Pin.png"
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

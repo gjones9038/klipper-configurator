@@ -47,6 +47,14 @@ fans:
 probe_ports:
 - id: PROBE
   pin: gpio6
+i2c_ports:
+- id: I2C
+  scl_pin: gpio29
+  sda_pin: gpio28
+  bus: i2c0h
+  supply_v:
+  - 5
+  note: 4-pin I2C header (5V, GND, SCL gpio29, SDA gpio28).
 bltouch:
   sensor_pin: gpio21
   control_pin: gpio22
@@ -58,6 +66,9 @@ accelerometer:
   cs_pin: gpio1
   spi_bus: spi0a
 notes:
+- 'I2C header: SCL gpio29, SDA gpio28, Klipper hardware bus i2c0h (BTT pin diagram; the sample config''s
+  commented I2C lines use i2c0h / gpio29 / gpio28; Klipper src/rp2040/i2c.c maps i2c0h to sda 28, scl
+  29).'
 - USB only - no CAN transceiver.
 unverified:
 - connector labels (taken from sample config order)
@@ -65,3 +76,9 @@ sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB_SB2209_USB/sample-bigtreetech-ebb-sb-usb-v1.0.cfg
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB_SB2209_USB/Hardware/BIGTREETECH EBB SB2209 USB-Pin.pdf
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/Klipper3d/klipper
+  path: src/rp2040/i2c.c
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

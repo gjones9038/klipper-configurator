@@ -45,6 +45,7 @@ fans:
 probe_ports:
 - id: PROBE
   pin: gpio10
+i2c_ports: []   # no I2C header on this board (see notes)
 neopixel_ports:
 - id: RGB
   pin: gpio7
@@ -56,6 +57,7 @@ accelerometer:
     mosi_pin: gpio20
     miso_pin: gpio19
 notes:
+- No I2C header (LDO pinout), so an Eddy Coil cannot be connected; use the Eddy USB instead.
 - USB toolhead board with a USB adapter board on the frame; not CAN.
 - Has an on-board chamber thermistor input (gpio28) and board NTC (gpio26).
 unverified:
@@ -63,4 +65,7 @@ unverified:
 sources:
 - repo: https://github.com/MotorDynamicsLab/Nitehawk-SB
   path: Firmware/Klipper Configs/nitehawk-sb.cfg
+  commit: be93526b948d3339c755cb32116baef221ce1a8d
+- repo: https://github.com/MotorDynamicsLab/Nitehawk-SB
+  path: Images/nhsb_pcb_pinout.png
   commit: be93526b948d3339c755cb32116baef221ce1a8d

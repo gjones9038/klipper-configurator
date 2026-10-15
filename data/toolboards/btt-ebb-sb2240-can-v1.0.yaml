@@ -51,6 +51,7 @@ fans:
 probe_ports:
 - id: PROBE
   pin: PC13
+i2c_ports: []   # no I2C header on this board (see notes)
 bltouch:
   sensor_pin: PB8
   control_pin: PB9
@@ -62,6 +63,7 @@ accelerometer:
   cs_pin: PB12
   spi_bus: spi2_PB2_PB11_PB10
 notes:
+- No I2C header (BTT pin diagram), so an Eddy Coil cannot be connected; use the Eddy USB instead.
 - Same board as SB2209 but with a TMC2240 on SPI (cs PA15, spi2_PB2_PB11_PB10).
 - 'klipper_tmc_autotune: set overvoltage_vth to measured toolhead voltage + 0.8V.'
 unverified:
@@ -69,4 +71,7 @@ unverified:
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB SB2240_2209 CAN/sample-bigtreetech-ebb-sb-canbus-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB SB2240_2209 CAN/SB2240/Hardware/SB2240.png
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

@@ -38,6 +38,7 @@ fans:
 probe_ports:
 - id: PROBE
   pin: gpio10
+i2c_ports: []   # no I2C header on this board (see notes)
 neopixel_ports:
 - id: RGB
   pin: gpio7
@@ -52,10 +53,14 @@ accelerometer:
     mosi_pin: gpio20
     miso_pin: gpio19
 notes:
+- No I2C header (LDO pinout), so an Eddy Coil cannot be connected; use the Eddy USB instead.
 - USB toolhead board.
 unverified:
 - connector labels (taken from sample config order)
 sources:
 - repo: https://github.com/MotorDynamicsLab/Nitehawk-36
   path: Configs/nitehawk-36.cfg
+  commit: feae221a011b71557e052a52fef90ecce21b2477
+- repo: https://github.com/MotorDynamicsLab/Nitehawk-36
+  path: Images/nh36_pcb_pinout.jpg
   commit: feae221a011b71557e052a52fef90ecce21b2477

@@ -145,7 +145,7 @@ function eddyCoilCases(db: Db, start: number): Case[] {
     const build: Build = {
       printer: 'voron-2.4', size: '350', variant: 'standard',
       mainboard: { id: 'btt-octopus-pro-v1.1', connection: 'usb-can-bridge' },
-      toolboard: { id: tb, connection: 'can' },
+      toolboard: { id: tb, connection: db.toolboards[tb].interfaces.includes('can') ? 'can' : 'usb' },
       toolhead: 'stealthburner',
       drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
       motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
