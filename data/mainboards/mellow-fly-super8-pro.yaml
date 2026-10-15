@@ -1,0 +1,242 @@
+schema: mainboard/1
+id: mellow-fly-super8-pro
+name: Mellow Fly-Super8 Pro
+manufacturer: Mellow
+revisions:
+- '1.0'
+status: needs-review
+mcu_variants:
+- chip: stm32h723
+  crystal_mhz: 25
+  bootloader_kib: 0
+- chip: stm32h743
+  crystal_mhz: 25
+  bootloader_kib: 0
+interfaces:
+- usb
+- can
+- usb-can-bridge
+can_pins: PB8/PB9
+driver_mount: stepstick
+supported_drivers:
+- tmc2208
+- tmc2209
+- tmc5160
+tmc_spi:
+  software:
+    mosi_pin: PB5
+    miso_pin: PB4
+    sclk_pin: PB3
+driver_slots:
+- id: DRIVER0
+  step_pin: PE2
+  dir_pin: PC5
+  enable_pin: '!PF11'
+  uart_pin: PC4
+  spi_cs_pin: PC4
+  diag_pin: PG12
+- id: DRIVER1
+  step_pin: PE3
+  dir_pin: PF13
+  enable_pin: '!PF14'
+  uart_pin: PF12
+  spi_cs_pin: PF12
+  diag_pin: PG11
+- id: DRIVER2
+  step_pin: PE4
+  dir_pin: PG0
+  enable_pin: '!PG1'
+  uart_pin: PF15
+  spi_cs_pin: PF15
+  diag_pin: PG10
+- id: DRIVER3
+  step_pin: PE14
+  dir_pin: PE8
+  enable_pin: '!PE9'
+  uart_pin: PE7
+  spi_cs_pin: PE7
+  diag_pin: PG9
+- id: DRIVER4
+  step_pin: PE15
+  dir_pin: PE11
+  enable_pin: '!PF2'
+  uart_pin: PE10
+  spi_cs_pin: PE10
+  diag_pin: PD7
+- id: DRIVER5
+  step_pin: PE1
+  dir_pin: PF0
+  enable_pin: '!PC15'
+  uart_pin: PF1
+  spi_cs_pin: PF1
+  diag_pin: PD6
+- id: DRIVER6
+  step_pin: PE0
+  dir_pin: PG3
+  enable_pin: '!PG4'
+  uart_pin: PG2
+  spi_cs_pin: PG2
+  diag_pin: PA8
+- id: DRIVER7
+  step_pin: PE6
+  dir_pin: PG6
+  enable_pin: '!PG7'
+  uart_pin: PG5
+  spi_cs_pin: PG5
+  diag_pin: PF3
+endstops:
+- id: IO0
+  pin: PG12
+  diag_of: DRIVER0
+- id: IO1
+  pin: PG11
+  diag_of: DRIVER1
+- id: IO2
+  pin: PG10
+  diag_of: DRIVER2
+- id: IO3
+  pin: PG9
+  diag_of: DRIVER3
+- id: IO4
+  pin: PD7
+  diag_of: DRIVER4
+- id: IO5
+  pin: PD6
+  diag_of: DRIVER5
+- id: IO6
+  pin: PA8
+  diag_of: DRIVER6
+heaters:
+- id: HEAT0
+  pin: PB0
+  role: hotend
+- id: HEAT1
+  pin: PB1
+  role: hotend
+- id: HEAT2
+  pin: PC7
+  role: hotend
+- id: HEAT3
+  pin: PF7
+  role: hotend
+- id: HEAT4
+  pin: PF6
+  role: hotend
+- id: BED
+  pin: PE5
+  role: bed
+thermistors:
+- id: ADC_0
+  pin: PF4
+  pullup_ohms: 4700
+- id: ADC_1
+  pin: PF5
+  pullup_ohms: 4700
+- id: ADC_2
+  pin: PF9
+  pullup_ohms: 4700
+- id: ADC_3
+  pin: PF10
+  pullup_ohms: 4700
+- id: ADC_4
+  pin: PC0
+  pullup_ohms: 4700
+- id: ADC_5
+  pin: PC1
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PA0
+  wires: 2
+- id: FAN1
+  pin: PA1
+  wires: 2
+- id: FAN2
+  pin: PA2
+  wires: 2
+- id: FAN3
+  pin: PA3
+  wires: 2
+- id: FAN4
+  pin: PA15
+  wires: 2
+- id: FAN5
+  pin: PB11
+  wires: 2
+- id: FAN6
+  pin: PB10
+  wires: 2
+- id: FAN7
+  pin: PD12
+  wires: 2
+- id: FAN8
+  pin: PD14
+  wires: 2
+- id: FAN9
+  pin: PD15
+  wires: 2
+probe_ports:
+- id: HV_IN
+  pin: PF3
+  protected: true
+  supply_v:
+  - 5
+  - 12
+  - 24
+  note: 'High-voltage input for inductive probes (Mellow: "1个高压IN口"). Shares DIAG7 (jumper from v1.2). IO supply
+    5/12/24 V by jumper.'
+- id: PROBE
+  pin: PC3
+  supply_v:
+  - 5
+  note: Probe pin of the BLTOUCH header (GND, 5V, PC6, GND, PC3).
+bltouch:
+  sensor_pin: PC3
+  control_pin: PC6
+neopixel_ports: []
+notes:
+- 'Mellow: early Super8 Pro boards use an STM32H743 and are not marked "pro"; later boards marked "pro" use an STM32H723.
+  Check the chip before building firmware.'
+- Mellow and the community docs both state the Super8 Pro has the Super8 pin map.
+- 'Pins: Mellow pin diagram (Super8 v1.3), Mellow sample config (Trident; drivers 0, 1, 3, 4, 5) and the community
+  pin table (v1.2) agree. Drivers 2, 6, 7 come from the diagram and the community table.'
+- DIAG0-6 share the IO0-IO6 inputs; DIAG7 shares HV IN. With physical endstops on stepsticks, remove the DIAG jumper
+  of that driver.
+- Thermistor pull-ups are not stated; the Mellow sample sets no pullup_resistor (Klipper default 4.7k).
+- No RGB/neopixel header on the diagram.
+unverified:
+- probe pin polarity (no modifier in the sources beyond the sample's ^PF3)
+- thermistor pull-up values
+- fan port voltage selection
+sources:
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_super8/super8_pin.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_super8/cfg.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/mellow-3d.github.io
+  path: pages/mydoc/fly_boards/fly-super8/fly_super8_pins.md
+  commit: 31f184d39f5390b57b09241d1c0249c433f31723
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_super8_pro/pins.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/board/fly_super8_pro/flash.md
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_super8_pro/canbridge1.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/klipper-docs
+  path: docs/images/boards/fly_super8_pro/canbridge2.png
+  commit: 6a176153885b585a8f171a28d2cba0fa800bacdd
+- repo: https://github.com/Mellow-3D/mellow-3d.github.io
+  path: pages/mydoc/fly_boards/fly-super8pro_h723/fly_super8_pro_h723_klipper_usb.md
+  commit: 31f184d39f5390b57b09241d1c0249c433f31723
+- repo: https://github.com/Mellow-3D/Fly-Super8Pro
+  path: README.md
+  commit: 0b982743ea8ddf187300ba3878263ac45f9bf40b
+discrepancies:
+- 'H723 bootloader: Mellow''s menuconfig screenshots use "No bootloader" (flashing with STM32CubeProgrammer); the
+  community docs use "128KiB bootloader". Depends on how the board was flashed.'
