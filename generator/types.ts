@@ -62,7 +62,28 @@ export interface Build {
   webUi?: 'mainsail' | 'fluidd' | 'none';    // default mainsail: its cfg provides PAUSE/RESUME/CANCEL_PRINT
   nozzleDiameter?: number;
   slotOverrides?: Record<string, string>;    // klipper stepper name -> slot id
+  toolchanger?: ToolchangerSpec;
 }
+
+// Toolchanger (StealthChanger). T0 is the main toolhead described above
+// (toolboard, extruder, hotend, thermistors.hotend, motors.extruder); tools lists T1..Tn.
+export interface ToolchangerSpec {
+  system: string;                            // toolchangers.yaml id
+  tools: ToolSpec[];
+  docks?: Array<Dock | null>;                // index = tool number (T0 first); measured with TC_DOCK_* macros
+  safeY?: number;                            // StealthChanger wiki: park_y + thickest tool + buffer
+  travel?: { yMin?: number; zMax?: number };  // stepper_y position_min / stepper_z position_max that reach the docks
+}
+
+export interface ToolSpec {
+  toolboard: { id: string; connection?: 'can' | 'usb' };
+  extruder?: string;                         // default: T0's
+  hotend?: string;
+  hotendThermistor?: string;
+  extruderMotor?: string;
+}
+
+export interface Dock { x: number; y: number; z: number }
 
 // One generated issue. Errors block generation; warnings go into the output.
 export interface Issue {
@@ -78,6 +99,7 @@ export interface WireConnection {
   connector: string;
   pins: string;
   note?: string;
+  tool?: number;              // toolchanger tool number for parts on a tool's board
 }
 
 // A documentation link for the user. The web UI opens these in a new tab
@@ -127,4 +149,5 @@ export interface Db {
   homing: Rec;
   filters: Record<string, Rec>;
   filterDefaults: Rec;
+  toolchangers: Record<string, Rec>;
 }

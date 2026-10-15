@@ -41,6 +41,27 @@ How it decides: `generator/plan.ts` resolves the build (slot assignment, drivers
 ports, homing, probe) and collects errors/warnings; `emit.ts`, `macros.ts` and `wiring.ts` only
 format the plan.
 
+### Toolchangers (StealthChanger)
+
+Choosing the `stealthchanger-sb` toolhead adds `toolchanger` to the build (see
+`examples/v24-350-leviathan-stealthchanger.json`): T0 is the main toolhead, `toolchanger.tools`
+lists T1..Tn (board, and optionally extruder / hotend / thermistor per tool), `docks` and `safeY`
+are measured per printer, and `travel` sets the stepper limits that reach the docks. Output follows
+viesturz/klipper-toolchanger (`data/toolchangers.yaml`, every value cited):
+
+| File | Contents |
+|---|---|
+| `toolchanger.cfg` | `[toolchanger]`, StealthChanger dock paths, pickup / dropoff macros, `TC_DOCK_ALIGN_*` dock measuring |
+| `tools/Tn.cfg` | per tool: MCU, `[extruderN]`, fans, accelerometer, LEDs, `[tool_probe Tn]` (Tap = Z probe + tool detection), `[tool Tn]` |
+| `homing.cfg` | `INITIALIZE_TOOLCHANGER`, Z homing with the mounted tool's Tap, `ADJUST_Z_AFTER_TOOL_NOZZLE_HOME` |
+
+Tool changes are refused (by the generated macros) until a tool's dock and the safe Y are set.
+The pickup / dropoff macros are written for this repo from klipper-toolchanger's documentation; the
+upstream example macros are GPLv3. Only the Voron 2.4 (fixed docks) is modelled; Trident needs a liftbar.
+
+> klipper-toolchanger `main` (94756df) does not load on Klipper after its 2026-05-25 probe rework.
+> The generator warns about it; the Klipper check runs against the open fix, PR #174.
+
 ## Web app
 
 ```sh
@@ -65,7 +86,9 @@ the config as a .zip.
 
 `tools/klipper_check.py` runs Klipper itself in batch mode against generated configs
 (`klippy.py printer.cfg -d <mcu>.dict -d toolhead=<mcu>.dict`) and executes `PREFLIGHT`, `G28`
-(including sensorless homing overrides) and the tuning macros. A bad pin, unknown option, Jinja
+(including sensorless homing overrides) and the tuning macros. Toolchanger builds load
+klipper-toolchanger (pinned to PR #174) and, when docks are set, change tools; batch mode has no
+detection pins, so a test-only extra (`tools/klipper-check/kc_test_tool_detect.py`) marks T0 mounted. A bad pin, unknown option, Jinja
 error or out-of-range move fails the case.
 
 ```sh
@@ -88,6 +111,7 @@ data/
   hotends.yaml     flow class, max temp, heater options
   toolheads.yaml   Stealthburner / StealthChanger: fans, LEDs, input shaper baseline
   probes.yaml      inductive, Tap, Klicky, Beacon, Cartographer, Eddy, BLTouch
+  toolchangers.yaml StealthChanger: klipper-toolchanger settings, dock paths, known issues
   thermistors.yaml exact Klipper sensor_type strings + user-facing choices
   fans.yaml        fan roles -> Klipper sections + defaults
   tuning.yaml      baselines + post-preflight tuning flow

@@ -1,9 +1,9 @@
 // The wizard steps. Each step renders form fields that edit the Build through
 // ctx.update(); plan() / generate() run again on every change.
-import type { Build, Db, Rec, Result, Issue } from '../generator/types.ts';
+import type { Build, Db, Rec, Result, Issue, ToolSpec } from '../generator/types.ts';
 import type { Plan } from '../generator/plan.ts';
 import { h, select, segmented, numberField, checkbox, pill, extLink, type Child, type Option } from './dom.ts';
-import { canDevices, driversNeeded } from './state.ts';
+import { canDevices, driversNeeded, toolchangerFor } from './state.ts';
 
 export interface Ctx {
   db: Db;
@@ -115,21 +115,25 @@ const mainboardStep: Step = {
 const toolboardStep: Step = {
   id: 'toolboard', name: 'Toolhead board', title: 'Toolhead board', preview: 'toolhead.cfg',
   lead: 'A CAN or USB board on the toolhead carries the extruder, hotend, fans and accelerometer, so only one cable runs to the toolhead.',
-  codes: ['unknown_toolboard', 'toolboard_connection', 'no_can_path', 'no_led_port'],
+  codes: ['unknown_toolboard', 'toolboard_connection', 'no_can_path', 'no_led_port', 'unknown_toolchanger', 'toolchanger_printer', 'toolchanger_toolhead',
+    'toolchanger_needs_toolboard', 'toolchanger_one_tool', 'toolchanger_module', 'tool_extruder_fit'],
   render({ db, build, update }) {
     const toolhead = build.toolhead ? db.toolheads[build.toolhead] : undefined;
+    const tc = toolchangerFor(build, db);
     const tb = build.toolboard ? db.toolboards[build.toolboard.id] : undefined;
     const board = db.mainboards[build.mainboard.id];
     const can = canDevices(build, db);
     const boards = Object.values(db.toolboards).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const ffPill = (ff: string) => !toolhead?.toolboard_form_factors ? h('span', { class: 'mono' }, ff)
       : toolhead.toolboard_form_factors.includes(ff) ? pill(ff, 'ok') : pill(ff, 'info');
+    const noTap = (t: Rec) => tc && !t.probe_ports?.length;
     return [
+      tc ? h('h2', null, `T0 board (${tc.name}: every tool has its own)`) : null,
       pickTable(['Board', 'MCU', 'Mount', 'Connection', 'Pin data'], [
-        { id: '', picked: !tb, name: 'None', sub: 'Extruder, heater and fans wired to the mainboard', cells: ['', '', '', ''],
-          onPick: () => update((b) => { delete b.toolboard; }) },
+        ...(tc ? [] : [{ id: '', picked: !tb, name: 'None', sub: 'Extruder, heater and fans wired to the mainboard', cells: ['', '', '', ''],
+          onPick: () => update((b) => { delete b.toolboard; }) }]),
         ...boards.map((t) => ({
-          id: t.id, picked: t.id === tb?.id, name: t.name, sub: `rev ${t.revisions.join(' / ')}`,
+          id: t.id, picked: t.id === tb?.id, name: t.name, sub: `rev ${t.revisions.join(' / ')}${noTap(t) ? ' · no probe port in the data (Tap sensor)' : ''}`,
           onPick: () => update((b) => { b.toolboard = { id: t.id, connection: t.interfaces[0] }; }),
           cells: [h('span', { class: 'mono' }, String(t.mcu?.chip ?? t.mcu).toUpperCase()), ffPill(t.form_factor), t.interfaces.map((i: string) => i.toUpperCase()).join(' / '), statusPill(t.status)],
         })),
@@ -147,10 +151,45 @@ const toolboardStep: Step = {
           if (v === 'bridge') { b.mainboard.connection = 'usb-can-bridge'; delete b.canAdapter; }
           else { if (b.mainboard.connection === 'usb-can-bridge') b.mainboard.connection = 'usb'; b.canAdapter = 'u2c'; }
         }), `On CAN: ${can.join(', ')}.`)) : null,
+      tc ? toolList(db, build, update, tc) : null,
       tb ? sources(tb) : null,
     ];
   },
 };
+
+function toolList(db: Db, build: Build, update: Ctx['update'], tc: Rec): Child {
+  const tools = build.toolchanger?.tools ?? [];
+  const boards = Object.values(db.toolboards).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  const t0 = db.toolboards[build.toolboard?.id ?? ''];
+  return h('div', { class: 'section' },
+    h('h2', null, 'Tools'),
+    h('p', { class: 'hint', style: 'margin:0' }, `T0 uses the board above and the extruder and hotend from the Hotend step. Each other tool can differ. `,
+      `Tool boards need a probe input for the Tap sensor; boards without one in the data can't be used yet.`),
+    segmented('Number of tools', String(tools.length + 1), ['2', '3', '4', '5', '6'].map((n) => ({ value: n, label: n })), (v) => update((b) => {
+      const want = Number(v) - 1;
+      const list = b.toolchanger!.tools;
+      while (list.length < want) list.push({ toolboard: { ...(list[list.length - 1]?.toolboard ?? b.toolboard!) } });
+      list.length = want;
+    })),
+    h('div', { class: 'cards' }, tools.map((t, i) => {
+      const n = i + 1;
+      const tb = db.toolboards[t.toolboard.id];
+      const set = (fn: (x: ToolSpec) => void) => update((b) => fn(b.toolchanger!.tools[i]));
+      return h('section', { class: 'card' }, h('h2', null, `T${n}`),
+        select('Board', t.toolboard.id, boards.map((x) => ({ value: x.id, label: `${x.name} ${x.revisions.join('/')}${x.probe_ports?.length ? '' : ' (no probe port in data)'}`, disabled: !x.probe_ports?.length })),
+          (v) => set((x) => { x.toolboard = { id: v, connection: db.toolboards[v].interfaces[0] }; })),
+        segmented('Connection', t.toolboard.connection ?? 'can', (['can', 'usb'] as const).map((c) => ({ value: c, label: c.toUpperCase(), disabled: !tb?.interfaces.includes(c) })),
+          (v) => set((x) => { x.toolboard.connection = v; })),
+        select('Extruder', t.extruder ?? '', [{ value: '', label: `Same as T0 (${db.extruders[build.extruder].name})` }, ...Object.values(db.extruders).map((e) => ({ value: e.id, label: e.name }))],
+          (v) => set((x) => { if (v) x.extruder = v; else delete x.extruder; delete x.extruderMotor; })),
+        select('Hotend', t.hotend ?? '', [{ value: '', label: `Same as T0 (${db.hotends[build.hotend].name})` }, ...Object.values(db.hotends).map((x) => ({ value: x.id, label: x.name }))],
+          (v) => set((x) => { if (v) x.hotend = v; else delete x.hotend; })),
+        select('Hotend thermistor', t.hotendThermistor ?? '', [{ value: '', label: 'Same as T0' }, ...Object.values(db.thermistors).map((x) => ({ value: x.id, label: x.label }))],
+          (v) => set((x) => { if (v) x.hotendThermistor = v; else delete x.hotendThermistor; })));
+    })),
+    t0 && !t0.probe_ports?.length ? h('p', { class: 'hint' }, `T0's board has no probe input in the data.`) : null,
+    sources(tc));
+}
 
 // --- 4. Motors and drivers --------------------------------------------------------
 const GROUPS = [['xy', 'A/B (X/Y)'], ['z', 'Z'], ['extruder', 'Extruder']] as const;
@@ -212,8 +251,11 @@ const switchDraft: { x?: number; y?: number } = {};
 const homingStep: Step = {
   id: 'homing', name: 'Homing & probe', title: 'Homing and probe', preview: 'printer.cfg',
   lead: 'How each axis finds home, and the probe used for leveling and the bed mesh.',
-  codes: ['sensorless_', 'no_endstop_port', 'no_z_switch_xy', 'z_switch_out_of_range', 'no_probe', 'probe_', 'pnp_unsupported_port', 'beacon_sensorless', 'plugin_required', 'no_bltouch_port'],
+  codes: ['sensorless_', 'no_endstop_port', 'no_z_switch_xy', 'z_switch_out_of_range', 'no_probe', 'probe_', 'pnp_unsupported_port', 'beacon_sensorless', 'plugin_required', 'no_bltouch_port',
+    'toolchanger_probe', 'toolchanger_z_homing', 'tool_dock_unset', 'dock_out_of_range', 'safe_y_out_of_range', 'toolchanger_safe_y', 'toolchanger_travel'],
   render({ db, build, update }) {
+    const tc = toolchangerFor(build, db);
+    if (tc) return toolchangerHoming(db, build, update, tc);
     const probe = build.probe ? db.probes[build.probe] : undefined;
     const known = probe?.defaults ?? probe?.offsets;
     const zm = db.homing.z_methods;
@@ -253,6 +295,52 @@ const homingStep: Step = {
     ];
   },
 };
+
+const dockDraft: Record<number, Partial<{ x: number; y: number; z: number }>> = {};
+function toolchangerHoming(db: Db, build: Build, update: Ctx['update'], tc: Rec): Child {
+  const spec = build.toolchanger!;
+  const count = spec.tools.length + 1;
+  const setDock = (n: number, axis: 'x' | 'y' | 'z', v: number | undefined) => update((b) => {
+    const t = b.toolchanger!;
+    const cur = { ...(t.docks?.[n] ?? {}), ...dockDraft[n], [axis]: v };
+    dockDraft[n] = cur;
+    const docks = Array.from({ length: count }, (_, k) => t.docks?.[k] ?? null);
+    docks[n] = cur.x !== undefined && cur.y !== undefined && cur.z !== undefined ? { x: cur.x, y: cur.y, z: cur.z } : null;
+    if (docks.every((d) => d === null)) delete t.docks; else t.docks = docks;
+  });
+  const setTravel = (k: 'yMin' | 'zMax', v: number | undefined) => update((b) => {
+    const t = b.toolchanger!;
+    t.travel = { ...t.travel, [k]: v };
+    if (v === undefined) delete t.travel[k];
+    if (!Object.keys(t.travel).length) delete t.travel;
+  });
+  return [
+    h('div', { class: 'grid' },
+      segmented('X / Y homing', build.homing.xy, Object.entries(db.homing.xy_methods).map(([id, m]: [string, any]) => ({ value: id as 'physical' | 'sensorless', label: m.name })),
+        (v) => update((b) => { b.homing.xy = v; }), db.homing.xy_methods[build.homing.xy]?.description)),
+    h('p', { class: 'hint', style: 'margin:0' }, `Z: the mounted tool's Tap sensor homes Z and probes ([tool_probe] on each tool). PRINT_START levels and meshes with T0, then picks up the first tool.`),
+    h('div', { class: 'section' }, h('h2', null, 'Docks'),
+      h('p', { class: 'hint', style: 'margin:0' }, 'Measure each dock on the printer (TC_DOCK_ALIGN_START, jog, TC_DOCK_ALIGN_SAVE), or enter known positions. ',
+        `${tc.dock_z_rule}. Tool changes are refused until a tool's dock and the safe Y are set.`),
+      h('div', { class: 'table-wrap' }, h('table', null,
+        h('thead', null, h('tr', null, ['Tool', 'Park X', 'Park Y', 'Park Z'].map((c) => h('th', { scope: 'col' }, c)))),
+        h('tbody', null, Array.from({ length: count }, (_, n) => {
+          const d = { ...(spec.docks?.[n] ?? {}), ...dockDraft[n] };
+          const cell = (axis: 'x' | 'y' | 'z') => h('td', null, h('input', {
+            type: 'number', step: 'any', inputmode: 'decimal', 'aria-label': `T${n} park ${axis.toUpperCase()}`, value: d[axis] === undefined ? '' : String(d[axis]),
+            onChange: (e: Event) => { const raw = (e.target as HTMLInputElement).value.trim(); setDock(n, axis, raw === '' ? undefined : Number(raw)); },
+          }));
+          return h('tr', null, h('td', { class: 'mono' }, `T${n}`), cell('x'), cell('y'), cell('z'));
+        }))))),
+    h('div', { class: 'grid' },
+      numberField('Safe Y (mm)', spec.safeY, (v) => update((b) => { if (v === undefined) delete b.toolchanger!.safeY; else b.toolchanger!.safeY = v; }),
+        { step: 0.1, hint: `StealthChanger wiki: ${tc.safe_y_rule}.` }),
+      numberField('Y travel minimum (mm)', spec.travel?.yMin, (v) => setTravel('yMin', v),
+        { step: 0.1, placeholder: '0', hint: 'stepper_y position_min. Docks usually sit in front of the bed, below Y 0.' }),
+      numberField('Z travel maximum (mm)', spec.travel?.zMax, (v) => setTravel('zMax', v),
+        { step: 0.1, placeholder: String(db.printers[build.printer].sizes.find((s: Rec) => s.id === build.size)?.position_max.z ?? ''), hint: 'stepper_z position_max, if docks sit above the normal Z travel.' })),
+  ];
+}
 
 // --- 6. Hotend and extruder ----------------------------------------------------------
 const hotendStep: Step = {
@@ -294,7 +382,7 @@ const FAN_LABELS: Record<string, string> = {
 const fansStep: Step = {
   id: 'fans', name: 'Fans & filter', title: 'Fans and filter', preview: 'mainboard.cfg',
   lead: 'Ports are picked automatically: toolhead fans go to the toolhead board when there is one.',
-  codes: ['no_fan_port', 'fan_port_', 'no_hotend_fan', 'no_toolboard', 'two_part_fans', 'unknown_fan_role', 'nevermore_twice', 'no_tach', 'filter_', 'unknown_filter'],
+  codes: ['no_fan_port', 'fan_port_', 'no_hotend_fan', 'toolchanger_fan_board', 'no_toolboard', 'two_part_fans', 'unknown_fan_role', 'nevermore_twice', 'no_tach', 'filter_', 'unknown_filter'],
   render({ db, build, plan, update }) {
     const nm = build.nevermore;
     const model = nm ? db.filters[nm.model] : undefined;

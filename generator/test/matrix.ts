@@ -89,5 +89,49 @@ export function matrix(db: Db): Case[] {
       }
     }
   }
+  cases.push(...toolchangerCases(db, cases.length));
   return cases;
+}
+
+// StealthChanger on the Voron 2.4: a few mainboards, mixed tool boards, with and
+// without measured docks (only the docked case can actually change tools).
+function toolchangerCases(db: Db, start: number): Case[] {
+  const boards = ['ldo-leviathan-v1.2', 'btt-octopus-pro-v1.1', 'btt-manta-m8p-v2.0'];
+  const toolSets = [
+    ['btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2240-can-v1.0'],
+    ['btt-ebb-sb2209-rp2040-v1.0', 'btt-ebb-sb2209-can-v1.0'],
+    ['btt-ebb-sb2240-can-v1.0', 'btt-ebb-sb2209-rp2040-v1.0', 'btt-ebb-sb2209-can-v1.0', 'btt-ebb-sb2240-can-v1.0'],
+  ];
+  const out: Case[] = [];
+  boards.forEach((boardId, i) => {
+    const tb = toolSets[i];
+    const board = db.mainboards[boardId];
+    const stepstick = board.driver_mount !== 'onboard';
+    const docked = i === 0;
+    const build: Build = {
+      printer: 'voron-2.4', size: '350', variant: 'standard',
+      mainboard: { id: boardId, connection: board.interfaces.includes('usb-can-bridge') ? 'usb-can-bridge' : 'usb' },
+      ...(board.interfaces.includes('usb-can-bridge') ? {} : { canAdapter: 'u2c' as const }),
+      toolboard: { id: tb[0], connection: 'can' },
+      toolhead: 'stealthchanger-sb',
+      drivers: { xy: { module: stepstick ? 'btt-tmc2209' : 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
+      motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
+      homing: { xy: i === 1 ? 'sensorless' : 'physical', z: 'probe_virtual_endstop' },
+      extruder: 'galileo2', hotend: i === 2 ? 'revo-voron' : 'rapido2-hf',
+      thermistors: { hotend: 'semitec-104nt4', bed: 'ntc100k-3950' },
+      fans: [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }, { role: 'exhaust' }],
+      leds: true, autotune: i !== 2, webUi: (['mainsail', 'fluidd', 'none'] as const)[i],
+      toolchanger: {
+        system: 'stealthchanger',
+        tools: tb.slice(1).map((id, k) => ({ toolboard: { id, connection: 'can' as const }, ...(k === 1 ? { extruder: 'clockwork2', hotend: 'dragon-sf' } : {}) })),
+        ...(docked ? {
+          docks: tb.map((_, k) => ({ x: 60 + k * 100, y: -10, z: 320 })),
+          safeY: 60,
+          travel: { yMin: -15, zMax: 330 },
+        } : {}),
+      },
+    };
+    out.push({ name: `${String(start + out.length).padStart(3, '0')}-${boardId}-stealthchanger-${tb.length}tools${docked ? '-docked' : ''}`, build });
+  });
+  return out;
 }

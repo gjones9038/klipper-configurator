@@ -9,9 +9,10 @@ Setup (once):
   - a Klipper checkout                     --klipper
   - data dictionaries per MCU (<chip>.dict) --dicts   (build test/configs/<chip>.config)
   - klipper_tmc_autotune checkout          --autotune (only needed for autotune builds)
+  - klipper-toolchanger checkout           --toolchanger (only needed for toolchanger builds)
   - klippy's Python deps on PYTHONPATH     --site
 
-Usage: klipper_check.py --klipper K --dicts D [--autotune A] [--site S] OUT_DIR [OUT_DIR ...]
+Usage: klipper_check.py --klipper K --dicts D [--autotune A] [--toolchanger T] [--site S] OUT_DIR [OUT_DIR ...]
 """
 import argparse
 import json
@@ -45,6 +46,28 @@ CALC_E_STEPS REMAINING=20
 CALC_PA HEIGHT=12.5
 """
 
+# Toolchanger builds: home and level with the mounted tool (T0), then change tools
+# when the build has docks and safe Y (without them the macros refuse by design).
+# kc_test_tool_detect.py stands in for the detection pins batch mode lacks.
+GCODE_TOOLCHANGER = """
+PREFLIGHT
+G28
+G90
+G1 X100 Y100 Z30 F6000
+G32
+CALC_E_STEPS REMAINING=20
+CALC_PA HEIGHT=12.5
+TC_DOCK_ALIGN_START
+EXIT_DOCKING_MODE
+"""
+GCODE_TOOLCHANGES = """
+T1
+T2
+T0
+T2
+PRINT_END
+"""
+
 ERROR_MARKERS = ("Config error", "Internal error", "Error evaluating", "Traceback",
                  "Move out of range", "Unknown command", "Must home", "Option '")
 
@@ -54,14 +77,21 @@ def mcus_for(outdir):
         return json.load(f)
 
 
-def prepare_klipper(klipper, autotune, workdir):
-    """Copy klippy/ into workdir and install the autotune extension if given."""
+def prepare_klipper(klipper, autotune, toolchanger, workdir):
+    """Copy klippy/ into workdir and install the autotune / toolchanger extensions if given."""
     dst = os.path.join(workdir, "klipper")
     shutil.copytree(klipper, dst, ignore=shutil.ignore_patterns(".git", "out", "lib", "src", "docs"))
+    extras = os.path.join(dst, "klippy", "extras")
     if autotune:
-        extras = os.path.join(dst, "klippy", "extras")
         for f in ("autotune_tmc.py", "motor_constants.py", "motor_database.cfg"):
             shutil.copy(os.path.join(autotune, f), extras)
+    if toolchanger:
+        src = os.path.join(toolchanger, "klipper", "extras")
+        for f in os.listdir(src):
+            if f.endswith(".py"):
+                shutil.copy(os.path.join(src, f), extras)
+        # Test-only: simulate T0 mounted (batch mode has no detection pins).
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), "klipper-check", "kc_test_tool_detect.py"), extras)
     return dst
 
 
@@ -85,8 +115,17 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     cfg = stage(outdir, work, ui_configs)
     eddy = os.path.exists(os.path.join(cfg, "probe.cfg")) and \
         "[probe_eddy_current" in open(os.path.join(cfg, "probe.cfg")).read()
+    tc = os.path.exists(os.path.join(cfg, "toolchanger.cfg"))
+    docked = tc and "params_dock_set: 0" not in "".join(
+        open(os.path.join(cfg, "tools", n)).read() for n in os.listdir(os.path.join(cfg, "tools")))
+    if tc:
+        with open(os.path.join(cfg, "printer.cfg"), "a") as f:
+            f.write("\n[kc_test_tool_detect]\n")
     with open(os.path.join(work, "test.gcode"), "w") as f:
-        f.write(GCODE_EDDY if eddy else GCODE)
+        if tc:
+            f.write(GCODE_TOOLCHANGER + (GCODE_TOOLCHANGES if docked else "PRINT_END\n"))
+        else:
+            f.write(GCODE_EDDY if eddy else GCODE)
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
             "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]
@@ -106,11 +145,23 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     return proc.returncode == 0 and not bad, proc.returncode, text, bad
 
 
+class _keep:
+    def __init__(self, path):
+        self.path = path
+    def __enter__(self):
+        shutil.rmtree(self.path, ignore_errors=True)
+        os.makedirs(self.path)
+        return self.path
+    def __exit__(self, *a):
+        return False
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--klipper", required=True)
     ap.add_argument("--dicts", required=True)
     ap.add_argument("--autotune")
+    ap.add_argument("--toolchanger", help="klipper-toolchanger checkout (repo root)")
     ap.add_argument("--site")
     ap.add_argument("--ui-configs", help="dir containing mainsail-config/ and fluidd-config/ checkouts")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -118,20 +169,23 @@ def main():
     a = ap.parse_args()
 
     failures = skipped = 0
-    with tempfile.TemporaryDirectory() as tmp:
-        klipper = prepare_klipper(a.klipper, a.autotune, tmp)
+    keep = os.environ.get("KC_KEEP_WORKDIR")   # debugging: keep the staged config and logs here
+    with (tempfile.TemporaryDirectory() if not keep else _keep(keep)) as tmp:
+        klipper = prepare_klipper(a.klipper, a.autotune, a.toolchanger, tmp)
         for outdir in a.outdirs:
             ok, code, text, bad = check(outdir, klipper, a.dicts, a.site, tmp, a.ui_configs)
             if ok is None:
                 skipped += 1
                 print(f"SKIP  {outdir}  (an MCU without a Klipper data dictionary, e.g. Beacon)")
                 continue
-            print(f"{'PASS' if ok else 'FAIL'}  {outdir}")
+            print(f"{'PASS' if ok else 'FAIL'}  {outdir}" + ("" if ok else f"  (exit {code})"))
             if not ok:
                 failures += 1
                 tail = bad or text.strip().splitlines()[-15:]
                 for ln in tail[:15]:
                     print("      " + ln)
+                if a.verbose:
+                    print(text)
             elif a.verbose:
                 print(text[-2000:])
     checked = len(a.outdirs) - skipped

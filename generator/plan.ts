@@ -70,6 +70,27 @@ export interface FanPlan extends PortUse {
   defaults: Rec;
 }
 
+export interface ToolPlan {
+  n: number;                  // tool number
+  mcu: string;                // klipper mcu name
+  toolboard: Rec;
+  connection: 'can' | 'usb';
+  extruderSection: string;    // extruder, extruder1, ...
+  stepper: StepperPlan;
+  extruder: Rec;
+  hotend: Rec;
+  thermistor: Rec;
+  heater: PortUse;
+  sensor: PortUse & { pullup: number };
+  maxTemp: number;
+  paBaseline: number;
+  fans: FanPlan[];            // part cooling (fan_generic Tn_partfan) and hotend (heater_fan Tn_hotend_fan)
+  probe: PortUse;             // Tap / OptoTap: [tool_probe Tn] pin and [tool Tn] detection_pin
+  accel?: Rec;
+  leds?: PortUse & { chain: number; order: string };
+  dock?: { x: number; y: number; z: number };
+}
+
 export interface Plan {
   build: Build;
   printer: Rec;
@@ -100,6 +121,8 @@ export interface Plan {
   issues: Issue[];
   links: Link[];
   mcus: McuInfo[];
+  tools?: ToolPlan[];         // toolchanger: T0..Tn
+  toolchanger?: { rec: Rec; safeY?: number; closeY?: number; yMin?: number; zMax?: number };
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -111,11 +134,18 @@ function splitPin(raw: string): [string, string] {
 }
 
 /** Qualify a board pin for use in printer.cfg: modifiers first, then mcu prefix. */
-export function qpin(board: BoardKind, raw: string, extraMods = ''): string {
+export function qpin(board: BoardKind, raw: string, extraMods = '', mcuName = TOOLHEAD_MCU): string {
   const [mods, bare] = splitPin(raw);
   const all = [...new Set((extraMods + mods).split(''))].join('');
-  return all + (board === 'toolboard' ? `${TOOLHEAD_MCU}:` : '') + bare;
+  return all + (board === 'toolboard' ? `${mcuName}:` : '') + bare;
 }
+
+const qpinBase = qpin;
+
+/** MCU name of toolchanger tool n: T0 keeps "toolhead", T1.. are "toolhead1".. */
+export const toolMcu = (n: number) => (n === 0 ? TOOLHEAD_MCU : `${TOOLHEAD_MCU}${n}`);
+/** Klipper extruder section of tool n (Klipper's M104/M109 T<n> use the same mapping). */
+export const extruderName = (n: number) => (n === 0 ? 'extruder' : `extruder${n}`);
 
 export function plan(build: Build, db: Db): Plan {
   const issues: Issue[] = [];
@@ -157,6 +187,27 @@ export function plan(build: Build, db: Db): Plan {
   if (toolboard) addLinks(repoLink(toolboard, 'manufacturer docs and pinout'), 'toolhead board');
   addLinks(extruder.docs, 'extruder');
   addLinks([KLIPPER_DOCS.configChecks], 'first power-on');
+
+  // --- toolchanger: checks that shape the rest of the plan ----------------
+  const tcSpec = build.toolchanger;
+  const tcRec: Rec | undefined = tcSpec
+    ? need(db.toolchangers[tcSpec.system], 'unknown_toolchanger', `Unknown toolchanger "${tcSpec.system}"`)
+    : undefined;
+  if (tcSpec && tcRec) {
+    if (!tcRec.applies_to.includes(build.printer)) {
+      err('toolchanger_printer', `${tcRec.name} is modelled for ${tcRec.applies_to.map((id: string) => db.printers[id]?.name ?? id).join(', ')} (fixed docks on a flying gantry). ${printer.name} needs a liftbar, which the generator does not write yet.`);
+    }
+    if (build.toolhead !== tcRec.toolhead) err('toolchanger_toolhead', `${tcRec.name} tools are "${db.toolheads[tcRec.toolhead]?.name}"; set the toolhead to it.`);
+    if (!toolboard) err('toolchanger_needs_toolboard', `Every ${tcRec.name} tool carries its own toolhead board; T0 has none.`);
+    if (build.probe) err('toolchanger_probe', `${tcRec.name} homes and probes with each tool's own Tap sensor ([tool_probe]); remove the separate probe.`);
+    if (build.homing.z !== 'probe_virtual_endstop') err('toolchanger_z_homing', `${tcRec.name} homes Z with the tool probe; set Z homing to "Probe as Z endstop".`);
+    if (!tcSpec.tools.length) err('toolchanger_one_tool', 'A toolchanger needs at least two tools; add T1.');
+    for (const k of tcRec.module.known_issues ?? []) {
+      warn('toolchanger_module', k.text);
+      addLinks(k.links, 'toolchanger');
+    }
+    addLinks(tcRec.docs, 'toolchanger');
+  }
   if (board.status !== 'reviewed') {
     warn('board_needs_review', `${board.name} pin data is marked "${board.status}". Verify pins against the board before powering on.`);
   }
@@ -254,9 +305,11 @@ export function plan(build: Build, db: Db): Plan {
     }, 'toolboard', 'extruder'));
   }
 
-  function buildStepper(def: Rec, slot: Rec, boardKind: BoardKind, group: 'xy' | 'z' | 'extruder'): StepperPlan {
-    const driver = resolveDriver(slot, boardKind, group);
-    const motor = motors[group];
+  function buildStepper(def: Rec, slot: Rec, boardKind: BoardKind, group: 'xy' | 'z' | 'extruder',
+    tool: { extruder: Rec; motor?: Rec; mcu: string } = { extruder, motor: motors.extruder, mcu: TOOLHEAD_MCU }): StepperPlan {
+    const driver = resolveDriver(slot, boardKind, group, tool.mcu);
+    const motor = group === 'extruder' ? tool.motor : motors[group];
+    const extruder = tool.extruder;
     const dirInverted = def.dir_inverted ?? false;
     let rotationDistance: number, gearRatio: string | undefined, microsteps: number;
     if (group === 'extruder') {
@@ -276,18 +329,19 @@ export function plan(build: Build, db: Db): Plan {
       microsteps = printer.defaults.stepper_xy.microsteps;
     }
     const fullSteps = motor?.step_angle_deg === 0.9 ? 400 : 200;
-    const { current, note } = runCurrent(group, motor, driver, slot);
+    const { current, note } = runCurrent(group, motor, driver, slot, extruder);
     return {
       name: def.klipper, role: def.role, position: def.position, board: boardKind, slot: slot.id,
-      step: qpin(boardKind, slot.step_pin),
-      dir: qpin(boardKind, slot.dir_pin, dirInverted ? '!' : ''),
-      enable: qpin(boardKind, slot.enable_pin),
+      step: qpin(boardKind, slot.step_pin, '', tool.mcu),
+      dir: qpin(boardKind, slot.dir_pin, dirInverted ? '!' : '', tool.mcu),
+      enable: qpin(boardKind, slot.enable_pin, '', tool.mcu),
       rotationDistance, gearRatio, microsteps, fullSteps, driver,
       runCurrent: current, currentNote: note, motor, group, pairsWith: def.pairs_with,
     };
   }
 
-  function resolveDriver(slot: Rec, boardKind: BoardKind, group: 'xy' | 'z' | 'extruder'): DriverPlan {
+  function resolveDriver(slot: Rec, boardKind: BoardKind, group: 'xy' | 'z' | 'extruder', mcuName = TOOLHEAD_MCU): DriverPlan {
+    const qpin = (b: BoardKind, raw: string, mods = '') => qpinBase(b, raw, mods, mcuName);
     const chips = db.drivers.chips;
     if (slot.onboard_driver) {
       const od = slot.onboard_driver;
@@ -296,13 +350,13 @@ export function plan(build: Build, db: Db): Plan {
       if (iface === 'uart') pins.uart_pin = qpin(boardKind, slot.uart_pin);
       else {
         pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
-        Object.assign(pins, spiPins(slot.spi_bus ? { bus: slot.spi_bus } : board.tmc_spi, boardKind));
+        Object.assign(pins, spiPins(slot.spi_bus ? { bus: slot.spi_bus } : board.tmc_spi, boardKind, mcuName));
       }
       return {
         chip: od.chip, section: od.klipper_section ?? chips[od.chip].klipper_section, iface, pins,
         sense: od.sense_resistor ?? chips[od.chip].sense_resistor_default ?? undefined,
         rref: od.rref ?? (od.chip === 'tmc2240' ? chips.tmc2240.current_reference.default_ohms : undefined),
-        diag: slot.diag_pin ? { key: slot.diag_pin_key ?? 'diag_pin', pin: diagPin(slot, od.chip, boardKind) } : undefined,
+        diag: slot.diag_pin ? { key: slot.diag_pin_key ?? 'diag_pin', pin: diagPin(slot, od.chip, boardKind, mcuName) } : undefined,
         onboard: true, hv: !!od.motor_power,
       };
     }
@@ -326,7 +380,7 @@ export function plan(build: Build, db: Db): Plan {
     } else {
       if (!board.tmc_spi) err('no_tmc_spi', `${board.name} has no TMC SPI bus in the data.`);
       pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
-      Object.assign(pins, spiPins(board.tmc_spi, boardKind));
+      Object.assign(pins, spiPins(board.tmc_spi, boardKind, mcuName));
     }
     let diagKey = 'diag_pin';
     if (chip.sensorless) {
@@ -337,12 +391,13 @@ export function plan(build: Build, db: Db): Plan {
       chip: mod.chip, section: chip.klipper_section, iface, pins,
       sense: mod.sense_resistor ?? chip.sense_resistor_default ?? undefined,
       rref: mod.rref ?? (mod.chip === 'tmc2240' ? chip.current_reference.default_ohms : undefined),
-      diag: slot.diag_pin ? { key: diagKey, pin: diagPin(slot, mod.chip, boardKind) } : undefined,
+      diag: slot.diag_pin ? { key: diagKey, pin: diagPin(slot, mod.chip, boardKind, mcuName) } : undefined,
       onboard: false, moduleId: mod.id, hv: false,
     };
   }
 
-  function spiPins(spi: Rec | undefined, boardKind: BoardKind): Record<string, string> {
+  function spiPins(spi: Rec | undefined, boardKind: BoardKind, mcuName = TOOLHEAD_MCU): Record<string, string> {
+    const qpin = (b: BoardKind, raw: string) => qpinBase(b, raw, '', mcuName);
     if (!spi) return {};
     if (spi.bus) return { spi_bus: spi.bus };
     return {
@@ -352,14 +407,15 @@ export function plan(build: Build, db: Db): Plan {
     };
   }
 
-  function diagPin(slot: Rec, chip: string, boardKind: BoardKind): string {
+  function diagPin(slot: Rec, chip: string, boardKind: BoardKind, mcuName = TOOLHEAD_MCU): string {
+    const qpin = (b: BoardKind, raw: string, mods: string) => qpinBase(b, raw, mods, mcuName);
     // Board data wins (LDO uses ^! everywhere); otherwise Klipper's TMC_Drivers.md:
     // ^ for TMC2209-family DIAG, ^! for TMC2130/5160/2240 DIAG0/DIAG1.
     const mods = slot.diag_modifier ?? (chip === 'tmc2209' || chip === 'tmc2226' ? '^' : '^!');
     return qpin(boardKind, slot.diag_pin, mods);
   }
 
-  function runCurrent(group: 'xy' | 'z' | 'extruder', motor: Rec | undefined, driver: DriverPlan, slot: Rec) {
+  function runCurrent(group: 'xy' | 'z' | 'extruder', motor: Rec | undefined, driver: DriverPlan, slot: Rec, extruder: Rec) {
     // Published reference values first (extruder maker, Z drive maker, Voron),
     // never above the policy ceiling: fraction_of_rated x motor rating and the
     // driver/slot limits. The ceiling is shown so users know their headroom.
@@ -466,7 +522,7 @@ export function plan(build: Build, db: Db): Plan {
   if (build.thermistors.chamber) {
     thermChamber = db.thermistors[build.thermistors.chamber];
     if (!thermChamber) err('unknown_thermistor', `Unknown chamber thermistor "${build.thermistors.chamber}"`);
-    const tbChamber = toolboard && pick(toolboard.thermistors, (x) => x.typical_use === 'chamber');
+    const tbChamber = toolboard && !tcRec && pick(toolboard.thermistors, (x) => x.typical_use === 'chamber');
     if (tbChamber) {
       chamberSensor = { board: 'toolboard', port: tbChamber.id, pin: qpin('toolboard', tbChamber.pin), pullup: tbChamber.pullup_ohms };
     } else {
@@ -600,10 +656,13 @@ export function plan(build: Build, db: Db): Plan {
     if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
       err('probe_not_z_endstop', `${p.name} is not suitable as the Z endstop. Use a nozzle switch for Z.`);
     }
+  } else if (tcRec) {
+    // Each tool's Tap sensor is the probe; Klipper sees one probe object (tool_probe_endstop).
+    probe = { id: 'tool_probe', name: 'Tap sensor on each tool ([tool_probe])', kind: 'tool_probe', z_endstop_capable: true, offset: { x: 0, y: 0 } };
   } else if (build.homing.z === 'probe_virtual_endstop') {
     err('no_probe', 'Z homing with the probe needs a probe.');
   }
-  if (printer.z_leveling && !build.probe) err('no_probe_for_leveling', `${printer.name} needs a probe for ${printer.z_leveling}.`);
+  if (printer.z_leveling && !build.probe && !tcRec) err('no_probe_for_leveling', `${printer.name} needs a probe for ${printer.z_leveling}.`);
 
   // --- accelerometer, LEDs -------------------------------------------------
   const accel = toolboard?.accelerometer ? { ...toolboard.accelerometer, board: 'toolboard' as BoardKind } : undefined;
@@ -625,6 +684,130 @@ export function plan(build: Build, db: Db): Plan {
   const paBaseline = r2((extruder.pa_baseline?.start ?? 0.04) + flow);
   if ((build.nozzleDiameter ?? 0.4) !== 0.4) warn('pa_nozzle', 'Pressure advance baseline assumes a 0.4 mm nozzle.');
 
+  // --- toolchanger: one ToolPlan per tool ---------------------------------
+  let tools: ToolPlan[] | undefined;
+  let toolchanger: Plan['toolchanger'];
+  if (tcSpec && tcRec && toolboard) {
+    const tapMods = db.probes['voron-tap']?.pin_modifier ?? '^';
+    const probePort = (tb: Rec, n: number, mcuName: string): PortUse => {
+      const port = tb.probe_ports?.[0];
+      if (!port) {
+        err('no_probe_port', `T${n}: ${tb.name} has no probe input for the Tap sensor.`);
+        return { board: 'toolboard', port: '?', pin: '?' };
+      }
+      return { board: 'toolboard', port: port.id, pin: qpin('toolboard', port.pin, port.modifier ?? tapMods, mcuName) };
+    };
+    const toolFan = (f: FanPlan, n: number): FanPlan => ({
+      ...f,
+      section: f.role === 'part_cooling' ? `fan_generic T${n}_partfan` : `heater_fan T${n}_hotend_fan`,
+      defaults: f.role === 'hotend' ? { ...f.defaults, heater: extruderName(n) } : f.defaults,
+    });
+
+    // T0: the main toolhead already planned above. Its toolboard fans move into the tool.
+    const t0Fans = fans.filter((f) => f.board === 'toolboard');
+    for (const f of t0Fans) {
+      if (!['part_cooling', 'hotend'].includes(f.role)) err('toolchanger_fan_board', `Fan "${f.role}" is on T0's board; only the part cooling and hotend fans travel with a tool. Put it on the mainboard.`);
+    }
+    for (const role of ['part_cooling', 'hotend']) {
+      if (!t0Fans.some((f) => f.role === role)) err('toolchanger_fan_board', `The ${role.replace('_', ' ')} fan must be on the tool's board on a toolchanger (each tool has its own).`);
+    }
+    fans.splice(0, fans.length, ...fans.filter((f) => f.board !== 'toolboard'));
+    const t0Conn = build.toolboard!.connection ?? (toolboard.interfaces.includes('can') ? 'can' : 'usb');
+    tools = [{
+      n: 0, mcu: toolMcu(0), toolboard, connection: t0Conn, extruderSection: 'extruder',
+      stepper: steppers.find((s) => s.group === 'extruder')!,
+      extruder, hotend, thermistor: thermHotend, heater: hotendHeater, sensor: hotendSensor, maxTemp, paBaseline,
+      fans: t0Fans.filter((f) => ['part_cooling', 'hotend'].includes(f.role)).map((f) => toolFan(f, 0)),
+      probe: probePort(toolboard, 0, toolMcu(0)), accel, leds, dock: tcSpec.docks?.[0] ?? undefined,
+    }];
+
+    tcSpec.tools.forEach((spec, i) => {
+      const n = i + 1;
+      const mcuName = toolMcu(n);
+      const tb = need(db.toolboards[spec.toolboard.id], 'unknown_toolboard', `T${n}: unknown toolhead board "${spec.toolboard.id}"`);
+      const conn = spec.toolboard.connection ?? (tb.interfaces.includes('can') ? 'can' : 'usb');
+      if (!tb.interfaces.includes(conn)) err('toolboard_connection', `T${n}: ${tb.name} has no ${conn} interface.`);
+      if (conn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
+        err('no_can_path', `T${n}: ${tb.name} on CAN needs the mainboard in USB-CAN bridge mode or a USB-CAN adapter (canAdapter: "u2c").`);
+      }
+      if (tb.status !== 'reviewed') warn('board_needs_review', `T${n}: ${tb.name} pin data is marked "${tb.status}". Verify pins against the board before powering on.`);
+      addLinks(repoLink(tb, 'manufacturer docs and pinout'), 'toolhead board');
+      const ext = need(db.extruders[spec.extruder ?? build.extruder], 'unknown_extruder', `T${n}: unknown extruder "${spec.extruder}"`);
+      const he = need(db.hotends[spec.hotend ?? build.hotend], 'unknown_hotend', `T${n}: unknown hotend "${spec.hotend}"`);
+      const th = need(db.thermistors[spec.hotendThermistor ?? build.thermistors.hotend], 'unknown_thermistor', `T${n}: unknown thermistor "${spec.hotendThermistor}"`);
+      if (th.custom_definition_required) err('custom_thermistor', `T${n}: ${th.label} needs a custom [thermistor] definition, which the generator does not write yet.`);
+      if (th.needs) err('thermistor_hw', `T${n}: ${th.label} needs extra hardware (${th.needs.join('; ')}), which the generator does not configure yet.`);
+      if (toolhead?.compatible_extruders && !toolhead.compatible_extruders.includes(ext.id)) {
+        warn('tool_extruder_fit', `T${n}: ${ext.name} is not listed as fitting the ${toolhead.name}.`);
+      }
+      addLinks(ext.docs, 'extruder');
+      const motorId: string | undefined = spec.extruderMotor ?? (spec.extruder ? ext.recommended_motor : build.motors.extruder ?? ext.recommended_motor);
+      const motor = motorId ? db.motors[motorId.toLowerCase()] : undefined;
+      if (motorId && !motor) warn('unknown_motor', `T${n}: motor "${motorId}" is not in the motor database: run_current falls back to the printer default and autotune is skipped for it.`);
+      const d = tb.extruder_driver;
+      const stepper = buildStepper({ klipper: extruderName(n), role: 'E' }, {
+        id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
+        uart_pin: d.uart_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus,
+        onboard_driver: { chip: d.chip, klipper_section: db.drivers.chips[d.chip].klipper_section, sense_resistor: d.sense_resistor, rref: d.rref_ohms },
+      }, 'toolboard', 'extruder', { extruder: ext, motor, mcu: mcuName });
+      steppers.push(stepper);
+      const h = tb.heaters[0];
+      const t = pick(tb.thermistors, (x) => x.typical_use === 'hotend')!;
+      const toolMax = Math.min(he.max_temp, th.max_temp_c ?? he.max_temp);
+      // Same fan ports as T0 when the board has them, so every tool is wired alike.
+      const used = new Set<string>();
+      const toolFans: FanPlan[] = [];
+      for (const f0 of tools![0].fans) {
+        const port = tb.fans.find((p: Rec) => p.id === f0.port && !used.has(p.id)) ?? tb.fans.find((p: Rec) => !used.has(p.id));
+        if (!port) { err('no_fan_port', `T${n}: no free fan port on ${tb.name} for the ${f0.role.replace('_', ' ')} fan.`); continue; }
+        used.add(port.id);
+        toolFans.push(toolFan({ ...f0, port: port.id, pin: qpin('toolboard', port.pin, '', mcuName), tach: undefined }, n));
+      }
+      let toolLeds: ToolPlan['leds'];
+      if (build.leds && toolhead?.leds) {
+        const port = tb.neopixel_ports?.[0];
+        if (!port) warn('no_led_port', `T${n}: LEDs need an RGB port on ${tb.name}; skipped.`);
+        else toolLeds = { board: 'toolboard', port: port.id, pin: qpin('toolboard', port.pin, '', mcuName), chain: toolhead.leds.chain_count, order: toolhead.leds.color_order };
+      }
+      tools!.push({
+        n, mcu: mcuName, toolboard: tb, connection: conn, extruderSection: extruderName(n), stepper,
+        extruder: ext, hotend: he, thermistor: th,
+        heater: { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin, '', mcuName) },
+        sensor: { board: 'toolboard', port: t.id, pin: qpin('toolboard', t.pin, '', mcuName), pullup: t.pullup_ohms ?? 4700 },
+        maxTemp: toolMax,
+        paBaseline: r2((ext.pa_baseline?.start ?? 0.04) + (db.flowClasses[he.flow_class]?.pa_offset ?? 0)),
+        fans: toolFans, probe: probePort(tb, n, mcuName),
+        accel: tb.accelerometer ? { ...tb.accelerometer } : undefined, leds: toolLeds,
+        dock: tcSpec.docks?.[n] ?? undefined,
+      });
+    });
+
+    const missing = tools.filter((t) => !t.dock).map((t) => `T${t.n}`);
+    if (missing.length) {
+      warn('tool_dock_unset', `No dock position for ${missing.join(', ')} yet. Tool changes to and from ${missing.length > 1 ? 'them' : 'it'} are refused until you measure it with TC_DOCK_ALIGN_START / TC_DOCK_ALIGN_SAVE (toolchanger.cfg) or enter it here. ${tcRec.dock_z_rule}.`);
+    }
+    if (tcSpec.safeY === undefined) {
+      warn('toolchanger_safe_y', `No safe Y set. Tool changes are refused until it is: ${tcRec.safe_y_rule} (StealthChanger wiki).`);
+    }
+    // Docks sit outside the print area; Klipper only moves inside the stepper limits.
+    const yMin = tcSpec.travel?.yMin ?? printer.defaults.stepper_xy.position_min;
+    const zMax = tcSpec.travel?.zMax ?? size.position_max.z;
+    const pathZ = Math.max(...[...tcRec.dropoff_path, ...tcRec.pickup_path].map((q: Rec) => q.z ?? 0));
+    warn('toolchanger_travel', `Docks are reached outside the normal print area. Klipper moves only within stepper_y position_min (now ${yMin}) and stepper_z position_max (now ${zMax}). Set both to what your printer can physically reach before measuring docks, or Klipper refuses the moves.`);
+    for (const t of tools) {
+      if (!t.dock) continue;
+      if (t.dock.y < yMin) err('dock_out_of_range', `T${t.n} dock Y ${t.dock.y} is below stepper_y position_min ${yMin}. Set the Y travel minimum to ${t.dock.y} or lower.`);
+      if (t.dock.z + pathZ > zMax) err('dock_out_of_range', `T${t.n} dock Z ${t.dock.z} plus the ${pathZ} mm docking path is above stepper_z position_max ${zMax}. Set the Z travel maximum to at least ${r2(t.dock.z + pathZ)}.`);
+    }
+    if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y ${tcSpec.safeY} is beyond the ${size.position_max.y} mm Y travel.`);
+    const docked = tools.filter((t) => t.dock).map((t) => t.dock!.y);
+    toolchanger = {
+      rec: tcRec, safeY: tcSpec.safeY, yMin: tcSpec.travel?.yMin, zMax: tcSpec.travel?.zMax,
+      closeY: docked.length === tools.length ? r2(Math.max(...docked) + tcRec.close_y_offset) : undefined,
+    };
+    if (tools.some((t) => t.connection === 'can')) addLinks([KLIPPER_DOCS.canbus], 'wiring');
+  }
+
   return {
     build, printer, size, variant, board, mcu, toolboard, toolhead, steppers, extruder, hotend,
     hotendHeater, hotendSensor,
@@ -635,9 +818,12 @@ export function plan(build: Build, db: Db): Plan {
     links: finishLinks(),
     mcus: [
       { name: 'mcu', chip: mcu.chip, what: board.name, klipperCheck: true },
-      ...(toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, what: toolboard.name, klipperCheck: true }] : []),
+      ...(tools
+        ? tools.map((t) => ({ name: t.mcu, chip: t.toolboard.mcu.chip, what: `T${t.n}: ${t.toolboard.name}`, klipperCheck: true }))
+        : toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, what: toolboard.name, klipperCheck: true }] : []),
       ...extraMcus,
     ],
+    tools, toolchanger,
   };
 
   function finishLinks(): Link[] {

@@ -17,6 +17,7 @@ export interface RawData {
   thermistors: Rec;
   fans: Rec;
   homing: Rec;
+  toolchangers: Rec;
 }
 
 function byId(items: Rec[]): Record<string, Rec> {
@@ -48,5 +49,6 @@ export function assembleDb(raw: RawData): Db {
     homing: raw.homing,
     filters: byId(raw.filters.filters),
     filterDefaults: raw.filters.defaults,
+    toolchangers: byId(raw.toolchangers.toolchangers),
   };
 }

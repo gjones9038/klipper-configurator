@@ -11,6 +11,7 @@ function levelCmd(p: Plan): string {
 
 export function printMacros(p: Plan, header: string[]): string {
   const [bx, by] = p.size.bed_mm;
+  const tc = !!p.tools;
   const nm = p.nevermore;
   const hasChamber = !!p.chamberSensor;
   const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
@@ -44,9 +45,9 @@ export function printMacros(p: Plan, header: string[]): string {
 
 ${block(`
 [gcode_macro PRINT_START]
-description: Home, heat and soak, level, adaptive mesh, heat nozzle, purge. Params: BED EXTRUDER [CHAMBER] [CHAMBER_MINIMAL] [SOAK]
+description: Home, heat and soak, level, adaptive mesh, heat nozzle, purge. Params: BED EXTRUDER [CHAMBER] [CHAMBER_MINIMAL] [SOAK]${tc ? ' [TOOL]' : ''}
 gcode:
-    {% set BED = params.BED|default(100)|int %}
+    {% set BED = params.BED|default(100)|int %}${tc ? '\n    {% set TOOL = params.TOOL|default(0)|int %}' : ''}
     {% set EXTRUDER = params.EXTRUDER|default(240)|int %}
     {% set CHAMBER_SET = params.CHAMBER|default(0)|int %}
     {% set CHAMBER_MIN = params.CHAMBER_MINIMAL|default(0)|int %}
@@ -56,7 +57,7 @@ gcode:
     SET_DISPLAY_TEXT MSG="Homing"
     BED_MESH_CLEAR
     G28
-    G90
+    G90${tc ? '\n    SET_DISPLAY_TEXT MSG="T0 levels and meshes (reference tool)"\n    T0' : ''}
 ${nevermoreOn}
     SET_DISPLAY_TEXT MSG="Bed: {BED}C"
     G0 X${bx / 2} Y${by / 2} Z30 F6000
@@ -73,7 +74,7 @@ ${chamberWait}
     ${levelCmd(p)}
     G28 Z
     SET_DISPLAY_TEXT MSG="Bed mesh"
-    BED_MESH_CALIBRATE ADAPTIVE=1${scan}
+    BED_MESH_CALIBRATE ADAPTIVE=1${scan}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
     SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
     G0 X${bx / 2} Y20 Z10 F6000
     M109 S{EXTRUDER}
@@ -172,10 +173,10 @@ gcode:
 }
 
 export function preflightMacros(p: Plan, header: string[]): string {
-  const sensors = ['extruder', 'heater_bed', ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
+  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), 'heater_bed', ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
   const motors = p.steppers.map((s) =>
-    `    RESPOND MSG="${s.name}: ${s.board === 'toolboard' ? 'toolhead board' : s.slot} (${s.role}${s.position ? ' ' + s.position : ''})"\n    STEPPER_BUZZ STEPPER=${s.name}`).join('\n');
-  const fans = p.fans.map((f) => {
+    `    RESPOND MSG="${s.name}: ${s.board === 'toolboard' ? (p.tools ? `T${p.tools.find((t) => t.stepper === s)?.n} board` : 'toolhead board') : s.slot} (${s.role}${s.position ? ' ' + s.position : ''})"\n    STEPPER_BUZZ STEPPER=${s.name}`).join('\n');
+  const fans = [...p.fans, ...(p.tools ?? []).flatMap((t) => t.fans)].map((f) => {
     const [kind, name] = f.section.split(' ');
     if (kind === 'fan') return '    RESPOND MSG="Part cooling fan"\n    M106 S255\n    G4 P3000\n    M107';
     if (kind === 'fan_generic') return `    RESPOND MSG="${name}"\n    SET_FAN_SPEED FAN=${name} SPEED=1\n    G4 P3000\n    SET_FAN_SPEED FAN=${name} SPEED=0`;
@@ -186,7 +187,7 @@ export function preflightMacros(p: Plan, header: string[]): string {
 ${block(`
 [gcode_macro PREFLIGHT]
 description: First check after wiring: temperatures, endstops and probe. Then run PREFLIGHT_MOTORS and PREFLIGHT_FANS.
-gcode:
+gcode:${p.tools ? '\n    INITIALIZE_TOOLCHANGER' : ''}
     {% set ns = namespace(ok=true) %}
     {% for name in ${JSON.stringify(sensors)} %}
         {% set t = printer[name].temperature %}
@@ -199,6 +200,7 @@ gcode:
     {% endfor %}
     QUERY_ENDSTOPS
     RESPOND MSG="Endstops should read 'open'. Press each switch by hand and run QUERY_ENDSTOPS again: it must read 'TRIGGERED'."
+${p.tools ? '    QUERY_PROBE\n    RESPOND MSG="QUERY_PROBE reads the mounted tool\'s Tap sensor. Lift the tool off its Tap by hand and query again: it must change state."' : ''}
 ${(p.probe?.port || p.bltouch) ? '    QUERY_PROBE\n    RESPOND MSG="Probe should be open; trigger it by hand and run QUERY_PROBE again."' : ''}
     {% if ns.ok %}
         RESPOND MSG="Sensors look sane. Next: PREFLIGHT_MOTORS with the toolhead centered, then PREFLIGHT_FANS."
@@ -231,11 +233,11 @@ export function tuningMacros(p: Plan, header: string[]): string {
 
 ${block(`
 [gcode_macro TUNE_PID_HOTEND]
-description: PID-tune the hotend with the part fan at 25%. TEMP=245 by default.
+description: PID-tune the hotend with the part fan at 25%. TEMP=245 by default.${p.tools ? ' HEATER=extruder1 etc. for other tools (mount that tool first).' : ''}
 gcode:
-    {% set T = params.TEMP|default(245)|float %}
+    {% set T = params.TEMP|default(245)|float %}${p.tools ? "\n    {% set H = params.HEATER|default('extruder') %}" : ''}
     M106 S64
-    PID_CALIBRATE HEATER=extruder TARGET={T}
+    PID_CALIBRATE HEATER=${p.tools ? '{H}' : 'extruder'} TARGET={T}
     M107
     RESPOND MSG="Hotend PID done. Run SAVE_CONFIG to keep it."
 `)}
@@ -334,7 +336,14 @@ export function homingMacros(p: Plan, header: string[]): string {
   const names = Object.keys(cur);
   const setAll = (vals: Record<string, number>) =>
     names.map((n) => `    SET_TMC_CURRENT STEPPER=${n} CURRENT=${vals[n]}`).join('\n');
-  const homeAxis = (axis: 'X' | 'Y') => block(`
+  const sensorless = p.build.homing.xy === 'sensorless';
+  const tc = !!p.tools;
+  const homeAxis = (axis: 'X' | 'Y') => !sensorless ? block(`
+[gcode_macro _HOME_${axis}]
+description: ${axis} home on its endstop switch.
+gcode:
+    G28 ${axis}
+`) : block(`
 [gcode_macro _HOME_${axis}]
 description: Sensorless ${axis} home at reduced current (Klipper TMC_Drivers.md).
 gcode:
@@ -346,9 +355,12 @@ ${setAll(cur)}
     G90
 ${setAll(run)}
 `);
+  const intro = [
+    sensorless ? '# Sensorless X/Y. homing_override replaces safe_z_home, so Z homing lives here too.\n# CoreXY moves both A and B motors for either axis, so every A/B motor drops current together.' : '# homing_override replaces safe_z_home, so Z homing lives here too.',
+    tc ? '# Toolchanger: the mounted tool\'s Tap sensor homes Z. INITIALIZE_TOOLCHANGER detects which tool\n# is mounted (require_tool_present: homing stops if none is), and ADJUST_Z_AFTER_TOOL_NOZZLE_HOME\n# applies that tool\'s Z offset after homing (klipper-toolchanger toolchanger.md).' : '',
+  ].filter(Boolean).join('\n');
   return `${hdr(header)}
-# Sensorless X/Y. homing_override replaces safe_z_home, so Z homing lives here too.
-# CoreXY moves both A and B motors for either axis, so every A/B motor drops current together.
+${intro}
 
 ${homeAxis('X')}
 
@@ -359,7 +371,7 @@ ${block(`
 gcode:
     G90
     G0 X${zxy[0]} Y${zxy[1]} F6000
-    G28 Z
+    G28 Z${tc ? '\n    ADJUST_Z_AFTER_TOOL_NOZZLE_HOME' : ''}
     G0 Z10 F1200
 `)}
 
@@ -370,7 +382,7 @@ gcode:
 ${block(`
 [homing_override]
 axes: xyz
-gcode:
+gcode:${tc ? '\n    INITIALIZE_TOOLCHANGER' : ''}
     {% set home_all = 'X' not in params and 'Y' not in params and 'Z' not in params %}
     {% set z_homed = 'z' in printer.toolhead.homed_axes %}
     {% if z_homed %}

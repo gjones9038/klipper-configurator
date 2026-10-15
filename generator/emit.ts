@@ -1,8 +1,9 @@
 // Render a Plan into Klipper config files. No decisions here beyond formatting.
 import { CfgFile, Section } from './cfg.ts';
-import type { Plan, StepperPlan, FanPlan } from './plan.ts';
+import type { Plan, StepperPlan, FanPlan, PortUse } from './plan.ts';
 import { TOOLHEAD_MCU } from './plan.ts';
 import type { Db, Rec } from './types.ts';
+import { toolFile, toolchangerFile } from './toolchanger.ts';
 import { homingMacros, levelingMacros, preflightMacros, printMacros, tuningMacros } from './macros.ts';
 
 export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
@@ -32,9 +33,12 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     pc.add(new Section(`include ${webUi}.cfg`, `${webUi === 'mainsail' ? 'Mainsail' : 'Fluidd'} client macros: PAUSE / RESUME / CANCEL_PRINT, virtual_sdcard`));
   }
   pc.add(new Section('include mainboard.cfg'));
-  if (p.toolboard) pc.add(new Section('include toolhead.cfg'));
+  if (p.tools) {
+    pc.add(new Section('include toolchanger.cfg', `${p.toolchanger!.rec.name}: [toolchanger], dock macros`));
+    for (const t of p.tools) pc.add(new Section(`include tools/T${t.n}.cfg`, `${t.toolboard.name}`));
+  } else if (p.toolboard) pc.add(new Section('include toolhead.cfg'));
   if (eddy || beacon) pc.add(new Section('include probe.cfg'));
-  if (sensorless) pc.add(new Section('include homing.cfg'));
+  if (sensorless || p.tools) pc.add(new Section('include homing.cfg'));
   if (b.autotune) pc.add(new Section('include autotune.cfg'));
   for (const m of ['print', 'leveling', 'preflight', 'tuning']) pc.add(new Section(`include macros/${m}.cfg`));
 
@@ -52,8 +56,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   // force_move: sensorless homing macros and the first eddy calibration when homing with it
   // (Klipper Eddy_Probe.md) both need SET_KINEMATIC_POSITION.
-  if (sensorless || (eddy && probeHoming)) {
-    pc.add(new Section('force_move', sensorless ? 'used by homing.cfg' : 'first eddy calibration (Klipper Eddy_Probe.md)')
+  if (sensorless || p.tools || (eddy && probeHoming)) {
+    pc.add(new Section('force_move', sensorless || p.tools ? 'used by homing.cfg' : 'first eddy calibration (Klipper Eddy_Probe.md)')
       .set('enable_force_move', true));
   }
 
@@ -61,7 +65,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const center = `${bedX / 2}, ${bedY / 2}`;
   // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
   // sensorless homing uses homing_override, which also excludes it.
-  if (!sensorless && !(beacon && probeHoming)) {
+  if (!sensorless && !p.tools && !(beacon && probeHoming)) {
     const xy = probeHoming ? [bedX / 2, bedY / 2] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
     pc.add(new Section('safe_z_home')
       .set('home_xy_position', `${xy[0]}, ${xy[1]}`, b.homing.z === 'nozzle_switch' ? 'nozzle switch position' : 'bed center')
@@ -113,7 +117,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   if (p.accel) {
     pc.add(new Section('resonance_tester')
-      .set('accel_chip', p.accel.chip)
+      .set('accel_chip', p.tools ? `${p.accel.chip} T0` : p.accel.chip, p.tools ? 'change to the tool you are measuring; shapers are per tool' : undefined)
       .set('probe_points', [`${bedX / 2}, ${bedY / 2}, 20`]));
   } else if (p.toolhead?.input_shaper_baseline) {
     const s = p.toolhead.input_shaper_baseline;
@@ -127,7 +131,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const mb = new CfgFile(header('mainboard.cfg'));
   mb.add(mcuSection('mcu', p.board, b.mainboard.connection, p.mcu.chip));
   mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
-  const tb = p.toolboard ? new CfgFile(header('toolhead.cfg')) : undefined;
+  const tb = p.toolboard && !p.tools ? new CfgFile(header('toolhead.cfg')) : undefined;
   if (tb) {
     const tconn = b.toolboard!.connection ?? (p.toolboard!.interfaces.includes('can') ? 'can' : 'usb');
     tb.add(mcuSection(`mcu ${TOOLHEAD_MCU}`, p.toolboard!, tconn, p.toolboard!.mcu.chip));
@@ -135,30 +139,17 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
   const fileFor = (board: 'mainboard' | 'toolboard') => (board === 'toolboard' ? tb! : mb);
 
+  const extruderSection = (es: StepperPlan) => extruderSec(es, p, db, {
+    heater: p.hotendHeater, sensor: p.hotendSensor, thermistor: p.thermistor.hotend,
+    hotend: p.hotend, extruder: p.extruder, maxTemp: p.maxTemp, pa: p.paBaseline,
+  });
   for (const s of p.steppers) {
+    if (p.tools && s.board === 'toolboard') continue;   // tools/Tn.cfg
     const f = fileFor(s.board);
     f.add(s.name === 'extruder' ? extruderSection(s) : stepperSection(s, p));
     f.add(tmcSection(s, p, db));
   }
 
-  // [extruder] holds both the stepper and the hotend heater keys.
-  function extruderSection(es: StepperPlan): Section {
-    const sec = stepperSection(es, p);
-    const hd = p.hotend;
-    sec.set('nozzle_diameter', b.nozzleDiameter ?? 0.4).set('filament_diameter', 1.75)
-      .set('heater_pin', p.hotendHeater.pin)
-      .set('sensor_type', p.thermistor.hotend.sensor_type)
-      .set('sensor_pin', p.hotendSensor.pin);
-    if (p.hotendSensor.pullup !== 4700) sec.set('pullup_resistor', p.hotendSensor.pullup, 'board thermistor pull-up');
-    const hdef = db.hotendDefaults;
-    sec.set('min_temp', hdef.min_temp).set('max_temp', p.maxTemp)
-      .set('max_power', hdef.max_power).set('min_extrude_temp', hdef.min_extrude_temp)
-      .set('max_extrude_only_distance', 150, 'room for the 100 mm rotation_distance test')
-      .set('control', 'pid', `seed values; run TUNE_PID_HOTEND (${hd.name})`)
-      .set('pid_kp', hdef.pid_seed.pid_kp).set('pid_ki', hdef.pid_seed.pid_ki).set('pid_kd', hdef.pid_seed.pid_kd)
-      .set('pressure_advance', p.paBaseline, `baseline (${p.extruder.name} + ${hd.flow_class}); run TUNE_PA`);
-    return sec;
-  }
 
   const bed = new Section('heater_bed')
     .set('heater_pin', p.bedHeater.pin, `${p.bedHeater.port}`)
@@ -210,7 +201,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       .set('sensor_pin', p.bltouch.sensor).set('control_pin', p.bltouch.control)
       .set('x_offset', p.probe!.offset.x).set('y_offset', p.probe!.offset.y).set('z_offset', 0));
   }
-  if (p.accel) {
+  if (p.accel && tb) {
     const a = new Section(p.accel.chip).set('cs_pin', `${TOOLHEAD_MCU}:${p.accel.cs_pin}`);
     if (p.accel.spi_bus) a.set('spi_bus', p.accel.spi_bus);
     else {
@@ -220,8 +211,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     }
     tb!.add(a);
   }
-  if (p.leds) {
-    tb!.add(new Section('neopixel toolhead_leds').set('pin', p.leds.pin)
+  if (p.leds && tb) {
+    tb.add(new Section('neopixel toolhead_leds').set('pin', p.leds.pin)
       .set('chain_count', p.leds.chain).set('color_order', p.leds.order)
       .set('initial_RED', 0.2).set('initial_GREEN', 0.2).set('initial_BLUE', 0.2).set('initial_WHITE', p.leds.order.length === 4 ? 0.2 : undefined));
   }
@@ -251,7 +242,11 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     files['autotune.cfg'] = at.render();
   }
 
-  if (sensorless) files['homing.cfg'] = homingMacros(p, header('homing.cfg'));
+  if (p.tools) {
+    files['toolchanger.cfg'] = toolchangerFile(p, header('toolchanger.cfg'));
+    for (const t of p.tools) files[`tools/T${t.n}.cfg`] = toolFile(p, t, db, header(`tools/T${t.n}.cfg`));
+  }
+  if (sensorless || p.tools) files['homing.cfg'] = homingMacros(p, header('homing.cfg'));
   files['macros/print.cfg'] = printMacros(p, header('macros/print.cfg'));
   files['macros/leveling.cfg'] = levelingMacros(p, header('macros/leveling.cfg'));
   files['macros/preflight.cfg'] = preflightMacros(p, header('macros/preflight.cfg'));
@@ -259,7 +254,35 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   return files;
 }
 
-function mcuSection(name: string, board: Rec, conn: string, chip: string): Section {
+export interface HotendParts {
+  heater: PortUse;
+  sensor: PortUse & { pullup: number };
+  thermistor: Rec;
+  hotend: Rec;
+  extruder: Rec;
+  maxTemp: number;
+  pa: number;
+}
+
+// [extruder] holds both the stepper and the hotend heater keys.
+export function extruderSec(es: StepperPlan, p: Plan, db: Db, t: HotendParts, tuneHint = 'TUNE_PID_HOTEND'): Section {
+  const sec = stepperSection(es, p);
+  sec.set('nozzle_diameter', p.build.nozzleDiameter ?? 0.4).set('filament_diameter', 1.75)
+    .set('heater_pin', t.heater.pin)
+    .set('sensor_type', t.thermistor.sensor_type)
+    .set('sensor_pin', t.sensor.pin);
+  if (t.sensor.pullup !== 4700) sec.set('pullup_resistor', t.sensor.pullup, 'board thermistor pull-up');
+  const hdef = db.hotendDefaults;
+  sec.set('min_temp', hdef.min_temp).set('max_temp', t.maxTemp)
+    .set('max_power', hdef.max_power).set('min_extrude_temp', hdef.min_extrude_temp)
+    .set('max_extrude_only_distance', 150, 'room for the 100 mm rotation_distance test')
+    .set('control', 'pid', `seed values; run ${tuneHint} (${t.hotend.name})`)
+    .set('pid_kp', hdef.pid_seed.pid_kp).set('pid_ki', hdef.pid_seed.pid_ki).set('pid_kd', hdef.pid_seed.pid_kd)
+    .set('pressure_advance', t.pa, `baseline (${t.extruder.name} + ${t.hotend.flow_class}); run TUNE_PA`);
+  return sec;
+}
+
+export function mcuSection(name: string, board: Rec, conn: string, chip: string): Section {
   const s = new Section(name, `${board.name}`);
   if (conn === 'usb') {
     s.set('serial', `/dev/serial/by-id/usb-Klipper_${chip}_REPLACE_ME-if00`, 'ls /dev/serial/by-id/*');
@@ -272,9 +295,10 @@ function mcuSection(name: string, board: Rec, conn: string, chip: string): Secti
   return s;
 }
 
-function stepperSection(s: StepperPlan, p: Plan): Section {
+export function stepperSection(s: StepperPlan, p: Plan): Section {
   const d = p.printer.defaults;
-  const sec = new Section(s.name, `${s.board === 'toolboard' ? p.toolboard!.name : s.slot}${s.position ? ` · ${s.role} ${s.position}` : ` · ${s.role}`}`)
+  const tool = p.tools?.find((t) => t.stepper === s);
+  const sec = new Section(s.name, `${s.board === 'toolboard' ? (tool ? `T${tool.n} ${tool.toolboard.name}` : p.toolboard!.name) : s.slot}${s.position ? ` · ${s.role} ${s.position}` : ` · ${s.role}`}`)
     .set('step_pin', s.step).set('dir_pin', s.dir, 'direction verified in PREFLIGHT_MOTORS').set('enable_pin', s.enable)
     .set('microsteps', s.microsteps).set('rotation_distance', s.rotationDistance)
     .set('gear_ratio', s.gearRatio).set('full_steps_per_rotation', s.fullSteps);
@@ -285,7 +309,8 @@ function stepperSection(s: StepperPlan, p: Plan): Section {
     const sensorless = s.endstop === 'virtual';
     sec.set('endstop_pin', sensorless ? `${s.driver.section}_${s.name}:virtual_endstop` : (s.endstop as any).pin,
       sensorless ? 'sensorless' : (s.endstop as any).port)
-      .set('position_min', xy.position_min)
+      .set('position_min', axis === 'y' && p.toolchanger?.yMin !== undefined ? p.toolchanger.yMin : xy.position_min,
+        axis === 'y' && p.toolchanger?.yMin !== undefined ? 'reaches the tool docks' : undefined)
       .set('position_endstop', xy.endstop_at_max ? max : 0).set('position_max', max)
       .set('homing_speed', sensorless ? (p.build.autotune ? Math.max(50, s.rotationDistance + 10) : s.rotationDistance / 2) : xy.homing_speed,
         sensorless ? (p.build.autotune ? 'autotune: must exceed rotation_distance' : 'Klipper: rotation_distance / 2') : undefined)
@@ -299,14 +324,14 @@ function stepperSection(s: StepperPlan, p: Plan): Section {
       sec.set('endstop_pin', (s.endstop as any).pin, (s.endstop as any).port)
         .set('position_endstop', z.position_endstop, 'Z_ENDSTOP_CALIBRATE stores the real value');
     }
-    sec.set('position_max', p.size.position_max.z).set('position_min', z.position_min)
+    sec.set('position_max', p.toolchanger?.zMax ?? p.size.position_max.z, p.toolchanger?.zMax !== undefined ? 'reaches the tool docks' : undefined).set('position_min', z.position_min)
       .set('homing_speed', z.homing_speed).set('second_homing_speed', z.second_homing_speed)
       .set('homing_retract_dist', z.homing_retract_dist);
   }
   return sec;
 }
 
-function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
+export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
   const d = s.driver;
   const sec = new Section(`${d.section} ${s.name}`, d.onboard ? `onboard ${d.chip}` : `${d.moduleId}, ${d.iface.toUpperCase()}`);
   for (const [k, v] of Object.entries(d.pins)) sec.set(k, v);
@@ -328,7 +353,7 @@ function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
   return sec;
 }
 
-function fanSection(f: FanPlan): Section {
+export function fanSection(f: FanPlan): Section {
   const s = new Section(f.section, `${f.board} ${f.port}`).set('pin', f.pin);
   if (f.tach) s.set('tachometer_pin', f.tach);
   for (const [k, v] of Object.entries(f.defaults)) s.set(k, v as any);

@@ -32,6 +32,7 @@ export function loadRaw(dataDir: string = DATA_DIR): RawData {
     thermistors: load(join(dataDir, 'thermistors.yaml')),
     fans: load(join(dataDir, 'fans.yaml')),
     homing: load(join(dataDir, 'homing.yaml')),
+    toolchangers: load(join(dataDir, 'toolchangers.yaml')),
   };
 }
 

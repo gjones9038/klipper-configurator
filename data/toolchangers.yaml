@@ -1,0 +1,94 @@
+# Toolchanger systems. The generator writes klipper-toolchanger configs
+# (viesturz/klipper-toolchanger): [toolchanger], one [tool Tn] per tool, a per-tool
+# [tool_probe Tn] that is both the Z probe and the tool-presence switch, and its own
+# pickup / dropoff macros (written for this generator from the module's documented
+# behaviour; the upstream examples are GPLv3 and are not copied).
+schema: 1
+toolchangers:
+  - id: stealthchanger
+    name: StealthChanger
+    applies_to: [voron-2.4]       # flying gantry with fixed docks; Trident needs a liftbar (not modelled)
+    toolhead: stealthchanger-sb   # toolheads.yaml entry every tool uses
+    dock: fixed
+    z_probe: per_tool             # each tool's Tap / OptoTap sensor homes Z and detects the tool
+    module:
+      repo: https://github.com/viesturz/klipper-toolchanger
+      commit: 94756dfde9b729fd69f9b8780067821c5c99a528
+      install: "wget -O - https://raw.githubusercontent.com/viesturz/klipper-toolchanger/main/install.sh | bash"
+      update_manager: |
+        [update_manager klipper-toolchanger]
+        type: git_repo
+        channel: dev
+        path: ~/klipper-toolchanger
+        origin: https://github.com/viesturz/klipper-toolchanger.git
+        managed_services: klipper
+        primary_branch: main
+      known_issues:
+        - id: klipper_probe_api
+          text: >-
+            Klipper reworked its probe internals on 2026-05-25 (commits fb57d59..a0d2769:
+            ProbeSessionHelper renamed to SampleAveragingHelper, new ProbeEndstopWrapper and
+            HomingViaProbeHelper signatures). klipper-toolchanger main (last change 2026-04-07)
+            still uses the old API, so [tool_probe] fails to load on newer Klipper
+            ("__init__() takes from 3 to 4 positional arguments but 5 were given").
+            Open fix: PR #174 (orion23rigel, tool-probe-latest-klipper-api). Until it is merged,
+            install that branch or run a Klipper from before 2026-05-25.
+          links:
+            - {title: "klipper-toolchanger PR #174: update for latest Klipper probe API", url: "https://github.com/viesturz/klipper-toolchanger/pull/174"}
+          sources:
+            - {repo: "https://github.com/Klipper3d/klipper", path: "klippy/extras/probe.py", commit: a0d276963}
+            - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "klipper/extras/tool_probe.py", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+    toolchanger:                  # examples/dock location/fixed/toolchanger.cfg
+      params_fast_speed: 30000
+      params_path_speed: 900
+      initialize_on: home
+      require_tool_present: true
+      abort_on_tool_missing: true
+      t_command_restore_axis: Z   # StealthChanger wiki: "this should be t_command_restore_axis: z"
+    # Paths relative to the park position; f = path-speed multiplier, verify = check the
+    # tool is detected after that move. examples/README.md, "StealthChanger".
+    dropoff_path: [{z: 3.5, y: 4}, {z: 0, y: 0}, {z: -12, y: 0}]
+    pickup_path: [{z: -12, y: 2}, {z: -12, y: 0}, {z: 1.5, y: 0, f: 0.5, verify: 1}, {z: 0.5, y: 2.5, f: 0.5}, {z: 8, y: 8}]
+    close_y_offset: 30            # wiki: close_y = park_y + 30
+    safe_y_rule: "park_y + the thickness of your thickest tool, plus a little buffer"   # wiki; per build
+    dock_z_rule: "Z is the point where 1 more mm down will untrigger the tap module"    # wiki
+    tool_probe:                   # examples/z probe/per tool probe/toolhead_n.cfg
+      speed: 5.0
+      samples: 3
+      samples_result: median
+      sample_retract_dist: 2.0
+      samples_tolerance: 0.02
+      samples_tolerance_retries: 3
+    probe_max_temp_c: 150         # _TAP_PROBE_ACTIVATE in examples/z probe/per tool probe/homing.cfg
+    detection_pin_note: >-
+      Since klipper-toolchanger 2026.2.8 detection_pin uses probe semantics (triggered = tool
+      absent), so it takes the same pin and modifiers as the tool's [tool_probe].
+    slicer:                       # examples/README.md, "Slicer setup"
+      tool_change: "M104 S{temperature[next_extruder]} T[next_extruder] ; set new tool temperature so it can start heating while changing"
+      after_layer_change: "VERIFY_TOOL_DETECTED ASYNC=1 ; Check after each layer if the tool is still attached"
+    docs:
+      - {title: "StealthChanger wiki: configuration (offsets, docks, close_y / safe_y)", url: "https://github.com/DraftShift/StealthChanger/blob/main/wiki/Configuration.md"}
+      - {title: "StealthChanger wiki: calibration", url: "https://github.com/DraftShift/StealthChanger/blob/main/wiki/Calibration.md"}
+      - {title: "klipper-toolchanger: [toolchanger] / [tool] reference and G-codes", url: "https://github.com/viesturz/klipper-toolchanger/blob/main/toolchanger.md"}
+      - {title: "klipper-toolchanger: install", url: "https://github.com/viesturz/klipper-toolchanger#installation"}
+      - {title: "Esoterical CAN bus guide", url: "https://github.com/Esoterical/voron_canbus"}
+    discrepancies:
+      - >-
+        tool_probe.md links a tool to its probe with "probe: tool_probe T1", but tool.py reads
+        "tool_probe" (as in toolchanger.md and the per-tool-probe example). Using tool_probe.
+      - >-
+        StealthChanger's Klipper/Toolhead_T0.cfg uses [multi_fan], params_sc_path and the
+        tapchanger macros; the klipper-toolchanger examples use [fan_generic],
+        params_dropoff_path / params_pickup_path. Following klipper-toolchanger (the module the
+        StealthChanger wiki tells you to install).
+    unverified:
+      - "dropoff/pickup paths are the upstream StealthChanger defaults; check them with TEST_TOOL_DOCKING on your docks"
+      - "dock positions, safe_y and tool offsets are per printer and always measured"
+    sources:
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "examples/dock location/fixed/toolchanger.cfg", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "examples/z probe/per tool probe/toolhead_n.cfg", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "examples/README.md", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "toolchanger.md", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {repo: "https://github.com/viesturz/klipper-toolchanger", path: "klipper/extras/tool.py", commit: 94756dfde9b729fd69f9b8780067821c5c99a528}
+      - {repo: "https://github.com/DraftShift/StealthChanger", path: "wiki/Configuration.md", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+      - {repo: "https://github.com/DraftShift/StealthChanger", path: "Klipper/Toolhead_T0.cfg", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}

@@ -15,9 +15,10 @@ export function buildSummary(b: Build, db: Db): string {
   const conn = { usb: 'USB', can: 'CAN', 'usb-can-bridge': 'USB-CAN bridge' }[b.mainboard.connection];
   return [
     `${board.name} ${board.revisions.join('/')} (${conn})`,
-    b.toolboard ? db.toolboards[b.toolboard.id].name : 'no toolhead board',
+    b.toolchanger ? `${db.toolchangers[b.toolchanger.system]?.name ?? 'toolchanger'}, ${b.toolchanger.tools.length + 1} tools` : null,
+    b.toolboard ? `${b.toolchanger ? 'T0 ' : ''}${db.toolboards[b.toolboard.id].name}` : 'no toolhead board',
     db.extruders[b.extruder].name, db.hotends[b.hotend].name,
-    b.probe ? db.probes[b.probe].name : 'no probe',
+    b.toolchanger ? 'Tap on every tool' : b.probe ? db.probes[b.probe].name : 'no probe',
     b.homing.xy === 'sensorless' ? 'sensorless X/Y' : 'X/Y switches',
     b.autotune ? 'TMC autotune' : null,
     b.nevermore ? db.filters[b.nevermore.model].name : null,
@@ -34,7 +35,7 @@ export function zipFiles(result: Result, build: Build): Record<string, string> {
 
 // Files in the order a user reads them: configs, macros, then the guides.
 function fileOrder(names: string[]): string[] {
-  const rank = (n: string) => n === 'printer.cfg' ? 0 : n.endsWith('.cfg') && !n.includes('/') ? 1 : n.startsWith('macros/') ? 2 : n === 'WARNINGS.md' ? 3 : n.endsWith('.md') ? 4 : 5;
+  const rank = (n: string) => n === 'printer.cfg' ? 0 : n.endsWith('.cfg') && !n.includes('/') ? 1 : n.startsWith('tools/') ? 1.5 : n.startsWith('macros/') ? 2 : n === 'WARNINGS.md' ? 3 : n.endsWith('.md') ? 4 : 5;
   return [...names].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
@@ -80,7 +81,7 @@ export function renderExport(opts: { db: Db; build: Build; result: Result; file:
         h('thead', null, h('tr', null, ['#', 'Component', 'Board', 'Connector', 'Pins', 'Note'].map((c) => h('th', { scope: 'col' }, c)))),
         h('tbody', null, result.wiring.connections.map((c) => h('tr', null,
           h('td', null, h('span', { class: 'wire-num' }, c.num)), h('td', null, h('b', null, c.component)),
-          h('td', null, c.board === 'toolboard' ? 'Toolhead' : 'Main'),
+          h('td', null, c.tool !== undefined ? `T${c.tool}` : c.board === 'toolboard' ? 'Toolhead' : 'Main'),
           h('td', { class: 'mono', style: 'color: var(--light-blue)' }, c.connector), h('td', { class: 'mono' }, c.pins), h('td', { class: 'hint' }, c.note ?? ''))))))),
     h('section', { class: 'section' }, h('h2', null, 'Documentation'),
       h('div', { class: 'cards' }, topics.map((t) => h('div', { class: 'card' }, h('h2', null, t),

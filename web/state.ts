@@ -45,7 +45,10 @@ const ifaces = (rec: Rec): string[] => (Array.isArray(rec.interface) ? rec.inter
 
 export function canDevices(b: Build, db: Db): string[] {
   const out: string[] = [];
-  if (b.toolboard && (b.toolboard.connection ?? 'can') === 'can') out.push(db.toolboards[b.toolboard.id].name);
+  if (b.toolboard && (b.toolboard.connection ?? 'can') === 'can') out.push(b.toolchanger ? `T0 ${db.toolboards[b.toolboard.id].name}` : db.toolboards[b.toolboard.id].name);
+  b.toolchanger?.tools.forEach((t, i) => {
+    if ((t.toolboard.connection ?? 'can') === 'can') out.push(`T${i + 1} ${db.toolboards[t.toolboard.id].name}`);
+  });
   const p = b.probe ? db.probes[b.probe] : undefined;
   if (p && p.kind === 'eddy_native' && (b.probeConnection ?? ifaces(p)[0]) === 'can') out.push(p.name);
   return out;
@@ -81,6 +84,27 @@ export function normalize(input: Build, db: Db): Build {
   } else if (b.homing.z === 'probe_virtual_endstop') {
     b.homing.z = 'nozzle_switch';
   }
+  // Toolchanger toolheads (StealthChanger) switch the build into toolchanger mode:
+  // every tool has its own board and Tap sensor, which homes Z and probes.
+  const tc = toolchangerFor(b, db);
+  if (tc) {
+    const firstTapBoard = Object.values(db.toolboards).find((t) => t.probe_ports?.length && t.interfaces.includes('can'))!;
+    b.toolboard ??= { id: firstTapBoard.id, connection: 'can' };
+    b.toolchanger ??= { system: tc.id, tools: [{ toolboard: { ...b.toolboard } }] };
+    b.toolchanger.system = tc.id;
+    for (const t of b.toolchanger.tools) {
+      const tb = db.toolboards[t.toolboard.id];
+      if (!tb) t.toolboard = { id: b.toolboard.id, connection: b.toolboard.connection };
+      else if (!tb.interfaces.includes(t.toolboard.connection ?? 'can')) t.toolboard.connection = tb.interfaces[0];
+      if (t.extruder && !db.extruders[t.extruder]) delete t.extruder;
+      if (t.hotend && !db.hotends[t.hotend]) delete t.hotend;
+    }
+    if (b.toolchanger.docks) b.toolchanger.docks = b.toolchanger.docks.slice(0, b.toolchanger.tools.length + 1);
+    for (const k of ['probe', 'probeOffset', 'probeOutput', 'probeConnection'] as const) delete b[k];
+    b.homing.z = 'probe_virtual_endstop';
+  } else {
+    delete b.toolchanger;
+  }
   if (b.homing.z !== 'nozzle_switch') delete b.homing.zSwitchXY;
 
   // A USB-CAN adapter only when something is on CAN and the board isn't bridging.
@@ -105,6 +129,10 @@ export function normalize(input: Build, db: Db): Build {
   // Fans: a fan pinned to the toolhead board falls back to auto when there is none.
   for (const f of b.fans) if (f.board === 'toolboard' && !b.toolboard) { delete f.board; delete f.port; }
   return b;
+}
+
+export function toolchangerFor(b: Build, db: Db): Rec | undefined {
+  return Object.values(db.toolchangers).find((t) => t.toolhead === b.toolhead);
 }
 
 /** Drivers a build needs on the mainboard (motion, plus the extruder without a toolhead board). */

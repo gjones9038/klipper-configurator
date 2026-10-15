@@ -37,13 +37,15 @@ test('no physical pin is used twice in a generated config', () => {
       for (const line of text.split('\n')) {
         const s = /^\[(.+?)\]/.exec(line);
         if (s) { section = s[1]; continue; }
-        const m = /^(\w*pin): *([!^~]*)((?:toolhead:)?P[A-K]\d+|(?:toolhead:)?gpio\d+)/.exec(line);
+        const m = /^(\w*pin): *([!^~]*)((?:toolhead\d*:)?P[A-K]\d+|(?:toolhead\d*:)?gpio\d+)/.exec(line);
         if (!m) continue;
         // SPI bus pins are shared by design; endstop pin may equal its slot's DIAG pin.
         if (m[1].startsWith('spi_software')) continue;
         const key = m[3];
         const prev = seen.get(key);
-        assert.ok(!prev || (m[1].startsWith('diag') && prev.includes('endstop')),
+        // A toolchanger tool's Tap pin is both [tool_probe] pin and [tool] detection_pin (tool_probe.py allows it).
+        const tapShare = (m[1] === 'detection_pin' && prev?.includes('[tool_probe')) ?? false;
+        assert.ok(!prev || tapShare || (m[1].startsWith('diag') && prev.includes('endstop')),
           `${c.name} ${name}: ${key} in [${section}] ${m[1]} and ${prev}`);
         seen.set(key, `[${section}] ${m[1]}`);
       }

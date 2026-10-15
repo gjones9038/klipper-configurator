@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # One-time setup for tools/klipper_check.py. Everything lands in .cache/klipper-check
 # (gitignored); nothing needs root.
-#   - Klipper + klipper_tmc_autotune checkouts (pinned by commit below)
+#   - Klipper + klipper_tmc_autotune + klipper-toolchanger checkouts (pinned by commit below)
 #   - xPack ARM GCC (via npx xpm) to build MCU data dictionaries
 #   - klippy's Python deps unpacked from PyPI wheels (no pip/venv required)
 set -euo pipefail
 
 KLIPPER_COMMIT=9cb99754c035b90206ef0a02660f674fc9517e9b
 AUTOTUNE_REPO=https://github.com/andrewmcgr/klipper_tmc_autotune.git
+# klipper-toolchanger main (94756df) does not load on this Klipper (probe API change of
+# 2026-05-25); check against PR #174, the open fix. Switch to main once it is merged.
+TOOLCHANGER_REPO=https://github.com/viesturz/klipper-toolchanger.git
+TOOLCHANGER_REF=pull/174/head
+TOOLCHANGER_COMMIT=0bded502b27dae5b9261789e03b0c8a0b84f48fb
 CHIPS="stm32f042 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,6 +24,8 @@ if [ ! -d "$C/klipper" ]; then
 fi
 git -C "$C/klipper" fetch -q origin "$KLIPPER_COMMIT" && git -C "$C/klipper" checkout -q "$KLIPPER_COMMIT"
 [ -d "$C/autotune" ] || git clone -q --depth 1 "$AUTOTUNE_REPO" "$C/autotune"
+[ -d "$C/toolchanger" ] || git clone -q "$TOOLCHANGER_REPO" "$C/toolchanger"
+git -C "$C/toolchanger" fetch -q origin "$TOOLCHANGER_REF" && git -C "$C/toolchanger" checkout -q "$TOOLCHANGER_COMMIT"
 # web UI client configs, so [include mainsail.cfg] / [include fluidd.cfg] resolve in checks
 [ -d "$C/ui/mainsail-config" ] || git clone -q --depth 1 https://github.com/mainsail-crew/mainsail-config.git "$C/ui/mainsail-config"
 [ -d "$C/ui/fluidd-config" ] || git clone -q --depth 1 https://github.com/fluidd-core/fluidd-config.git "$C/ui/fluidd-config"

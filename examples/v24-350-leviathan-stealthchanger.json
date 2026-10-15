@@ -1,0 +1,79 @@
+{
+  "printer": "voron-2.4",
+  "size": "350",
+  "variant": "standard",
+  "mainboard": {
+    "id": "ldo-leviathan-v1.2",
+    "connection": "usb-can-bridge"
+  },
+  "toolboard": {
+    "id": "btt-ebb-sb2209-can-v1.0",
+    "connection": "can"
+  },
+  "toolhead": "stealthchanger-sb",
+  "drivers": {
+    "xy": {
+      "module": "btt-tmc2209"
+    },
+    "z": {
+      "module": "btt-tmc2209"
+    }
+  },
+  "motors": {
+    "xy": "ldo-42sth48-2504ac",
+    "z": "ldo-42sth48-2004ac",
+    "extruder": "ldo-36sth20-1004ahg"
+  },
+  "homing": {
+    "xy": "physical",
+    "z": "probe_virtual_endstop"
+  },
+  "extruder": "galileo2",
+  "hotend": "rapido2-hf",
+  "thermistors": {
+    "hotend": "semitec-104nt4",
+    "bed": "ntc100k-3950"
+  },
+  "fans": [
+    {
+      "role": "part_cooling"
+    },
+    {
+      "role": "hotend"
+    },
+    {
+      "role": "controller"
+    },
+    {
+      "role": "exhaust"
+    }
+  ],
+  "leds": true,
+  "autotune": true,
+  "nevermore": {
+    "model": "nevermore-micro-v6",
+    "voltage": 24,
+    "mode": "hot_bed",
+    "postPrintMinutes": 10
+  },
+  "webUi": "mainsail",
+  "toolchanger": {
+    "system": "stealthchanger",
+    "tools": [
+      {
+        "toolboard": {
+          "id": "btt-ebb-sb2209-can-v1.0",
+          "connection": "can"
+        }
+      },
+      {
+        "toolboard": {
+          "id": "btt-ebb-sb2240-can-v1.0",
+          "connection": "can"
+        },
+        "extruder": "galileo2",
+        "hotend": "revo-voron"
+      }
+    ]
+  }
+}
