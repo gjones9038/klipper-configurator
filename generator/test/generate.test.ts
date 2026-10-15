@@ -417,3 +417,27 @@ test('Ender 3 S1: inverted endstops at negative positions, switched hotend fan, 
   assert.match(pro, /\[extruder\][^[]*max_temp: 300/);
   assert.match(pro, /\[heater_bed\][^[]*max_temp: 110/);
 });
+
+test('Orbitool O2S: inverted part fan with enable pin and the maker\'s 10 kHz PWM, TMC2240 UART', () => {
+  const b = example();
+  b.toolboard = { id: 'orbiter-orbitool-o2s', connection: 'usb' };
+  b.extruder = 'orbiter2';
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const th = r.files['toolhead.cfg'];
+  // Orbitool_O2S.cfg
+  assert.match(th, /\[fan\][^[]*pin: !toolhead:PA10\nenable_pin: toolhead:PB14[^[]*cycle_time: 0\.0001/);
+  assert.match(th, /\[heater_fan hotend_fan\][^[]*pin: !toolhead:PB15[^[]*cycle_time: 0\.0001/);
+  assert.match(th, /\[tmc2240 extruder\][^[]*uart_pin: toolhead:PC13\nrref: 12000/);
+  assert.match(th, /serial: \/dev\/serial\/by-id\/usb-Klipper_stm32f072xb_Orbitool_O2S-if00/);
+  assert.equal((th.match(/^cycle_time:/gm) ?? []).length, 2);   // maker setting replaces, never duplicates
+  assert.ok(!r.issues.some((i) => i.code === 'toolboard_extruder'));
+});
+
+test('Orbitool O2: heater capped at 99.5% for its short-circuit recovery; wrong extruder warns', () => {
+  const b = example();
+  b.toolboard = { id: 'orbiter-orbitool-o2', connection: 'usb' };
+  const r = generate(b, db, 'test');   // example uses a Galileo 2
+  assert.match(r.files['toolhead.cfg'], /\[extruder\][^[]*heater_pin: toolhead:PA0[^[]*max_power: 0\.995/);
+  assert.ok(r.issues.some((i) => i.code === 'toolboard_extruder' && /Orbiter 2\.0/.test(i.message)));
+});

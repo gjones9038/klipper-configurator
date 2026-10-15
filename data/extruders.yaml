@@ -94,15 +94,34 @@ extruders:
         commit: 98f8a37944d7277cd37231776400553cc402219f
 
   - id: orbiter2
-    name: Orbiter 2.0
+    name: Orbiter 2.0 / 2.5
     drive: direct
-    rotation_distance: 4.637
+    rotation_distance: 4.69
     gear_ratio: null              # gearing is folded into rotation_distance
-    microsteps: 16
+    microsteps: 32
     full_steps_per_rotation: 200
     pa_baseline: {start: 0.025, range: [0.01, 0.05]}
-    confidence: low
-    unverified: ["rotation_distance (690 steps/mm @16 microsteps per vendor docs, not fetched)"]
+    confidence: medium
+    sources:
+      - {repo: https://github.com/RobertLorincz/Orbiter-Toolboards, path: "Orbiter O2 Toolboard/Klipper Config/OrbitoolO2.cfg", commit: 52a5a330e1c57ea71ecdc2192382872b0b254452,
+         note: "rotation_distance = 4.69 # Orbiter v2; microsteps 32 (the Orbiter's designer)"}
+      - {repo: https://github.com/RobertLorincz/Orbiter-Toolboards, path: "Orbiter O2S Toolboard/Kipper Config/Orbitool_O2S.cfg", commit: 52a5a330e1c57ea71ecdc2192382872b0b254452,
+         note: "rotation_distance = 4.69 # Orbiter v2.5"}
+    discrepancies: ["The earlier record used 4.637 (690 steps/mm at 16 microsteps, quoted from vendor docs that were not fetched); the designer's configs use 4.69."]
+    unverified: ["pa_baseline is not from a source"]
+
+  - id: smart-orbiter3
+    name: Smart Orbiter 3 (SO3)
+    drive: direct
+    rotation_distance: 4.69
+    gear_ratio: null
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.025, range: [0.01, 0.05]}
+    confidence: medium
+    sources:
+      - {repo: https://github.com/RobertLorincz/Orbiter-Toolboards, path: "Orbiter SO3 Toolboard/Klipper Config/SO3.cfg", commit: 52a5a330e1c57ea71ecdc2192382872b0b254452}
+    unverified: ["pa_baseline is not from a source (the vendor config has its own pressure_advance)"]
 
   - id: sherpa-mini
     name: Sherpa Mini

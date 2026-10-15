@@ -216,6 +216,7 @@ export function firmwareMarkdown(p: Plan): string {
     lines.push(`## ${title}${t.name} ${t.revisions.join('/')}`, '',
       '- Enable extra low-level configuration options',
       `- Micro-controller: ${t.mcu.chip.toUpperCase()}`,
+      ...(t.mcu.menuconfig_extra ?? []).map((x: string) => `- ${x}`),
       ...(t.mcu.crystal_mhz ? [`- Clock reference: ${t.mcu.crystal_mhz} MHz crystal`] : []),
       t.mcu.bootloader_kib
         ? `- Bootloader offset: ${t.mcu.bootloader_kib}KiB bootloader${t.mcu.bootloader_note ? ` (${t.mcu.bootloader_note})` : ''}`

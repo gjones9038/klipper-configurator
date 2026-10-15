@@ -1,0 +1,92 @@
+schema: toolboard/1
+id: orbiter-orbitool-o2
+name: Orbitool
+manufacturer: Orbiter (Lorincz Electronics); sold by LDO
+revisions:
+- O2 v2.72
+status: needs-review
+mcu:
+  chip: stm32f042
+  check_dict: stm32f042-orbitool   # Klipper check: F042 build with TMC UART, LIS2DW, neopixel
+  crystal_mhz: 8
+  menuconfig_extra: ['Flash over DFU: make flash FLASH_DEVICE=0483:df11 (Orbitool manual)']
+interfaces:
+- usb
+form_factor: orbiter
+for_extruders: [orbiter2]
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PB7
+  dir_pin: PB6
+  enable_pin: '!PB4'
+  uart_pin: PB5
+  sense_resistor: 0.11
+heaters:
+- id: HOTEND
+  pin: PA0
+  role: hotend
+  max_power: 0.995          # vendor: "limit heater power to 99.5% to enable autorecovery from short detection"
+thermistors:
+- id: HOT-TEMP
+  pin: PA3
+  pullup_ohms: 2200
+  typical_use: hotend
+fans:
+- id: PART-FAN
+  pin: PA10
+  typical_use: part_cooling
+  wires: 2
+  klipper: {cycle_time: 0.02, hardware_pwm: false}
+- id: HOT-FAN
+  pin: '!PA9'
+  tachometer_pin: PA8
+  typical_use: hotend
+  wires: 3
+  klipper: {cycle_time: 0.0001, hardware_pwm: false}   # DC-DC fan driver, 10 kHz (vendor config)
+- id: TOOL-FAN
+  pin: PB1
+  wires: 2
+  klipper: {cycle_time: 0.02, hardware_pwm: false}
+probe_ports:
+- id: BLTOUCH-PROBE
+  pin: PA15
+  supply_v: [5]
+bltouch:
+  sensor_pin: PA15
+  control_pin: PB3
+i2c_ports: []
+neopixel_ports:
+- id: RGB
+  pin: PA1
+filament_sensor_ports:
+- id: FIL-SENSOR
+  pin: PA13
+  note: Orbiter v2 filament sensor; FIL_UNLOAD button on PA14
+accelerometer:
+  chip: lis2dw
+  cs_pin: PA4
+  spi_bus: spi1
+misc:
+  hotend_power_adc: PA2       # hot-end power measurement ([temperature_sensor Hotend_power] in the vendor config)
+  run_led: PB8
+  x_stop: PB0
+notes:
+- Made for the Orbiter 2.0 extruder; it mounts on the extruder's motor.
+- USB toolhead board (USB + 24 V on one connector).
+- The accelerometer axes_map depends on how the board is mounted (vendor config uses "y, z, x"); run ACCELEROMETER_QUERY and set it.
+- The vendor config adds hot-end power measurement, Orbiter sensor macros and firmware_retraction, which the generator does not write.
+unverified:
+- Only the designer's sources (config and pinout, which agree on every pin); Klipper has no config for this board.
+- The X-STOP input (PB0) is not used by the generator yet.
+sources:
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter O2 Toolboard/Klipper Config/OrbitoolO2.cfg
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter O2 Toolboard/Documentation/Orbitool v2.72 Pinout.pdf
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter O2 Toolboard/Documentation/Orbitool O2 User Manual.pdf
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452
+  note: firmware build (8 MHz crystal, DFU flashing), current ratings

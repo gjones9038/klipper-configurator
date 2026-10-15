@@ -150,7 +150,7 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
             "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]
     for m in mcus:
-        d = os.path.join(dicts, f"{m['chip']}.dict")
+        d = os.path.join(dicts, f"{m.get('checkDict') or m['chip']}.dict")
         args += ["-d", d if m["name"] == "mcu" else f"{m['name']}={d}"]
     log_path = os.path.join(work, "klippy.log")
     if os.path.exists(log_path):

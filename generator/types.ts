@@ -118,6 +118,7 @@ export interface McuInfo {
   chip: string;               // data dictionary / firmware target, e.g. stm32f446
   what: string;               // human label
   klipperCheck: boolean;      // false when no Klipper data dictionary can exist (Beacon)
+  checkDict?: string;         // Klipper check: a dictionary variant built with the board's features (stm32f042-orbitool)
 }
 
 export interface Result {

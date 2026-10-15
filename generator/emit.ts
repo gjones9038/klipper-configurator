@@ -305,7 +305,7 @@ export function extruderSec(es: StepperPlan, p: Plan, db: Db, t: HotendParts, tu
   if (t.sensor.pullup !== 4700) sec.set('pullup_resistor', t.sensor.pullup, 'board thermistor pull-up');
   const hdef = db.hotendDefaults;
   sec.set('min_temp', hdef.min_temp).set('max_temp', t.maxTemp)
-    .set('max_power', hdef.max_power).set('min_extrude_temp', hdef.min_extrude_temp)
+    .set('max_power', t.heater.maxPower ?? hdef.max_power, t.heater.maxPower ? 'board maker: keeps the heater short-circuit auto-recovery working' : undefined).set('min_extrude_temp', hdef.min_extrude_temp)
     .set('max_extrude_only_distance', 150, 'room for the 100 mm rotation_distance test')
     .set('control', 'pid', `seed values; run ${tuneHint} (${t.hotend.name})`)
     .set('pid_kp', (t.hotend.pid_seed ?? hdef.pid_seed).pid_kp).set('pid_ki', (t.hotend.pid_seed ?? hdef.pid_seed).pid_ki).set('pid_kd', (t.hotend.pid_seed ?? hdef.pid_seed).pid_kd)
@@ -316,7 +316,8 @@ export function extruderSec(es: StepperPlan, p: Plan, db: Db, t: HotendParts, tu
 export function mcuSection(name: string, board: Rec, conn: string, chip: string): Section {
   const s = new Section(name, `${board.name}`);
   if (conn === 'usb') {
-    s.set('serial', `/dev/serial/by-id/usb-Klipper_${chip}_REPLACE_ME-if00`, 'ls /dev/serial/by-id/*');
+    // Boards flashed with a fixed USB serial number (Orbitool O2S, SO3) have a known path.
+    s.set('serial', board.usb_path ?? `/dev/serial/by-id/usb-Klipper_${chip}_REPLACE_ME-if00`, board.usb_path ? 'USB serial number set in menuconfig (see FIRMWARE.md)' : 'ls /dev/serial/by-id/*');
     s.set('restart_method', 'command');
   } else if (conn === 'usb-serial') {
     s.set('serial', board.usb_serial?.serial_path ?? '/dev/serial/by-id/REPLACE_ME', `${board.usb_serial?.chip ?? 'USB-serial'} chip; check with ls /dev/serial/by-id/*`);
@@ -389,8 +390,10 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
 
 export function fanSection(f: FanPlan): Section {
   const s = new Section(f.section, `${f.board} ${f.port}`).set('pin', f.pin);
+  if (f.enable) s.set('enable_pin', f.enable);
   if (f.tach) s.set('tachometer_pin', f.tach);
-  for (const [k, v] of Object.entries(f.defaults)) s.set(k, v as any);
+  // Board-maker settings for the port win over the role defaults (one line per key).
+  for (const [k, v] of Object.entries({ ...f.defaults, ...f.options })) s.set(k, v as any, f.options && k in f.options ? 'board maker setting' : undefined);
   return s;
 }
 

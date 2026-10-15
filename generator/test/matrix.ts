@@ -187,7 +187,7 @@ function everyToolboardCases(db: Db, start: number): Case[] {
       motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
       homing: { xy: 'physical', z: 'nozzle_switch', zSwitchXY: [200, 300] },
       probe: 'voron-tap',
-      extruder: 'galileo2', hotend: 'revo-voron',
+      extruder: t.for_extruders?.[0] ?? 'galileo2', hotend: 'revo-voron',
       thermistors: { hotend: 'semitec-104nt4', bed: 'ntc100k-3950' },
       fans: [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }],
       leds: true, autotune: true, webUi: 'mainsail',

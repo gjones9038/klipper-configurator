@@ -1,0 +1,88 @@
+schema: toolboard/1
+id: orbiter-orbitool-so3
+name: Orbitool
+manufacturer: Orbiter (Lorincz Electronics); sold by LDO
+revisions:
+- SO3 (Smart Orbiter 3)
+status: needs-review
+mcu:
+  chip: stm32f042
+  check_dict: stm32f042-orbitool   # Klipper check: F042 build with TMC UART, LIS2DW, neopixel
+  crystal_mhz: 8
+  menuconfig_extra: ['USB serial number: SO3Tool (matches the serial path in toolhead.cfg)', 'Flash over DFU: make flash FLASH_DEVICE=0483:df11 (SO3 manual)']
+usb_path: /dev/serial/by-id/usb-Klipper_stm32f042x6_SO3Tool-if00
+interfaces:
+- usb
+form_factor: orbiter
+for_extruders: [smart-orbiter3]
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PB7
+  dir_pin: PB6
+  enable_pin: '!PB4'
+  uart_pin: PB5
+  sense_resistor: 0.11
+heaters:
+- id: HOTEND
+  pin: PA0
+  role: hotend
+thermistors:
+- id: HOTEND-TH
+  pin: PA2
+  pullup_ohms: 4700
+  typical_use: hotend
+  note: 'Jumper open: NTC, 4.7k pull-up. Jumper closed: PT1000, 2350 ohm pull-up (pinout).'
+fans:
+- id: PART-FAN
+  pin: PA14
+  typical_use: part_cooling
+  wires: 2
+  klipper: {cycle_time: 0.01, hardware_pwm: false}
+- id: HOT-FAN
+  pin: '!PA8'
+  tachometer_pin: PA3
+  typical_use: hotend
+  wires: 3
+  klipper: {cycle_time: 0.0001, hardware_pwm: false}   # vendor: "10KHz PWM frecvency, do not change this!"
+probe_ports:
+- id: BLTOUCH-PROBE
+  pin: PA15
+  supply_v: [5]
+bltouch:
+  sensor_pin: PA15
+  control_pin: PB3
+i2c_ports: []
+neopixel_ports:
+- id: RGB
+  pin: PB8
+filament_sensor_ports:
+- id: FIL-SENSE
+  pin: PA13
+  note: unload button on PA10
+accelerometer:
+  chip: lis2dw
+  cs_pin: PA4
+  spi_bus: spi1
+misc:
+  hotend_power_adc: PA1
+  hotend_light: PA9
+  sensor_ntc: PB1
+  x_stop: PB0
+notes:
+- The board of the Smart Orbiter 3 extruder.
+- 'The accelerometer axes_map depends on mounting (vendor config: "y, z, x").'
+- The vendor config adds filament sensor macros, the hot-end light and an onboard NTC, which the generator does not write.
+unverified:
+- Only the designer's sources (config and pinout, which agree on every pin); Klipper has no config for this board.
+- The pinout lists PB8 as both RUN LED and RGB_PIXEL; the vendor config uses PB8 for the neopixel.
+sources:
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter SO3 Toolboard/Klipper Config/SO3.cfg
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter SO3 Toolboard/Documentation/Orbitool SO3 pinout.pdf
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452
+- repo: https://github.com/RobertLorincz/Orbiter-Toolboards
+  path: Orbiter SO3 Toolboard/Documentation/Orbitool SO3 User Manual.pdf
+  commit: 52a5a330e1c57ea71ecdc2192382872b0b254452

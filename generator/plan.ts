@@ -64,10 +64,13 @@ export interface PortUse {
   port: string;
   pin: string;
   tach?: string;
+  maxPower?: number;          // heater cap from the board maker (Orbitool: 0.995 for short-circuit auto-recovery)
 }
 
 export interface FanPlan extends PortUse {
   role: string;
+  enable?: string;            // fan driver enable line (Orbitool O2S part fan)
+  options?: Rec;              // settings the board maker requires for this port (e.g. cycle_time)
   voltage?: number;
   section: string;            // full section header
   defaults: Rec;
@@ -191,6 +194,9 @@ export function plan(build: Build, db: Db): Plan {
   const extruder = need(db.extruders[build.extruder], 'unknown_extruder', `Unknown extruder "${build.extruder}"`);
   const hotend = need(db.hotends[build.hotend], 'unknown_hotend', `Unknown hotend "${build.hotend}"`);
 
+  if (toolboard?.for_extruders && !toolboard.for_extruders.includes(build.extruder)) {
+    warn('toolboard_extruder', `${toolboard.name} is made for the ${toolboard.for_extruders.map((id: string) => db.extruders[id]?.name ?? id).join(' / ')}, not the ${extruder.name}.`);
+  }
   addLinks(printer.docs, 'printer');
   addLinks(repoLink(board, 'manufacturer docs, pinout and sample configs'), 'mainboard');
   for (const e of board.activeExtensions ?? []) addLinks(repoLink(e, 'manufacturer docs, schematic and sample config'), 'mainboard');
@@ -587,13 +593,13 @@ export function plan(build: Build, db: Db): Plan {
   if (toolboard) {
     const h = toolboard.heaters[0];
     const t = pick(toolboard.thermistors, (x) => x.typical_use === 'hotend')!;
-    hotendHeater = { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin) };
+    hotendHeater = { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin), maxPower: h.max_power };
     hotendSensor = { board: 'toolboard', port: t.id, pin: qpin('toolboard', t.pin), pullup: t.pullup_ohms ?? 4700 };
   } else {
     const h = need(pick(mbHeaters, (x) => x.role === 'hotend'), 'no_hotend_heater', `${board.name} has no hotend heater output.`);
     const t = need(pick(mbTherms, (x) => !isBedTherm(x) && !usedTherm.has(x.id)), 'no_thermistor', 'No free thermistor port for the hotend.');
     usedTherm.add(t.id);
-    hotendHeater = { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin) };
+    hotendHeater = { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
     hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700 };
   }
   let chamberSensor: (PortUse & { pullup?: number }) | undefined;
@@ -639,6 +645,7 @@ export function plan(build: Build, db: Db): Plan {
     fans.push({
       role: f.role, section, defaults: role.defaults, board: kind, port: port.id,
       pin: qpin(kind, port.pin), tach: f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined,
+      enable: port.enable_pin ? qpin(kind, port.enable_pin) : undefined, options: port.klipper,
     });
   }
   // Nevermore filter: a fan_generic on the mainboard plus print start/end behaviour.
@@ -858,7 +865,8 @@ export function plan(build: Build, db: Db): Plan {
         const port = tb.fans.find((p: Rec) => p.id === f0.port && !used.has(p.id)) ?? tb.fans.find((p: Rec) => !used.has(p.id));
         if (!port) { err('no_fan_port', `T${n}: no free fan port on ${tb.name} for the ${f0.role.replace('_', ' ')} fan.`); continue; }
         used.add(port.id);
-        toolFans.push(toolFan({ ...f0, port: port.id, pin: qpin('toolboard', port.pin, '', mcuName), tach: undefined }, n));
+        toolFans.push(toolFan({ ...f0, port: port.id, pin: qpin('toolboard', port.pin, '', mcuName), tach: undefined,
+          enable: port.enable_pin ? qpin('toolboard', port.enable_pin, '', mcuName) : undefined, options: port.klipper }, n));
       }
       let toolLeds: ToolPlan['leds'];
       if (build.leds && toolhead?.leds) {
@@ -869,7 +877,7 @@ export function plan(build: Build, db: Db): Plan {
       tools!.push({
         n, mcu: mcuName, toolboard: tb, connection: conn, extruderSection: extruderName(n), stepper,
         extruder: ext, hotend: he, thermistor: th,
-        heater: { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin, '', mcuName) },
+        heater: { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin, '', mcuName), maxPower: h.max_power },
         sensor: { board: 'toolboard', port: t.id, pin: qpin('toolboard', t.pin, '', mcuName), pullup: t.pullup_ohms ?? 4700 },
         maxTemp: toolMax,
         paBaseline: r2((ext.pa_baseline?.start ?? 0.04) + (db.flowClasses[he.flow_class]?.pa_offset ?? 0)),
@@ -916,8 +924,8 @@ export function plan(build: Build, db: Db): Plan {
     mcus: [
       { name: 'mcu', chip: mcu.build_as ?? mcu.chip, what: board.name, klipperCheck: true },
       ...(tools
-        ? tools.map((t) => ({ name: t.mcu, chip: t.toolboard.mcu.chip, what: `T${t.n}: ${t.toolboard.name}`, klipperCheck: true }))
-        : toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, what: toolboard.name, klipperCheck: true }] : []),
+        ? tools.map((t) => ({ name: t.mcu, chip: t.toolboard.mcu.chip, checkDict: t.toolboard.mcu.check_dict, what: `T${t.n}: ${t.toolboard.name}`, klipperCheck: true }))
+        : toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, checkDict: toolboard.mcu.check_dict, what: toolboard.name, klipperCheck: true }] : []),
       ...extraMcus,
     ],
     tools, toolchanger,
