@@ -1,0 +1,141 @@
+schema: mainboard/1
+id: btt-skr-mini-e3-v3.0
+name: BIGTREETECH SKR Mini E3
+manufacturer: BIGTREETECH
+revisions:
+- '3.0'
+status: reviewed
+mcu_variants:
+- chip: stm32g0b1
+  crystal_mhz: 8
+  bootloader_kib: 8
+interfaces:
+- usb
+firmware:
+  flash: >-
+    "make flash" does not work on this board: copy out/klipper.bin to an SD card as
+    firmware.bin and restart the board with the card inserted (Klipper's config).
+power:
+  vin_v: [12, 24]
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PB13
+  dir_pin: PB12
+  enable_pin: '!PB14'
+  onboard_driver: &drv
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+  uart_pin: PC11
+  tx_pin: PC10
+  uart_address: 0
+  diag_pin: PC0
+  diag_pin_key: diag_pin
+  diag_modifier: '^'
+- id: Y
+  step_pin: PB10
+  dir_pin: PB2
+  enable_pin: '!PB11'
+  onboard_driver: *drv
+  uart_pin: PC11
+  tx_pin: PC10
+  uart_address: 2
+  diag_pin: PC1
+  diag_pin_key: diag_pin
+  diag_modifier: '^'
+- id: Z
+  step_pin: PB0
+  dir_pin: PC5
+  enable_pin: '!PB1'
+  onboard_driver: *drv
+  uart_pin: PC11
+  tx_pin: PC10
+  uart_address: 1
+  diag_pin: PC2
+  diag_pin_key: diag_pin
+  diag_modifier: '^'
+- id: E
+  step_pin: PB3
+  dir_pin: PB4
+  enable_pin: '!PD1'
+  onboard_driver: *drv
+  uart_pin: PC11
+  tx_pin: PC10
+  uart_address: 3
+endstops:
+- id: X-STOP
+  pin: PC0
+  diag_of: X
+- id: Y-STOP
+  pin: PC1
+  diag_of: Y
+- id: Z-STOP
+  pin: PC2
+  diag_of: Z
+heaters:
+- id: HE
+  pin: PC8
+  role: hotend
+- id: HB
+  pin: PC9
+  role: bed
+  drive: dc
+thermistors:
+- id: TH0
+  pin: PA0
+  typical_use: hotend
+- id: TB0
+  pin: PC4
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PC6
+  typical_use: part_cooling
+- id: FAN1
+  pin: PC7
+  typical_use: hotend
+- id: FAN2
+  pin: PB15
+  typical_use: controller
+probe_ports:
+- id: PROBE
+  pin: PC14
+bltouch:
+  sensor_pin: PC14
+  control_pin: PA1
+neopixel_ports:
+- id: RGB
+  pin: PA8
+filament_sensor_ports:
+- id: E0-STOP
+  pin: PC15
+exp_aliases:
+  EXP1_1: PB5
+  EXP1_2: PA15
+  EXP1_3: PA9
+  EXP1_4: <RST>
+  EXP1_5: PA10
+  EXP1_6: PB9
+  EXP1_7: PB8
+  EXP1_8: PD6
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+notes:
+- All four TMC2209 drivers share one UART (PC11, TX on PC10) at uart_address X 0, Y 2, Z 1, E 3.
+- Sensorless homing needs the DIAG jumper fitted for that axis (Voron V0 config); the endstop input is then the DIAG line.
+unverified:
+- crystal_mhz 8 is Klipper's default; no source states it.
+- The probe port's pull-up/polarity is not stated; a pull-up is used.
+sources:
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-bigtreetech-skr-mini-e3-v3.0.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/VoronDesign/Voron-0
+  path: Firmware/bigtreetech-skr-mini-e3-v3.0.cfg
+  commit: a53fc87562fd630c846af38d7de850c894dc3d85
+  note: same pins; sense_resistor 0.110, diag ^PC0/^PC1
+- repo: https://github.com/MarlinFirmware/Marlin
+  path: Marlin/src/pins/stm32g0/pins_BTT_SKR_MINI_E3_V3_0.h
+  commit: f5fa1edb9461c402dda88da01cc421d1e485675c
+  note: probe PC14, servo PA1, E0-STOP PC15, neopixel PA8, fans PC6/PC7/PB15, UART addresses asserted 0/2/1/3

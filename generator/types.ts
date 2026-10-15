@@ -37,7 +37,7 @@ export interface Build {
   leadscrew?: string;                        // printer leadscrew_options[].id (Trident)
   homing: {
     xy: 'physical' | 'sensorless';
-    z: 'nozzle_switch' | 'probe_virtual_endstop' | 'physical_min';
+    z: 'nozzle_switch' | 'probe_virtual_endstop' | 'physical_min' | 'physical_max';
     zSwitchXY?: [number, number];            // nozzle switch position, required for nozzle_switch
   };
   probe?: string;

@@ -47,7 +47,9 @@ test('no physical pin is used twice in a generated config', () => {
         const tapShare = (m[1] === 'detection_pin' && prev?.includes('[tool_probe')) ?? false;
         // Klipper allows one enable line shared by several steppers (Creality boards).
         const sharedEnable = m[1] === 'enable_pin' && !!prev?.endsWith('enable_pin');
-        assert.ok(!prev || tapShare || sharedEnable || (m[1].startsWith('diag') && prev.includes('endstop')),
+        // Addressed TMC drivers on one UART bus (SKR Mini E3 V3: uart_pin PC11 / tx_pin PC10, addresses 0-3).
+        const sharedUart = ['uart_pin', 'tx_pin'].includes(m[1]) && !!prev?.endsWith(` ${m[1]}`) && /uart_address/.test(text);
+        assert.ok(!prev || tapShare || sharedEnable || sharedUart || (m[1].startsWith('diag') && prev.includes('endstop')),
           `${c.name} ${name}: ${key} in [${section}] ${m[1]} and ${prev}`);
         seen.set(key, `[${section}] ${m[1]}`);
       }
@@ -467,4 +469,21 @@ test('Sovol SV06: TMC2209 UART at address 3, sensorless X/Y with maker threshold
   assert.match(mb, /\[probe\][^[]*pin: PB1\nx_offset: 27\ny_offset: -20/);
   assert.match(r.files['homing.cfg'], /G0 X83 Y130 F6000\n\s*G28 Z/);
   assert.ok(!r.issues.some((i) => /probe_voltage|probe_output|probe_modifier/.test(i.code)));
+});
+
+test('Voron 0.2 on the SKR Mini E3 V3: shared UART with addresses, sensorless X/Y at max, Z switch at max', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/voron-0.2.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  // Voron-0 Firmware/bigtreetech-skr-mini-e3-v3.0.cfg
+  for (const [name, addr] of [['stepper_x', 0], ['stepper_y', 2], ['stepper_z', 1], ['extruder', 3]] as const) {
+    assert.match(mb, new RegExp(`\\[tmc2209 ${name}\\][^[]*uart_pin: PC11\\ntx_pin: PC10\\nuart_address: ${addr}\\n`));
+  }
+  assert.match(mb, /\[stepper_x\][^[]*position_endstop: 120\nposition_max: 120[^[]*homing_positive_dir: True/);
+  assert.match(mb, /\[tmc2209 stepper_x\][^[]*diag_pin: \^PC0[^\n]*\ndriver_SGTHRS: 255/);
+  assert.match(mb, /\[stepper_z\][^[]*dir_pin: !PC5[^[]*endstop_pin: \^PC2[^\n]*\nposition_endstop: 120/);
+  assert.match(mb, /\[extruder\][^[]*rotation_distance: 22\.23\ngear_ratio: 50:10/);
+  assert.match(r.files['printer.cfg'], /\[bed_screws\][^[]*screw1: 60, 5\nscrew2: 5, 115/);
+  assert.match(r.files['homing.cfg'], /G28 X\n\s*G91\n\s*G1 X-10/);   // homes at max, backs off toward 0
 });

@@ -78,6 +78,20 @@ extruders:
     discrepancies: ["rotation_distance: Klipper 4.56, Marlin 691.5 steps/mm (4.627). Using Klipper's; calibrate it (TUNE_E_STEPS)."]
     unverified: ["pa_baseline is the generic direct-drive starting range"]
 
+  - id: voron-mini-afterburner
+    name: Voron V0 Mini Afterburner extruder
+    drive: direct
+    rotation_distance: 22.23
+    gear_ratio: "50:10"
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.04, range: [0.02, 0.06]}
+    confidence: high
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-0, path: Firmware/bigtreetech-skr-mini-e3-v3.0.cfg, commit: a53fc87562fd630c846af38d7de850c894dc3d85,
+         note: "rotation_distance 22.23, gear_ratio 50:10 # For Mini Afterburner, microsteps 32"}
+    unverified: ["pa_baseline is the Clockwork starting range"]
+
   - id: clockwork1
     name: Voron Clockwork (Afterburner)
     drive: direct

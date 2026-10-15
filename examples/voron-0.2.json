@@ -1,0 +1,15 @@
+{
+  "printer": "voron-0.2",
+  "size": "120",
+  "variant": "standard",
+  "mainboard": { "id": "btt-skr-mini-e3-v3.0", "connection": "usb" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "", "z": "" },
+  "homing": { "xy": "sensorless", "z": "physical_max" },
+  "extruder": "voron-mini-afterburner",
+  "hotend": "revo-voron",
+  "thermistors": { "hotend": "semitec-104nt4", "bed": "ntc100k-3950" },
+  "fans": [{ "role": "part_cooling" }, { "role": "hotend" }, { "role": "controller" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}

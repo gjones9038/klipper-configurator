@@ -242,7 +242,8 @@ function stockPrinterCases(db: Db, start: number): Case[] {
             mainboard: { id: boardId, mcu: mcu.chip, connection: board.interfaces[0] },
             drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
             motors: { xy: '', z: '' },
-            homing: probe ? { xy: st.homing_xy ?? 'physical', z: 'probe_virtual_endstop' } : { xy: st.homing_xy ?? 'physical', z: 'physical_min' },
+            homing: probe ? { xy: st.homing_xy ?? 'physical', z: 'probe_virtual_endstop' }
+              : { xy: st.homing_xy ?? 'physical', z: st.homing_z && st.homing_z !== 'probe_virtual_endstop' ? st.homing_z : 'physical_min' },
             ...(probe ? { probe, ...(st.probe_offsets?.[probe] ? { probeOffset: st.probe_offsets[probe] } : {}) } : {}),
             extruder: st.extruder, hotend: st.hotend,
             thermistors: { hotend: st.thermistors.hotend, bed: st.thermistors.bed },

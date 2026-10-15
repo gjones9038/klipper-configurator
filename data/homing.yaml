@@ -71,6 +71,10 @@ z_methods:
       - "Inductive probes as Z endstop drift with bed temperature; Voron recommends them for
         QGL/Z-tilt only."
       - "Beacon/Cartographer use their own homing integration; see probes.yaml."
+  physical_max:
+    name: Physical switch at Z max
+    description: The bed drops onto a switch at the bottom of the printer (Voron 0); Z homes to its maximum.
+    emits: {endstop_pin: "<port pin>", position_endstop: "= position_max"}
   physical_min:
     name: Physical switch at Z min
     description: Switch at the bottom of Z travel (stock on most bed-slingers, e.g. Ender 3); uncommon on Voron.

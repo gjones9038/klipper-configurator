@@ -49,8 +49,13 @@ def board_pin_conflicts(b):
     for s in b.get("driver_slots", []):
         for k in ("step_pin", "dir_pin", "enable_pin"):
             use(s.get(k), f"{s['id']}.{k}")
-        # uart and SPI CS are the same physical line on stepstick boards
-        use(s.get("uart_pin") or s.get("spi_cs_pin"), f"{s['id']}.uart/cs")
+        # uart and SPI CS are the same physical line on stepstick boards; a UART bus shared by
+        # addressed drivers (SKR Mini E3: PC11, uart_address 0-3) is one line by design
+        if "uart_address" in s and not s.get("onboard_driver", {}).get("standalone"):
+            use(s.get("uart_pin"), "shared-uart")
+            use(s.get("tx_pin"), "shared-uart-tx")
+        else:
+            use(s.get("uart_pin") or s.get("spi_cs_pin"), f"{s['id']}.uart/cs")
     if "extruder_driver" in b:
         d = b["extruder_driver"]
         for k in ("step_pin", "dir_pin", "enable_pin"):

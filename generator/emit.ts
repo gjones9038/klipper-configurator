@@ -67,7 +67,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
   // sensorless homing uses homing_override, which also excludes it.
   // A Z endstop switch (bed-slingers) homes anywhere: no safe_z_home needed.
-  if (!sensorless && !p.tools && !(beacon && probeHoming) && b.homing.z !== 'physical_min') {
+  if (!sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max'].includes(b.homing.z)) {
     // Probe homing: put the probe (not the nozzle) over the bed centre, within travel.
     const off = p.probe?.offset ?? { x: 0, y: 0 };
     const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
@@ -356,8 +356,9 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
     if (s.endstop === 'probe') {
       sec.set('endstop_pin', 'probe:z_virtual_endstop');
     } else {
+      const atMax = p.build.homing.z === 'physical_max';
       sec.set('endstop_pin', (s.endstop as any).pin, (s.endstop as any).port)
-        .set('position_endstop', z.position_endstop, 'Z_ENDSTOP_CALIBRATE stores the real value');
+        .set('position_endstop', atMax ? p.size.position_max.z : z.position_endstop, atMax ? 'switch at Z max: set it from a paper test after homing' : 'Z_ENDSTOP_CALIBRATE stores the real value');
     }
     sec.set('position_max', p.toolchanger?.zMax ?? p.size.position_max.z, p.toolchanger?.zMax !== undefined ? 'reaches the tool docks' : undefined).set('position_min', z.position_min)
       .set('homing_speed', z.homing_speed).set('second_homing_speed', z.second_homing_speed)

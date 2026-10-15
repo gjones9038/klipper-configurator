@@ -1,0 +1,88 @@
+schema: printer/1
+id: voron-0.2
+name: Voron 0.2
+manufacturer: Voron Design
+status: reviewed
+docs:
+  - {title: "Voron 0 documentation", url: "https://docs.vorondesign.com/build/"}
+  - {title: "Voron initial startup checks", url: "https://docs.vorondesign.com/build/startup/"}
+kinematics: corexy
+z_leveling: null                 # one Z leadscrew; level the bed with BED_SCREWS_ADJUST
+bed_heater: dc                   # 24 V pad on the board's bed output (Voron: max_power 0.6 "only needed for 100w pads")
+
+sizes:
+  - id: "120"
+    bed_mm: [120, 120]
+    position_max: {x: 120, y: 120, z: 120}
+    bed_screws: [[60, 5], [5, 115], [115, 115]]
+
+steppers:
+  - {klipper: stepper_x, role: B, rotation_distance: 40}
+  - {klipper: stepper_y, role: A, rotation_distance: 40}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}   # T8x8 integrated lead screw
+
+variants:
+  - id: standard
+    name: Standard
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 200
+    max_accel: 2000
+    max_z_velocity: 15
+    max_z_accel: 300
+  stepper_xy:
+    microsteps: 32
+    full_steps_per_rotation: 200
+    homing_speed: 40
+    homing_retract_dist: 0
+    homing_positive_dir: true
+    position_min: 0
+    endstop_at_max: true
+    run_current: 0.6
+  stepper_z:
+    microsteps: 32
+    position_endstop: 120
+    position_min: -1.5
+    homing_speed: 20
+    second_homing_speed: 3.0
+    homing_retract_dist: 3.0
+    run_current: 0.37              # Voron: "For LDO-42STH25-1004CL200E 1.0A"
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.5
+  sensorless_thresholds: {stepper_x: 255, stepper_y: 255}   # Voron: max sensitivity, tune it down
+  bed:
+    max_power: 1.0
+    max_temp: 120
+    pid: {pid_kp: 68.453, pid_ki: 2.749, pid_kd: 426.122}
+  safe_z_home:
+    home_xy_position: user
+    speed: 50
+    z_hop: 5
+  idle_timeout: 1800
+
+stock:
+  mainboards: [btt-skr-mini-e3-v3.0]
+  toolhead: null
+  extruder: voron-mini-afterburner
+  hotend: revo-voron
+  thermistors: {hotend: semitec-104nt4, bed: ntc100k-3950}
+  probe_options: []
+  homing_xy: sensorless
+  homing_z: physical_max
+  fans: [part_cooling, hotend, controller]
+
+notes:
+  - "A kit: Voron publishes configs for several boards; the SKR Mini E3 V3 is the one in this data. Pick your board, hotend and thermistors."
+  - "X/Y home sensorless at max; Z homes to a switch at Z max (the bed drops to it)."
+unverified:
+  - "stepper_xy run_current 0.6 is not from a source: Voron's config says to calculate it (rated current x 0.707, start at 60-70%). Choose your motor."
+  - "The stock hotend is a choice in the V0 (Voron's config leaves sensor_type blank); revo-voron and a 3950 bed thermistor are placeholders."
+sources:
+  - repo: https://github.com/VoronDesign/Voron-0
+    path: Firmware/bigtreetech-skr-mini-e3-v3.0.cfg
+    commit: a53fc87562fd630c846af38d7de850c894dc3d85
