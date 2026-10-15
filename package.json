@@ -1,0 +1,21 @@
+{
+  "name": "klipper-configurator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate Klipper configs and wiring guides from component data",
+  "scripts": {
+    "generate": "node generator/cli.ts",
+    "test": "node --test \"generator/test/*.test.ts\"",
+    "validate-data": "python3 tools/validate.py --matrix",
+    "klipper-check": "python3 -I tools/klipper_check.py --klipper .cache/klipper-check/klipper --dicts .cache/klipper-check/dicts --autotune .cache/klipper-check/autotune --site .cache/klipper-check/site",
+    "matrix": "node generator/test/write-matrix.ts out/matrix",
+    "setup-klipper-check": "bash tools/setup_klipper_check.sh"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

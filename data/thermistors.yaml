@@ -19,24 +19,26 @@ builtin_sensor_types:
 
 # What users actually pick in the UI -> Klipper sensor_type.
 user_choices:
-  - {id: ntc100k-3950, label: "NTC 100K 3950 (most generic hotends, Keenovo beds)",
+  - {id: ntc100k-3950, max_temp_c: 280, label: "NTC 100K 3950 (most generic hotends, Keenovo beds)",
      sensor_type: "Generic 3950",
      note: "Voron config: 'Use Generic 3950 for Keenovo heaters' and NTC 100K 3950 thermistors."}
-  - {id: semitec-104gt2, label: "ATC Semitec 104GT-2", sensor_type: "ATC Semitec 104GT-2"}
-  - {id: semitec-104nt4, label: "ATC Semitec 104NT-4 (E3D Revo and others)",
+  - {id: semitec-104gt2, max_temp_c: 300, label: "ATC Semitec 104GT-2", sensor_type: "ATC Semitec 104GT-2"}
+  - {id: semitec-104nt4, max_temp_c: 300, label: "ATC Semitec 104NT-4 (E3D Revo and others)",
      sensor_type: "ATC Semitec 104NT-4-R025H42G"}
-  - {id: epcos-b57560, label: "EPCOS 100K B57560G104F", sensor_type: "EPCOS 100K B57560G104F"}
-  - {id: slice-450, label: "Slice Engineering 450C", sensor_type: "SliceEngineering 450"}
-  - {id: pt1000, label: "PT1000 (direct)", sensor_type: "PT1000",
+  - {id: epcos-b57560, max_temp_c: 280, label: "EPCOS 100K B57560G104F", sensor_type: "EPCOS 100K B57560G104F"}
+  - {id: slice-450, max_temp_c: 450, label: "Slice Engineering 450C", sensor_type: "SliceEngineering 450"}
+  - {id: pt1000, max_temp_c: 400, label: "PT1000 (direct)", sensor_type: "PT1000",
      note: "Works on a 4.7k port, but resolution is better with a 2.2k pull-up (jumper on some
        boards). Set pullup_resistor to the port's actual value."}
-  - {id: pt100-max31865, label: "PT100 via MAX31865", sensor_type: "MAX31865",
+  - {id: pt100-max31865, max_temp_c: 400, label: "PT100 via MAX31865", sensor_type: "MAX31865",
      needs: ["SPI MAX31865 on the board or an add-on", "rtd_nominal_r: 100, rtd_reference_r: 430"]}
-  - {id: ldo-cmfb103f3950, label: "LDO Nitehawk-SB chamber NTC (CMFB103F3950FANT)",
+  - {id: ldo-cmfb103f3950, max_temp_c: 125, label: "LDO Nitehawk-SB chamber NTC (CMFB103F3950FANT)",
      sensor_type: "CMFB103F3950FANT", custom_definition_required: true,
      note: "Not built into Klipper; LDO's nitehawk-sb.cfg defines it with a [thermistor] section."}
 
 rules:
+  - "max_temp_c is a practical ceiling for the sensor (unverified, typical community values); the
+    generator uses min(hotend.max_temp, max_temp_c)."
   - "Always emit pullup_resistor when the port's pullup_ohms != 4700 (Klipper default)."
   - "Chamber sensors use [temperature_sensor chamber] unless a chamber heater or fan is
     controlled from it."

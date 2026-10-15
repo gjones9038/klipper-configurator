@@ -1,7 +1,49 @@
 # klipper-configurator
 
 A tool that turns "my printer, board, toolhead, motors, hotend…" into a complete Klipper
-config plus wiring diagrams. This repo is currently the **component data** it builds from.
+config plus wiring diagrams. This repo holds the **component data** and the **generator**;
+the web UI comes next.
+
+## Generator
+
+```sh
+npm install
+npm run generate -- examples/v24-350-leviathan-sb2209.json out/my-printer
+npm test                       # unit tests + the 96-case build matrix
+```
+
+A build file (see `generator/types.ts` → `Build`) names the printer, size, variant (incl. AWD),
+mainboard and connection, toolhead board, driver modules (UART or SPI), motors, homing
+(physical or sensorless), probe, extruder, hotend, thermistors, fans and whether to use
+klipper_tmc_autotune. Output:
+
+| File | Contents |
+|---|---|
+| `printer.cfg` | includes, kinematics, leveling, mesh, safe_z_home, input shaper / resonance tester |
+| `mainboard.cfg`, `toolhead.cfg` | MCUs, steppers + TMC sections, heaters, sensors, fans, probe, accelerometer, LEDs |
+| `autotune.cfg` | `[autotune_tmc]` per motor (when enabled) |
+| `homing.cfg` | sensorless homing override with reduced homing current (when sensorless) |
+| `macros/` | `PRINT_START/END`, `PREFLIGHT*`, `TUNE_*` / `CALC_*` tuning flow |
+| `WIRING.md`, `wiring.json` | every connection with connector + pins, and jumpers to set |
+| `FIRMWARE.md` | `make menuconfig` settings per MCU |
+| `WARNINGS.md` | data caveats for the chosen parts (unreviewed boards, source conflicts) |
+
+How it decides: `generator/plan.ts` resolves the build (slot assignment, drivers, currents,
+ports, homing, probe) and collects errors/warnings; `emit.ts`, `macros.ts` and `wiring.ts` only
+format the plan.
+
+### Checking output with real Klipper
+
+`tools/klipper_check.py` runs Klipper itself in batch mode against generated configs
+(`klippy.py printer.cfg -d <mcu>.dict -d toolhead=<mcu>.dict`) and executes `PREFLIGHT`, `G28`
+(including sensorless homing overrides) and the tuning macros. A bad pin, unknown option, Jinja
+error or out-of-range move fails the case.
+
+```sh
+npm run setup-klipper-check          # once: Klipper @ pinned commit, ARM GCC, MCU dicts, deps
+npm run matrix                       # write every generatable matrix case to out/matrix
+npm run klipper-check -- out/matrix/*/
+```
 
 ## Layout
 
@@ -26,6 +68,10 @@ tools/
   import_boards.py         initial import of all boards (overwrites data/*boards)
   import_motor_db.py       regenerate data/motors/motors.yaml
   validate.py              pin-conflict + reference checks; --matrix prints compatibility
+  klipper_check.py         run generated configs through Klipper (batch mode)
+  setup_klipper_check.sh   one-time setup for klipper_check.py
+generator/                 TypeScript, run directly by Node >= 23.6 (no build step)
+examples/                  sample build files
 ```
 
 ## Data conventions

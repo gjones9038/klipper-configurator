@@ -261,8 +261,9 @@ MAINBOARDS = [
                         max_current_a=3.0, motor_power="HV input, 24-55V (48V typical)"),
         endstops=[("X-ENDSTOP", "PC1", None), ("Y-ENDSTOP", "PC2", None),
                   ("Z-ENDSTOP", "PC3", None)],
-        probe=[dict(id="Z-PROBE", pin="PF1",
+        probe=[dict(id="Z-PROBE", pin="PF1", modifier="^",
                     note="Selectable voltage, integrated diode (vendor README). LDO config uses ^PF1.")],
+        diag_modifier="^!",  # LDO voron2_leviathan.cfg uses ^! on both TMC5160 and TMC2209 DIAG lines
         thermistor_pullup=2200,
         fan_meta=dict(wires=2, voltage=[5, 24], voltage_select="per-port jumper",
                       tach_all=True),
@@ -373,6 +374,12 @@ def build_mainboard(ov):
         dpin = diag.get("diag_pin") or diag.get("diag1_pin") or diag.get("diag0_pin")
         if dpin:
             s["diag_pin"] = dpin
+            if ov["driver_mount"] == "onboard":
+                # onboard drivers: the source config tells us which DIAG output is wired
+                s["diag_pin_key"] = next(k for k in ("diag0_pin", "diag1_pin", "diag_pin")
+                                         if diag.get(k))
+            if ov.get("diag_modifier"):
+                s["diag_modifier"] = ov["diag_modifier"]
         slots.append(s)
     if len(d["motors"]) != len(ov["slot_ids"]):
         warnings.append(f"slot count mismatch {len(d['motors'])} vs {len(ov['slot_ids'])}")

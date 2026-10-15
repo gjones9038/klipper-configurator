@@ -30,6 +30,7 @@ driver_slots:
     sense_resistor: 0.022
   spi_cs_pin: PD6
   diag_pin: PC15
+  diag_pin_key: diag1_pin
 - id: S2
   step_pin: PE5
   dir_pin: PE4
@@ -40,6 +41,7 @@ driver_slots:
     sense_resistor: 0.022
   spi_cs_pin: PD5
   diag_pin: PF0
+  diag_pin_key: diag1_pin
 - id: S3
   step_pin: PE2
   dir_pin: PE1
@@ -50,6 +52,7 @@ driver_slots:
     sense_resistor: 0.022
   spi_cs_pin: PD4
   diag_pin: PF1
+  diag_pin_key: diag1_pin
 - id: S4
   step_pin: PB9
   dir_pin: PB8
@@ -60,6 +63,7 @@ driver_slots:
     sense_resistor: 0.022
   spi_cs_pin: PD3
   diag_pin: PF2
+  diag_pin_key: diag1_pin
 - id: S5
   step_pin: PG9
   dir_pin: PG10

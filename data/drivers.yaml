@@ -93,13 +93,13 @@ unverified:
   - "max_voltage_v values (from datasheets, not checked this session)"
 
 # Run-current policy used by the generator when the user doesn't override.
+# Default = a published reference value (extruder maker > Z drive maker >
+# printer reference), capped at the ceiling below. The ceiling is printed as
+# headroom in the generated comment.
 run_current_policy:
-  fraction_of_rated: 0.7         # common community starting point (70% of rated RMS)
-  never_exceed: [motor.rated_current_a, slot.max_current_a, chip.practical_max_rms_a]
+  fraction_of_rated: 0.7         # ceiling: common community upper bound (70% of rated RMS)
+  ceiling_also: [slot.onboard_driver.max_current_a, chip.practical_max_rms_a]
   hold_current: omit             # Klipper recommends leaving hold_current unset
-  reference_overrides_note: >
-    Voron's reference configs use 0.8 A for 2 A A/B motors and 0.5 A for the
-    1 A Clockwork 2 motor. When the user picks Voron stock motors, prefer those values.
 
 sources:
   - repo: https://github.com/Klipper3d/klipper
