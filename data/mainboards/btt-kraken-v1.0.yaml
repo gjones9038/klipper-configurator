@@ -1,0 +1,231 @@
+schema: mainboard/1
+id: btt-kraken-v1.0
+name: BIGTREETECH Kraken
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: reviewed
+mcu_variants:
+- chip: stm32h723
+  crystal_mhz: 25
+  bootloader_kib: 128
+interfaces:
+- usb
+- can
+can_pins: PD0/PD1
+driver_mount: onboard
+tmc_spi:
+  software:
+    mosi_pin: PC8
+    miso_pin: PC7
+    sclk_pin: PC6
+driver_slots:
+- id: S1
+  step_pin: PC14
+  dir_pin: PC13
+  enable_pin: '!PE6'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.022
+  spi_cs_pin: PD6
+  diag_pin: PC15
+- id: S2
+  step_pin: PE5
+  dir_pin: PE4
+  enable_pin: '!PE3'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.022
+  spi_cs_pin: PD5
+  diag_pin: PF0
+- id: S3
+  step_pin: PE2
+  dir_pin: PE1
+  enable_pin: '!PE0'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.022
+  spi_cs_pin: PD4
+  diag_pin: PF1
+- id: S4
+  step_pin: PB9
+  dir_pin: PB8
+  enable_pin: '!PB7'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.022
+  spi_cs_pin: PD3
+  diag_pin: PF2
+- id: S5
+  step_pin: PG9
+  dir_pin: PG10
+  enable_pin: '!PG13'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+  spi_cs_pin: PD2
+- id: S6
+  step_pin: PG11
+  dir_pin: PD7
+  enable_pin: '!PG12'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+  spi_cs_pin: PA15
+- id: S7
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PB5'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+  spi_cs_pin: PA9
+- id: S8
+  step_pin: PG15
+  dir_pin: PB6
+  enable_pin: '!PG14'
+  onboard_driver:
+    chip: tmc2160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+  spi_cs_pin: PA10
+endstops:
+- id: S1-STOP
+  pin: PC15
+  diag_of: S1
+- id: S2-STOP
+  pin: PF0
+  diag_of: S2
+- id: S3-STOP
+  pin: PF1
+  diag_of: S3
+- id: S4-STOP
+  pin: PF2
+  diag_of: S4
+heaters:
+- id: HE0
+  pin: PF6
+  role: hotend
+- id: HE1
+  pin: PF7
+  role: hotend
+- id: HE2
+  pin: PF9
+  role: hotend
+- id: HE3
+  pin: PF8
+  role: hotend
+- id: HB
+  pin: PF5
+  role: bed
+thermistors:
+- id: T0
+  pin: PB1
+  pullup_ohms: 4700
+- id: T1
+  pin: PC5
+  pullup_ohms: 4700
+- id: T2
+  pin: PC4
+  pullup_ohms: 4700
+- id: T3
+  pin: PA7
+  pullup_ohms: 4700
+- id: TB
+  pin: PB0
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PA0
+  wires: 2
+- id: FAN1
+  pin: PA1
+  wires: 2
+- id: FAN2
+  pin: PA2
+  wires: 2
+- id: FAN3
+  pin: PA3
+  wires: 2
+- id: FAN4
+  pin: PA4
+  wires: 2
+- id: FAN5
+  pin: PA5
+  wires: 2
+- id: FAN6
+  pin: PA6
+  tachometer_pin: PC1
+  wires: 4
+- id: FAN7
+  pin: PE8
+  tachometer_pin: PG0
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: PD11
+bltouch:
+  sensor_pin: PG1
+  control_pin: PE9
+neopixel_ports:
+- id: RGB1
+  pin: PF12
+- id: RGB2
+  pin: PF11
+filament_sensor_ports:
+- id: FIL0
+  pin: PF3
+- id: FIL1
+  pin: PF4
+- id: FIL2
+  pin: PF10
+- id: FIL3
+  pin: PC0
+accelerometer_header:
+  cs_pin: PE10
+  spi_bus: spi4
+exp_aliases:
+  EXP1_1: PG5
+  EXP1_2: PG4
+  EXP1_3: PG3
+  EXP1_4: PG2
+  EXP1_5: PD15
+  EXP1_6: PD14
+  EXP1_7: PD13
+  EXP1_8: PD12
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PE13
+  EXP2_2: PE12
+  EXP2_3: PG8
+  EXP2_4: PE11
+  EXP2_5: PG7
+  EXP2_6: PE14
+  EXP2_7: PG6
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: <NC>
+notes:
+- All 8 drivers are on-board TMC2160s configured in Klipper as [tmc5160]. S1-S4 are high-current (0.022
+  ohm sense), S5-S8 use 0.075 ohm.
+- 'Very high current capability on S1-S4: run_current must still respect the motor''s rating.'
+unverified:
+- per-slot max current
+sources:
+- repo: https://github.com/bigtreetech/BIGTREETECH-Kraken
+  path: Firmware/generic-bigtreetech-kraken.cfg
+  commit: 8892550b80910025c64752d8ee884a38293e22fe
+- repo: https://github.com/VoronDesign/Voron-2
+  path: firmware/klipper_configurations/Kraken/Voron2_Kraken_Config.cfg
+  commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73
+- repo: https://github.com/bigtreetech/BIGTREETECH-Kraken
+  path: Firmware/README.md
+  commit: 8892550b80910025c64752d8ee884a38293e22fe

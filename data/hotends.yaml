@@ -1,0 +1,48 @@
+schema: hotends/1
+
+# Hotend data drives max_temp, heater wattage notes, flow-class adjustments to
+# the PA baseline and a PID seed (always replaced by PID_CALIBRATE).
+# Thermistor is asked of the user; `common_thermistor` only preselects.
+
+flow_classes:
+  standard:   {pa_offset: 0.0}
+  high_flow:  {pa_offset: 0.005}
+  ultra_high_flow: {pa_offset: 0.01}
+
+hotends:
+  - {id: revo-voron, name: E3D Revo Voron, flow_class: standard, max_temp: 300,
+     heater_w_options: [40, 60], common_thermistor: semitec-104nt4}
+  - {id: rapido2-hf, name: Phaetus Rapido 2 HF, flow_class: high_flow, max_temp: 300,
+     heater_w_options: [60, 115], common_thermistor: semitec-104nt4}
+  - {id: rapido2-uhf, name: Phaetus Rapido 2 UHF, flow_class: ultra_high_flow, max_temp: 300,
+     heater_w_options: [60, 115], common_thermistor: semitec-104nt4}
+  - {id: dragon-sf, name: Phaetus Dragon SF, flow_class: standard, max_temp: 300,
+     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
+  - {id: dragon-hf, name: Phaetus Dragon HF, flow_class: high_flow, max_temp: 300,
+     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
+  - {id: dragon-ace, name: Phaetus Dragon Ace, flow_class: high_flow, max_temp: 300,
+     heater_w_options: [60], common_thermistor: semitec-104nt4}
+  - {id: dragonfly-bms, name: Phaetus Dragonfly BMS, flow_class: standard, max_temp: 300,
+     heater_w_options: [40, 60], common_thermistor: ntc100k-3950}
+  - {id: chube-air, name: Chube Air, flow_class: high_flow, max_temp: 300,
+     heater_w_options: [60], common_thermistor: ntc100k-3950}
+  - {id: generic-v6, name: Generic V6-style, flow_class: standard, max_temp: 270,
+     heater_w_options: [40, 50, 60], common_thermistor: ntc100k-3950}
+
+defaults:
+  min_temp: 10
+  min_extrude_temp: 170
+  max_power: 1.0
+  pid_seed: {pid_kp: 26.213, pid_ki: 1.304, pid_kd: 131.721}   # Voron reference values
+
+unverified:
+  - "Every hotend above: max_temp, heater wattages and common thermistor come from general
+    knowledge, not from vendor docs fetched this session. Verify before marking reviewed."
+  - "pa_offset per flow class is a heuristic"
+  - "Thermistors rated for 300C need a matching thermistor; a Generic 3950 should be capped at
+    about 280C. The generator should use min(hotend.max_temp, thermistor limit)."
+
+sources:
+  - repo: https://github.com/VoronDesign/Voron-2
+    path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg
+    note: defaults block

@@ -1,0 +1,66 @@
+schema: toolboard/1
+id: ldo-nitehawk-sb
+name: LDO Nitehawk-SB
+manufacturer: LDO
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: rp2040
+interfaces:
+- usb
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio23
+  dir_pin: gpio24
+  enable_pin: '!gpio25'
+  uart_pin: gpio0
+  sense_resistor: 0.1
+heaters:
+- id: HE0
+  pin: gpio9
+  role: hotend
+thermistors:
+- id: T0
+  pin: gpio29
+  pullup_ohms: 2200
+  typical_use: hotend
+- id: CHAMBER_TEMP
+  pin: gpio28
+  typical_use: chamber
+- id: BOARD_NTC
+  pin: gpio26
+  typical_use: board
+fans:
+- id: FAN0
+  pin: gpio6
+  tachometer_pin: gpio17
+  wires: 4
+- id: FAN1
+  pin: gpio5
+  tachometer_pin: gpio16
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: gpio10
+neopixel_ports:
+- id: RGB
+  pin: gpio7
+accelerometer:
+  chip: adxl345
+  cs_pin: gpio21
+  spi_software:
+    sclk_pin: gpio18
+    mosi_pin: gpio20
+    miso_pin: gpio19
+notes:
+- USB toolhead board with a USB adapter board on the frame; not CAN.
+- Has an on-board chamber thermistor input (gpio28) and board NTC (gpio26).
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/MotorDynamicsLab/Nitehawk-SB
+  path: Firmware/Klipper Configs/nitehawk-sb.cfg
+  commit: be93526b948d3339c755cb32116baef221ce1a8d

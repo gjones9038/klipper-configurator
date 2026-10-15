@@ -1,0 +1,118 @@
+schema: extruders/1
+
+# rotation_distance/gear_ratio are starting values: users still calibrate
+# (rotation_distance_new = old * actual_mm / requested_mm).
+# `pa_baseline` is a starting point for SET_PRESSURE_ADVANCE before the
+# tuning tower; it's per extruder because drive type and gearing dominate it.
+
+extruders:
+  - id: clockwork2
+    name: Voron Clockwork 2 (Stealthburner)
+    drive: direct
+    rotation_distance: 22.6789511
+    gear_ratio: "50:10"
+    microsteps: 32
+    full_steps_per_rotation: 200
+    recommended_motor: ldo-36sth20-1004ahg
+    run_current: 0.5
+    pa_baseline: {start: 0.04, range: [0.02, 0.06]}
+    confidence: high
+    sources:
+      - repo: https://github.com/VoronDesign/Voron-2
+        path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg
+        commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73
+
+  - id: clockwork1
+    name: Voron Clockwork (Afterburner)
+    drive: direct
+    rotation_distance: 22.6789511
+    gear_ratio: "50:17"
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.04, range: [0.02, 0.06]}
+    confidence: high
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg,
+         note: "comment: 'Use 50:17 for Afterburner/Clockwork (BMG Gear Ratio)'"}
+
+  - id: voron-m4
+    name: Voron M4 (Bowden)
+    drive: bowden
+    rotation_distance: 22.6789511
+    gear_ratio: "80:20"
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.5, range: [0.2, 1.0]}
+    confidence: medium
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg,
+         note: "comment: 'Use 80:20 for M4, M3.1'"}
+
+  - id: galileo2
+    name: Galileo 2 (G2E Stealthburner / G2SA standalone)
+    drive: direct
+    rotation_distance: 47.088
+    gear_ratio: "9:1"
+    microsteps: 16
+    full_steps_per_rotation: 200
+    run_current: 0.6
+    pa_baseline: {start: 0.035, range: [0.02, 0.06]}
+    confidence: high
+    sources:
+      - repo: https://github.com/JaredC01/Galileo2
+        path: README.md
+        commit: 98f8a37944d7277cd37231776400553cc402219f
+
+  - id: orbiter2
+    name: Orbiter 2.0
+    drive: direct
+    rotation_distance: 4.637
+    gear_ratio: null              # gearing is folded into rotation_distance
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.025, range: [0.01, 0.05]}
+    confidence: low
+    unverified: ["rotation_distance (690 steps/mm @16 microsteps per vendor docs, not fetched)"]
+
+  - id: sherpa-mini
+    name: Sherpa Mini
+    drive: direct
+    rotation_distance: 22.6789511
+    gear_ratio: "50:10"
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.04, range: [0.02, 0.06]}
+    confidence: low
+    unverified: ["rotation_distance and gear_ratio (Annex repo has no Klipper values)"]
+
+  - id: lgx-lite
+    name: Bondtech LGX Lite
+    drive: direct
+    rotation_distance: 5.7
+    gear_ratio: null
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline: {start: 0.03, range: [0.015, 0.05]}
+    confidence: low
+    unverified: ["rotation_distance (562 steps/mm @16 microsteps per vendor docs, not fetched)"]
+
+# Z drive options that change Z stepper math (Voron 2.4 only).
+z_drives:
+  - id: voron-stock-z
+    applies_to: [voron-2.4]
+    rotation_distance: 40
+    gear_ratio: "80:16"
+    microsteps: 32
+    run_current: 0.8
+    sources: [{repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg}]
+  - id: galileo2-z
+    applies_to: [voron-2.4]
+    rotation_distance: 40
+    gear_ratio: "9:1"
+    microsteps: 32
+    run_current: 0.8
+    sources: [{repo: https://github.com/JaredC01/Galileo2, path: README.md, commit: 98f8a37944d7277cd37231776400553cc402219f}]
+
+notes:
+  - "pa_baseline values are community-typical starting points for PLA/PETG/ABS at around
+    0.4 mm nozzles. Low confidence by design: the tuning flow (tuning.yaml) replaces them."

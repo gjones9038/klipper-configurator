@@ -1,0 +1,109 @@
+schema: drivers/1
+
+# Driver chips as Klipper sees them. `klipper_section` is the config section
+# prefix to emit, e.g. [tmc2209 stepper_x]. `interfaces` lists how the chip can
+# be talked to; on stepstick boards the slot's uart_pin doubles as the SPI CS pin
+# and the board's tmc_spi bus is used.
+chips:
+  tmc2209:
+    klipper_section: tmc2209
+    interfaces: [uart]
+    sense_resistor_default: 0.110      # Klipper default (tmc2130.py helper)
+    klipper_max_run_current_a: 2.0
+    practical_max_rms_a: 1.4           # heat-limited on stepsticks; guidance, not a hard limit
+    sensorless: {pin_key: diag_pin, threshold_key: driver_SGTHRS, homing_mode: stealthchop}
+    autotune: supported
+    max_voltage_v: 28
+  tmc2226:
+    klipper_section: tmc2209           # pin/register compatible; Klipper has no tmc2226 module
+    interfaces: [uart]
+    sense_resistor_default: 0.110
+    klipper_max_run_current_a: 2.0
+    sensorless: {pin_key: diag_pin, threshold_key: driver_SGTHRS, homing_mode: stealthchop}
+    autotune: untested
+    max_voltage_v: 28
+  tmc2208:
+    klipper_section: tmc2208
+    interfaces: [uart]
+    sense_resistor_default: 0.110
+    klipper_max_run_current_a: 2.0
+    sensorless: null                   # no StallGuard
+    autotune: untested
+    max_voltage_v: 36
+  tmc2130:
+    klipper_section: tmc2130
+    interfaces: [spi]
+    sense_resistor_default: 0.110
+    klipper_max_run_current_a: 2.0
+    sensorless: {pin_key: diag1_pin, threshold_key: driver_SGT, homing_mode: spreadcycle}
+    autotune: untested
+    max_voltage_v: 46
+  tmc5160:
+    klipper_section: tmc5160
+    interfaces: [spi]
+    sense_resistor_default: 0.075      # Klipper default (tmc5160.py)
+    klipper_max_run_current_a: 10.0    # Klipper sanity limit; real limit is the module
+    sensorless: {pin_key: [diag0_pin, diag1_pin], threshold_key: driver_SGT, homing_mode: spreadcycle}
+    autotune: supported
+    max_voltage_v: 60
+  tmc2160:
+    klipper_section: tmc5160           # BTT Kraken sample config uses [tmc5160] for its TMC2160s
+    interfaces: [spi]
+    sense_resistor_default: null       # external MOSFET stage; always board-specific
+    sensorless: {pin_key: [diag0_pin, diag1_pin], threshold_key: driver_SGT, homing_mode: spreadcycle}
+    autotune: untested
+    max_voltage_v: 60
+  tmc2240:
+    klipper_section: tmc2240
+    interfaces: [spi, uart]            # tmc2240.py picks UART when uart_pin is set
+    current_reference: {key: rref, default_ohms: 12000}
+    sensorless: {pin_key: [diag0_pin, diag1_pin], threshold_key: driver_SGT, homing_mode: spreadcycle}
+    autotune: supported
+    max_voltage_v: 36
+  tmc2660:
+    klipper_section: tmc2660
+    interfaces: [spi]
+    sense_resistor_default: null       # required by Klipper
+    klipper_max_run_current_a: 2.4
+    sensorless: null
+    autotune: untested
+    max_voltage_v: 30
+
+# Pluggable driver modules: what the user actually buys. Values the generator
+# needs that differ from the chip default live here.
+modules:
+  - {id: btt-tmc2209,      chip: tmc2209, format: stepstick, sense_resistor: 0.110}
+  - {id: fysetc-tmc2209,   chip: tmc2209, format: stepstick, sense_resistor: 0.110}
+  - {id: btt-tmc2226,      chip: tmc2226, format: stepstick, sense_resistor: 0.110}
+  - {id: btt-tmc2208,      chip: tmc2208, format: stepstick, sense_resistor: 0.110}
+  - {id: btt-tmc2130,      chip: tmc2130, format: stepstick, sense_resistor: 0.110}
+  - {id: btt-tmc5160-pro,  chip: tmc5160, format: stepstick, sense_resistor: 0.075, diag_pin_key: diag1_pin,
+     note: "klipper_tmc_autotune README: BTT TMC5160 stepsticks use diag1_pin."}
+  - {id: fysetc-tmc5160,   chip: tmc5160, format: stepstick, sense_resistor: 0.075}
+  - {id: btt-tmc2240,      chip: tmc2240, format: stepstick, rref: 12000, diag_pin_key: diag0_pin,
+     note: "klipper_tmc_autotune README: BTT TMC2240 stepsticks use diag0_pin."}
+  - {id: mks-tmc2240,      chip: tmc2240, format: stepstick, rref: 12000, diag_pin_key: diag0_pin}
+  - {id: btt-ez2209,       chip: tmc2209, format: ez, sense_resistor: 0.110}
+  - {id: btt-ez5160-pro,   chip: tmc5160, format: ez, sense_resistor: 0.075}
+  - {id: btt-ez2130,       chip: tmc2130, format: ez, sense_resistor: 0.110}
+
+unverified:
+  - "modules[*].sense_resistor for non-BTT modules (they follow the common 0.110/0.075 values)"
+  - "practical_max_rms_a values"
+  - "max_voltage_v values (from datasheets, not checked this session)"
+
+# Run-current policy used by the generator when the user doesn't override.
+run_current_policy:
+  fraction_of_rated: 0.7         # common community starting point (70% of rated RMS)
+  never_exceed: [motor.rated_current_a, slot.max_current_a, chip.practical_max_rms_a]
+  hold_current: omit             # Klipper recommends leaving hold_current unset
+  reference_overrides_note: >
+    Voron's reference configs use 0.8 A for 2 A A/B motors and 0.5 A for the
+    1 A Clockwork 2 motor. When the user picks Voron stock motors, prefer those values.
+
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: klippy/extras/tmc2130.py, tmc2208.py, tmc2209.py, tmc2240.py, tmc5160.py, tmc2660.py
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+  - repo: https://github.com/andrewmcgr/klipper_tmc_autotune
+    path: README.md

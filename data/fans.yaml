@@ -1,0 +1,50 @@
+schema: fans/1
+
+# Each user fan = role + voltage + wire count + which board it plugs into.
+# Roles map to Klipper sections; defaults are Voron reference values.
+
+roles:
+  part_cooling:
+    klipper_section: fan
+    defaults: {kick_start_time: 0.5, off_below: 0.10}
+    prefer_board: toolboard
+  hotend:
+    klipper_section: heater_fan hotend_fan
+    defaults: {max_power: 1.0, kick_start_time: 0.5, heater: extruder, heater_temp: 50.0}
+    prefer_board: toolboard
+    safety: "Must never be generic/manual: heater_fan keeps it on whenever the hotend is hot."
+  controller:
+    klipper_section: controller_fan controller_fan
+    defaults: {kick_start_time: 0.5, heater: heater_bed}
+    prefer_board: mainboard
+  exhaust:
+    klipper_section: heater_fan exhaust_fan
+    defaults: {max_power: 1.0, shutdown_speed: 0.0, kick_start_time: 5.0, heater: heater_bed,
+               heater_temp: 60, fan_speed: 1.0}
+    prefer_board: mainboard
+  nevermore:
+    klipper_section: fan_generic nevermore
+    defaults: {kick_start_time: 0.5}
+    prefer_board: mainboard
+  bed_fans:
+    klipper_section: fan_generic bed_fans
+    defaults: {kick_start_time: 0.5}
+    prefer_board: mainboard
+  chamber_circulation:
+    klipper_section: fan_generic chamber
+    defaults: {kick_start_time: 0.5}
+    prefer_board: mainboard
+
+rules:
+  - "Fan voltage is not a config setting: it's set by a jumper on the board. The wiring guide
+    just reminds the user to set the port jumper to the fan's voltage."
+  - "4-wire PWM fans: control pin -> port PWM pin, emit tachometer_pin when the port has one.
+    Some 4-wire fans need hardware_pwm/cycle_time tuning; leave the defaults unless the user
+    reports trouble."
+  - "Always-on (unswitched) ports are for fans that must not be controlled; never assign
+    hotend fans to a port the MCU cannot see."
+
+sources:
+  - repo: https://github.com/VoronDesign/Voron-2
+    path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg
+    commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73

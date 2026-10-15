@@ -1,0 +1,67 @@
+schema: toolboard/1
+id: btt-ebb42-gen2-v1.0
+name: BIGTREETECH EBB42 Gen2
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: stm32g0b1
+  crystal_mhz: 8
+  bootloader_kib: 0
+interfaces:
+- can
+- usb
+can_pins: PB12/PB13
+form_factor: nema17-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PD3
+  dir_pin: PD2
+  enable_pin: '!PB6'
+  uart_pin: PB3
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: PB0
+  role: hotend
+thermistors:
+- id: T0
+  pin: PA1
+  pullup_ohms: 2200
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: PA0
+  typical_use: board
+fans:
+- id: FAN0
+  pin: PB8
+  wires: 2
+- id: FAN1
+  pin: PB15
+  wires: 2
+- id: FAN2
+  pin: PB4
+  tachometer_pin: PB9
+  wires: 4
+bltouch:
+  sensor_pin: PA5
+  control_pin: PA4
+neopixel_ports:
+- id: RGB
+  pin: PB14
+filament_sensor_ports:
+- id: FIL0
+  pin: PA3
+accelerometer:
+  chip: lis2dw
+  cs_pin: PB1
+  spi_bus: spi2_PB2_PB11_PB10
+notes: []
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB_GEN2/EBB42_GEN2/sample-bigtreetech-ebb42-gen2-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

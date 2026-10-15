@@ -1,0 +1,203 @@
+schema: mainboard/1
+id: btt-manta-m8p-v2.0
+name: BIGTREETECH Manta M8P
+manufacturer: BIGTREETECH
+revisions:
+- '2.0'
+status: reviewed
+mcu_variants:
+- chip: stm32h723
+  crystal_mhz: 25
+  bootloader_kib: 128
+interfaces:
+- usb
+- can
+- uart
+can_pins: PD0/PD1
+host_socket:
+- cb1
+- cm4
+- cb2
+driver_mount: stepstick
+supported_drivers:
+- tmc2209
+- tmc2226
+- tmc2208
+- tmc2130
+- tmc5160
+- tmc2240
+tmc_spi:
+  software:
+    mosi_pin: PG6
+    miso_pin: PG7
+    sclk_pin: PG8
+driver_slots:
+- id: M1
+  step_pin: PE6
+  dir_pin: PE5
+  enable_pin: '!PC14'
+  uart_pin: PC13
+  spi_cs_pin: PC13
+  diag_pin: PF4
+- id: M2
+  step_pin: PE2
+  dir_pin: PE1
+  enable_pin: '!PE4'
+  uart_pin: PE3
+  spi_cs_pin: PE3
+  diag_pin: PF3
+- id: M3
+  step_pin: PB8
+  dir_pin: PB7
+  enable_pin: '!PE0'
+  uart_pin: PB9
+  spi_cs_pin: PB9
+  diag_pin: PF2
+- id: M4
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PB6'
+  uart_pin: PB5
+  spi_cs_pin: PB5
+  diag_pin: PF1
+- id: M5
+  step_pin: PG13
+  dir_pin: PG12
+  enable_pin: '!PG15'
+  uart_pin: PG14
+  spi_cs_pin: PG14
+- id: M6
+  step_pin: PG9
+  dir_pin: PD7
+  enable_pin: '!PG11'
+  uart_pin: PG10
+  spi_cs_pin: PG10
+- id: M7
+  step_pin: PD4
+  dir_pin: PD3
+  enable_pin: '!PD6'
+  uart_pin: PD5
+  spi_cs_pin: PD5
+- id: M8
+  step_pin: PC7
+  dir_pin: PC8
+  enable_pin: '!PD2'
+  uart_pin: PC6
+  spi_cs_pin: PC6
+endstops:
+- id: M1-STOP
+  pin: PF4
+  diag_of: M1
+- id: M2-STOP
+  pin: PF3
+  diag_of: M2
+- id: M3-STOP
+  pin: PF2
+  diag_of: M3
+- id: M4-STOP
+  pin: PF1
+  diag_of: M4
+heaters:
+- id: HE0
+  pin: PA0
+  role: hotend
+- id: HE1
+  pin: PA1
+  role: hotend
+- id: HE2
+  pin: PA3
+  role: hotend
+- id: HE3
+  pin: PA5
+  role: hotend
+- id: HB
+  pin: PF5
+  role: bed
+thermistors:
+- id: T0
+  pin: PB0
+  pullup_ohms: 4700
+- id: T1
+  pin: PC5
+  pullup_ohms: 4700
+- id: T2
+  pin: PC4
+  pullup_ohms: 4700
+- id: T3
+  pin: PA7
+  pullup_ohms: 4700
+- id: TB
+  pin: PB1
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PF7
+  wires: 2
+- id: FAN1
+  pin: PF9
+  wires: 2
+- id: FAN2
+  pin: PF6
+  wires: 2
+- id: FAN3
+  pin: PF8
+  wires: 2
+- id: FAN4
+  pin: PA4
+  wires: 2
+- id: FAN5
+  pin: PA6
+  tachometer_pin: PC2
+  wires: 4
+- id: FAN6
+  pin: PA2
+  tachometer_pin: PC1
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: PD8
+bltouch:
+  sensor_pin: PD13
+  control_pin: PD12
+neopixel_ports:
+- id: RGB
+  pin: PD15
+filament_sensor_ports:
+- id: FIL0
+  pin: PF0
+- id: FIL1
+  pin: PC15
+accelerometer_header:
+  cs_pin: PA15
+  spi_bus: spi3a
+exp_aliases:
+  EXP1_1: PE7
+  EXP1_2: PG1
+  EXP1_3: PG0
+  EXP1_4: PF15
+  EXP1_5: PF14
+  EXP1_6: PF13
+  EXP1_7: PF12
+  EXP1_8: PF11
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PE13
+  EXP2_2: PE12
+  EXP2_3: PE15
+  EXP2_4: PE11
+  EXP2_5: PE10
+  EXP2_6: PE14
+  EXP2_7: PE8
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: <NC>
+notes:
+- TMC SPI is software SPI on PG6 (MOSI) / PG7 (MISO) / PG8 (SCK).
+sources:
+- repo: https://github.com/bigtreetech/Manta-M8P
+  path: V2.0/Firmware/generic-bigtreetech-manta-m8p-V2_0.cfg
+  commit: fabdfb8bdc4ab15db95ca48db4549e36c2b73ee2
+- repo: https://github.com/VoronDesign/Voron-2
+  path: firmware/klipper_configurations/M8P/Voron2_M8P-v2.0_config.cfg
+  commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73

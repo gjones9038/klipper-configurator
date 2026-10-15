@@ -1,0 +1,67 @@
+schema: tuning/1
+
+# Two layers:
+# 1. Baselines written into the generated config (starting values).
+# 2. A post-preflight tuning flow the generator turns into macros + a checklist.
+
+baselines:
+  pressure_advance:
+    formula: "extruder.pa_baseline.start + hotend.flow_classes[flow_class].pa_offset"
+    emit: "[extruder] pressure_advance"
+  input_shaper:
+    from: toolhead.input_shaper_baseline
+    emit_when: "toolhead baseline exists AND user has no accelerometer"
+    otherwise: "omit [input_shaper]; SHAPER_CALIBRATE writes it"
+  pid:
+    from: hotends.defaults.pid_seed
+    note: "Seed only. PID_CALIBRATE in the tuning flow replaces it; SAVE_CONFIG persists it."
+  rotation_distance:
+    from: extruders[*].rotation_distance
+
+# Order matters: each step assumes the previous one passed.
+flow:
+  - id: preflight
+    automatic: true
+    description: "Generated PREFLIGHT macro: confirm MCUs connected, heaters read sane room
+      temperature, STEPPER_BUZZ each motor (user confirms direction), endstop/probe QUERY
+      checks, fans spin."
+  - id: pid_hotend
+    automatic: true
+    gcode: "PID_CALIBRATE HEATER=extruder TARGET={print_temp|245}"
+    then: SAVE_CONFIG
+  - id: pid_bed
+    automatic: true
+    gcode: "PID_CALIBRATE HEATER=heater_bed TARGET={bed_temp|100}"
+    then: SAVE_CONFIG
+  - id: rotation_distance
+    automatic: false
+    description: "Guided: mark filament 120mm above the extruder, extrude 100mm at 1mm/s,
+      measure, macro prints the corrected rotation_distance."
+  - id: z_offset
+    automatic: false
+    description: "PROBE_CALIBRATE or Z_ENDSTOP_CALIBRATE with paper test, depending on Z method."
+  - id: input_shaper
+    automatic: true
+    requires: accelerometer          # toolboard accelerometer or a standalone ADXL345/LIS2DW
+    gcode: "SHAPER_CALIBRATE"
+    then: SAVE_CONFIG
+    without_accelerometer: "Skip; keep the baseline. Optionally print a ringing tower
+      (Klipper Resonance_Compensation.md)."
+  - id: pressure_advance
+    automatic: false
+    description: "Tuning tower around the baseline. User measures the best height; macro
+      computes PA = start + height * factor and runs SET_PRESSURE_ADVANCE."
+    gcode:
+      direct_drive: "TUNING_TOWER COMMAND=SET_PRESSURE_ADVANCE PARAMETER=ADVANCE START=0 FACTOR=.005"
+      bowden: "TUNING_TOWER COMMAND=SET_PRESSURE_ADVANCE PARAMETER=ADVANCE START=0 FACTOR=.020"
+  - id: tmc_autotune
+    automatic: true
+    optional: true
+    requires: "klipper_tmc_autotune installed and every tuned motor present in motors.yaml"
+    description: "No runtime step: [autotune_tmc] applies at startup. The flow checks that
+      klippy.log contains the 'autotune_tmc set' lines."
+
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: docs/Pressure_Advance.md, docs/Config_checks.md, docs/Measuring_Resonances.md
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

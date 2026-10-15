@@ -1,0 +1,61 @@
+schema: toolboard/1
+id: ldo-nitehawk-36
+name: LDO Nitehawk-36
+manufacturer: LDO
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: rp2040
+interfaces:
+- usb
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio23
+  dir_pin: gpio24
+  enable_pin: '!gpio25'
+  uart_pin: gpio0
+  sense_resistor: 0.1
+heaters:
+- id: HE0
+  pin: gpio9
+  role: hotend
+thermistors:
+- id: T0
+  pin: gpio29
+  pullup_ohms: 2200
+  typical_use: hotend
+fans:
+- id: FAN0
+  pin: gpio6
+  wires: 2
+- id: FAN1
+  pin: gpio5
+  tachometer_pin: gpio16
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: gpio10
+neopixel_ports:
+- id: RGB
+  pin: gpio7
+filament_sensor_ports:
+- id: FIL0
+  pin: gpio3
+accelerometer:
+  chip: adxl345
+  cs_pin: gpio27
+  spi_software:
+    sclk_pin: gpio18
+    mosi_pin: gpio20
+    miso_pin: gpio19
+notes:
+- USB toolhead board.
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/MotorDynamicsLab/Nitehawk-36
+  path: Configs/nitehawk-36.cfg
+  commit: feae221a011b71557e052a52fef90ecce21b2477

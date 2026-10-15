@@ -1,0 +1,200 @@
+schema: mainboard/1
+id: btt-manta-m8p-v1.1
+name: BIGTREETECH Manta M8P
+manufacturer: BIGTREETECH
+revisions:
+- '1.1'
+status: reviewed
+mcu_variants:
+- chip: stm32g0b1
+  crystal_mhz: 8
+  bootloader_kib: 8
+interfaces:
+- usb
+- can
+can_pins: PD12/PD13
+host_socket:
+- cb1
+- cm4
+driver_mount: stepstick
+supported_drivers:
+- tmc2209
+- tmc2226
+- tmc2208
+- tmc2130
+- tmc5160
+- tmc2240
+tmc_spi:
+  bus: spi1
+driver_slots:
+- id: M1
+  step_pin: PE2
+  dir_pin: PB4
+  enable_pin: '!PC11'
+  uart_pin: PC10
+  spi_cs_pin: PC10
+  diag_pin: PF3
+- id: M2
+  step_pin: PF12
+  dir_pin: PF11
+  enable_pin: '!PB3'
+  uart_pin: PF13
+  spi_cs_pin: PF13
+  diag_pin: PF4
+- id: M3
+  step_pin: PD7
+  dir_pin: PD6
+  enable_pin: '!PF10'
+  uart_pin: PF9
+  spi_cs_pin: PF9
+  diag_pin: PF5
+- id: M4
+  step_pin: PD3
+  dir_pin: PD2
+  enable_pin: '!PD5'
+  uart_pin: PD4
+  spi_cs_pin: PD4
+  diag_pin: PC0
+- id: M5
+  step_pin: PC9
+  dir_pin: PC8
+  enable_pin: '!PD1'
+  uart_pin: PD0
+  spi_cs_pin: PD0
+- id: M6
+  step_pin: PA10
+  dir_pin: PA14
+  enable_pin: '!PA15'
+  uart_pin: PF8
+  spi_cs_pin: PF8
+- id: M7
+  step_pin: PD11
+  dir_pin: PD9
+  enable_pin: '!PD15'
+  uart_pin: PD14
+  spi_cs_pin: PD14
+- id: M8
+  step_pin: PD8
+  dir_pin: PC6
+  enable_pin: '!PC7'
+  uart_pin: PD10
+  spi_cs_pin: PD10
+endstops:
+- id: M1-STOP
+  pin: PF3
+  diag_of: M1
+- id: M2-STOP
+  pin: PF4
+  diag_of: M2
+- id: M3-STOP
+  pin: PF5
+  diag_of: M3
+- id: M4-STOP
+  pin: PC0
+  diag_of: M4
+heaters:
+- id: HE0
+  pin: PE3
+  role: hotend
+- id: HE1
+  pin: PB5
+  role: hotend
+- id: HE2
+  pin: PB6
+  role: hotend
+- id: HE3
+  pin: PE1
+  role: hotend
+- id: HB
+  pin: PB7
+  role: bed
+thermistors:
+- id: T0
+  pin: PA1
+  pullup_ohms: 4700
+- id: T1
+  pin: PA2
+  pullup_ohms: 4700
+- id: T2
+  pin: PA3
+  pullup_ohms: 4700
+- id: T3
+  pin: PA4
+  pullup_ohms: 4700
+- id: TB
+  pin: PA0
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PE6
+  wires: 2
+- id: FAN1
+  pin: PE0
+  wires: 2
+- id: FAN2
+  pin: PC12
+  wires: 2
+- id: FAN3
+  pin: PE5
+  wires: 2
+- id: FAN4
+  pin: PE4
+  wires: 2
+- id: FAN5
+  pin: PB8
+  tachometer_pin: PC14
+  wires: 4
+- id: FAN6
+  pin: PB9
+  tachometer_pin: PC15
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: PF6
+bltouch:
+  sensor_pin: PB2
+  control_pin: PB1
+neopixel_ports:
+- id: RGB1
+  pin: PA9
+- id: RGB2
+  pin: PB15
+filament_sensor_ports:
+- id: FIL0
+  pin: PC1
+- id: FIL1
+  pin: PC2
+accelerometer_header:
+  cs_pin: PC4
+  spi_bus: spi1
+exp_aliases:
+  EXP1_1: PE9
+  EXP1_2: PE10
+  EXP1_3: PE11
+  EXP1_4: PE12
+  EXP1_5: PE13
+  EXP1_6: PE14
+  EXP1_7: PE15
+  EXP1_8: PB10
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PB14
+  EXP2_2: PB13
+  EXP2_3: PF7
+  EXP2_4: PB12
+  EXP2_5: PE7
+  EXP2_6: PB11
+  EXP2_7: PE8
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: <NC>
+notes:
+- M6-M8 pins and FAN4 tach differ from v1.0 - do not mix the two pin maps.
+sources:
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-bigtreetech-manta-m8p-v1.1.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/VoronDesign/Voron-2
+  path: firmware/klipper_configurations/M8P/Voron2_M8P-v1.1_config.cfg
+  commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73

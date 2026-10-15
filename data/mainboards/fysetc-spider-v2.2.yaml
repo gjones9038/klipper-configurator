@@ -1,0 +1,194 @@
+schema: mainboard/1
+id: fysetc-spider-v2.2
+name: FYSETC Spider
+manufacturer: FYSETC
+revisions:
+- '2.2'
+status: needs-review
+mcu_variants:
+- chip: stm32f446
+  crystal_mhz: 12
+  bootloader_kib: 32
+interfaces:
+- usb
+- uart
+driver_mount: stepstick
+supported_drivers:
+- tmc2209
+- tmc2226
+- tmc2208
+- tmc2130
+- tmc5160
+- tmc2240
+tmc_spi:
+  bus: spi4
+driver_slots:
+- id: X-MOT
+  step_pin: PE11
+  dir_pin: PE10
+  enable_pin: '!PE9'
+  uart_pin: PE7
+  spi_cs_pin: PE7
+  diag_pin: PB14
+- id: Y-MOT
+  step_pin: PD8
+  dir_pin: PB12
+  enable_pin: '!PD9'
+  uart_pin: PE15
+  spi_cs_pin: PE15
+  diag_pin: PB13
+- id: Z-MOT
+  step_pin: PD14
+  dir_pin: PD13
+  enable_pin: '!PD15'
+  uart_pin: PD10
+  spi_cs_pin: PD10
+  diag_pin: PA0
+- id: E0-MOT
+  step_pin: PD5
+  dir_pin: PD6
+  enable_pin: '!PD4'
+  uart_pin: PD7
+  spi_cs_pin: PD7
+  diag_pin: PA3
+- id: E1-MOT
+  step_pin: PE6
+  dir_pin: PC13
+  enable_pin: '!PE5'
+  uart_pin: PC14
+  spi_cs_pin: PC14
+  diag_pin: PA2
+- id: E2-MOT
+  step_pin: PE2
+  dir_pin: PE4
+  enable_pin: '!PE3'
+  uart_pin: PC15
+  spi_cs_pin: PC15
+  diag_pin: PA1
+- id: E3-MOT
+  step_pin: PD12
+  dir_pin: PC4
+  enable_pin: '!PE8'
+  uart_pin: PA15
+  spi_cs_pin: PA15
+- id: E4-MOT
+  step_pin: PE1
+  dir_pin: PE0
+  enable_pin: '!PC5'
+  uart_pin: PD11
+  spi_cs_pin: PD11
+endstops:
+- id: X-
+  pin: PB14
+  diag_of: X-MOT
+- id: Y-
+  pin: PB13
+  diag_of: Y-MOT
+- id: Z-
+  pin: PA0
+  diag_of: Z-MOT
+- id: E0-DIAG
+  pin: PA3
+  diag_of: E0-MOT
+- id: E1-DIAG
+  pin: PA2
+  diag_of: E1-MOT
+- id: E2-DIAG
+  pin: PA1
+  diag_of: E2-MOT
+heaters:
+- id: HE0
+  pin: PB15
+  role: hotend
+- id: HE1
+  pin: PC8
+  role: hotend
+- id: HE2
+  pin: PB3
+  role: hotend
+- id: HB
+  pin: PB4
+  role: bed
+thermistors:
+- id: T0
+  pin: PC0
+  pullup_ohms: 4700
+- id: T1
+  pin: PC1
+  pullup_ohms: 4700
+- id: T2
+  pin: PC2
+  pullup_ohms: 4700
+- id: TB
+  pin: PC3
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PB0
+  wires: 2
+  voltage_options: &id001
+  - 5
+  - 12
+  - 24
+  voltage_select: jumper
+- id: FAN1
+  pin: PB1
+  wires: 2
+  voltage_options: *id001
+  voltage_select: jumper
+- id: FAN2
+  pin: PB2
+  wires: 2
+  voltage_options: *id001
+  voltage_select: jumper
+probe_ports:
+- id: E0-DIAG
+  pin: PA3
+  note: FYSETC's Voron config uses PA3 for the probe.
+neopixel_ports:
+- id: RGB
+  pin: PC12
+  note: From FYSETC's Voron config.
+exp_aliases:
+  EXP1_10: <5V>
+  EXP1_9: <GND>
+  EXP1_8: PD1
+  EXP1_7: PD0
+  EXP1_6: PC12
+  EXP1_5: PC10
+  EXP1_4: PD2
+  EXP1_3: PC11
+  EXP1_2: PA8
+  EXP1_1: PC9
+  EXP2_10: <5V>
+  EXP2_9: <GND>
+  EXP2_8: <RST>
+  EXP2_7: PB10
+  EXP2_6: PA7
+  EXP2_5: PC7
+  EXP2_4: PA4
+  EXP2_3: PC6
+  EXP2_2: PA5
+  EXP2_1: PA6
+notes:
+- Spider has had several revisions (v1.0/1.1/2.x/3.x) with different thermistor and HV-slot layouts. This
+  record follows Klipper's generic (F446) pin map.
+discrepancies:
+- Klipper generic flashes to 0x08000000 (no bootloader); other guides use a 32KiB bootloader. Confirm
+  per board.
+- README pin tables disagree on TB (PC3 vs PB0) between revisions.
+unverified:
+- revision mapping
+- fans[*]
+- bootloader
+sources:
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-fysetc-spider.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/FYSETC/FYSETC-SPIDER
+  path: firmware/Klipper/printer.cfg
+  commit: a5bb58a41c4b226416fc6c41bf6afd1e31b7b837
+- repo: https://github.com/FYSETC/FYSETC-SPIDER
+  path: README.md
+  commit: a5bb58a41c4b226416fc6c41bf6afd1e31b7b837

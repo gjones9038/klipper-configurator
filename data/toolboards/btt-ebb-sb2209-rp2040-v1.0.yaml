@@ -1,0 +1,67 @@
+schema: toolboard/1
+id: btt-ebb-sb2209-rp2040-v1.0
+name: BIGTREETECH EBB SB2209 CAN (RP2040)
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: rp2040
+interfaces:
+- can
+- usb
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio18
+  dir_pin: gpio19
+  enable_pin: '!gpio17'
+  uart_pin: gpio20
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: gpio7
+  role: hotend
+thermistors:
+- id: T0
+  pin: gpio27
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: gpio28
+  typical_use: board
+fans:
+- id: FAN0
+  pin: gpio13
+  wires: 2
+- id: FAN1
+  pin: gpio14
+  wires: 2
+- id: FAN2
+  pin: gpio15
+  tachometer_pin: gpio12
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: gpio6
+bltouch:
+  sensor_pin: gpio21
+  control_pin: gpio22
+neopixel_ports:
+- id: RGB
+  pin: gpio16
+accelerometer:
+  chip: adxl345
+  cs_pin: gpio1
+  spi_software:
+    sclk_pin: gpio2
+    mosi_pin: gpio0
+    miso_pin: gpio3
+notes: []
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB SB2209 CAN (RP2040)/sample-bigtreetech-ebb-sb-rp2040-canbus-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

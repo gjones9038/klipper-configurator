@@ -1,0 +1,84 @@
+schema: homing/1
+
+# User picks one method per axis. X/Y: physical or sensorless. Z: one of the
+# z_methods. The generator validates the choice against the board/driver data.
+
+xy_methods:
+  physical:
+    name: Physical endstop switch
+    description: Microswitch or Hall sensor at the max end of the axis (Voron stock).
+    needs:
+      - "a free endstop input for each axis, on the mainboard (`endstops`) or the toolhead
+        board (Stealthburner X endstop is often wired to the toolhead board)"
+    emits:
+      endstop_pin: "<port pin>, usually with ^ pull-up for microswitches"
+      homing_retract_dist: 5
+      second_homing: true
+    wiring_notes:
+      - "Voron stock: X switch on the toolhead or gantry, Y switch on the rear-right of the
+        gantry. Wire the switches normally closed (NC) so a broken wire reads as triggered."
+      - "On stepstick boards the endstop header shares its pin with the driver DIAG line:
+        remove the DIAG jumper under that driver."
+
+  sensorless:
+    name: Sensorless (StallGuard)
+    description: The TMC driver detects the motor stall when the carriage hits the end.
+    needs:
+      - "driver chip with sensorless support (drivers.yaml chips.*.sensorless not null)"
+      - "a diag_pin on the board slot driving stepper_x and stepper_y"
+      - "stepsticks: DIAG jumper installed under those drivers"
+      - "onboard drivers: diag wired already (check board `driver_slots[*].diag_pin`)"
+    emits:
+      endstop_pin: "<tmc section>_<stepper>:virtual_endstop, e.g. tmc2209_stepper_x:virtual_endstop"
+      driver_config: "diag pin in the TMC section; driver_SGTHRS (tmc2209) or driver_SGT (others)"
+      homing_retract_dist: 0          # Klipper TMC_Drivers.md: must be 0
+      hold_current: omit              # Klipper: must not be set for sensorless (both steppers on CoreXY)
+      homing_speed: "rotation_distance / 2 (Klipper starting point); with klipper_tmc_autotune,
+        homing_speed must be > rotation_distance"
+      homing_override: true           # macro sets homing current, waits 2s for stall flag to clear
+    starting_thresholds:
+      tmc2209: {driver_SGTHRS: 80, range: [0, 255], more_sensitive: higher}
+      tmc2226: {driver_SGTHRS: 80, range: [0, 255], more_sensitive: higher}
+      tmc2130: {driver_SGT: 1, range: [-64, 63], more_sensitive: lower}
+      tmc5160: {driver_SGT: 1, range: [-64, 63], more_sensitive: lower}
+      tmc2240: {driver_SGT: 1, range: [-64, 63], more_sensitive: lower}
+    autotune_interaction: >
+      With [autotune_tmc] enabled, set sensorless thresholds in the autotune section
+      (sg4_thrs for TMC2209, sgt for TMC5160/2240). Values in the TMC section are
+      overridden silently (klipper_tmc_autotune README).
+    corexy_notes:
+      - "Klipper detects the X stall on [stepper_x] and the Y stall on [stepper_y]."
+      - "AWD: stepper_x1/stepper_y1 must not have an endstop. Keep their current identical to the
+        primary motor during homing or they fight the stall detection."
+    tuning_procedure: >
+      Start with the least sensitive value that still triggers, raise sensitivity in small
+      steps until a single touch homes reliably (Klipper TMC_Drivers.md "Find highest
+      sensitivity that successfully homes"). Always do the first attempt with a hand on the
+      emergency stop.
+    unverified:
+      - "starting_thresholds values are typical community starting points, not from Klipper docs"
+
+z_methods:
+  nozzle_switch:
+    name: Voron nozzle-pin Z endstop
+    description: Nozzle presses a microswitch pin at the rear; probe only used for leveling.
+    emits: {endstop_pin: "<port pin>", safe_z_home: "home_xy_position = switch location (user)"}
+  probe_virtual_endstop:
+    name: Probe as Z endstop
+    description: Tap, Klicky, Beacon, Cartographer, Eddy or inductive probe homes Z.
+    emits: {endstop_pin: "probe:z_virtual_endstop", position_endstop: omit}
+    notes:
+      - "Inductive probes as Z endstop drift with bed temperature; Voron recommends them for
+        QGL/Z-tilt only."
+      - "Beacon/Cartographer use their own homing integration; see probes.yaml."
+  physical_min:
+    name: Physical switch at Z min
+    description: Bed-side switch; uncommon on Voron.
+    emits: {endstop_pin: "<port pin>"}
+
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: docs/TMC_Drivers.md
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+  - repo: https://github.com/andrewmcgr/klipper_tmc_autotune
+    path: README.md

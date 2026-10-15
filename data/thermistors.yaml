@@ -1,0 +1,47 @@
+schema: thermistors/1
+
+# `sensor_type` strings are exactly what Klipper accepts (from
+# klippy/extras/temperature_sensors.cfg and adc_temperature.py).
+builtin_sensor_types:
+  ntc:
+    - "ATC Semitec 104GT-2"
+    - "ATC Semitec 104NT-4-R025H42G"
+    - "EPCOS 100K B57560G104F"
+    - "Generic 3950"
+    - "SliceEngineering 450"
+    - "TDK NTCG104LH104JT1"
+    - "Honeywell 100K 135-104LAG-J01"
+    - "NTC 100K MGB18-104F39050L32"
+  rtd_direct_adc: ["PT1000"]                   # direct on a thermistor port (pull-up matters)
+  amplifier_adc: ["PT100 INA826", "AD595", "AD597", "AD8494", "AD8495", "AD8496", "AD8497"]
+  spi: ["MAX31865", "MAX31855", "MAX31856", "MAX6675"]
+  other: ["temperature_mcu", "temperature_host", "BME280", "DS18B20", "SHT3X", "AHT10", "LM75"]
+
+# What users actually pick in the UI -> Klipper sensor_type.
+user_choices:
+  - {id: ntc100k-3950, label: "NTC 100K 3950 (most generic hotends, Keenovo beds)",
+     sensor_type: "Generic 3950",
+     note: "Voron config: 'Use Generic 3950 for Keenovo heaters' and NTC 100K 3950 thermistors."}
+  - {id: semitec-104gt2, label: "ATC Semitec 104GT-2", sensor_type: "ATC Semitec 104GT-2"}
+  - {id: semitec-104nt4, label: "ATC Semitec 104NT-4 (E3D Revo and others)",
+     sensor_type: "ATC Semitec 104NT-4-R025H42G"}
+  - {id: epcos-b57560, label: "EPCOS 100K B57560G104F", sensor_type: "EPCOS 100K B57560G104F"}
+  - {id: slice-450, label: "Slice Engineering 450C", sensor_type: "SliceEngineering 450"}
+  - {id: pt1000, label: "PT1000 (direct)", sensor_type: "PT1000",
+     note: "Works on a 4.7k port, but resolution is better with a 2.2k pull-up (jumper on some
+       boards). Set pullup_resistor to the port's actual value."}
+  - {id: pt100-max31865, label: "PT100 via MAX31865", sensor_type: "MAX31865",
+     needs: ["SPI MAX31865 on the board or an add-on", "rtd_nominal_r: 100, rtd_reference_r: 430"]}
+  - {id: ldo-cmfb103f3950, label: "LDO Nitehawk-SB chamber NTC (CMFB103F3950FANT)",
+     sensor_type: "CMFB103F3950FANT", custom_definition_required: true,
+     note: "Not built into Klipper; LDO's nitehawk-sb.cfg defines it with a [thermistor] section."}
+
+rules:
+  - "Always emit pullup_resistor when the port's pullup_ohms != 4700 (Klipper default)."
+  - "Chamber sensors use [temperature_sensor chamber] unless a chamber heater or fan is
+    controlled from it."
+
+sources:
+  - repo: https://github.com/Klipper3d/klipper
+    path: klippy/extras/temperature_sensors.cfg
+    commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

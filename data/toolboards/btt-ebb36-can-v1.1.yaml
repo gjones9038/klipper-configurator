@@ -1,0 +1,62 @@
+schema: toolboard/1
+id: btt-ebb36-can-v1.1
+name: BIGTREETECH EBB36 CAN
+manufacturer: BIGTREETECH
+revisions:
+- '1.1'
+status: reviewed
+mcu:
+  chip: stm32g0b1
+  crystal_mhz: 8
+  bootloader_kib: 0
+interfaces:
+- can
+- usb
+can_pins: PB0/PB1
+form_factor: nema14-back
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PD0
+  dir_pin: PD1
+  enable_pin: '!PD2'
+  uart_pin: PA15
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: PA2
+  role: hotend
+thermistors:
+- id: T0
+  pin: PA3
+  pullup_ohms: 4700
+  typical_use: hotend
+fans:
+- id: FAN0
+  pin: PA0
+  wires: 2
+- id: FAN1
+  pin: PA1
+  wires: 2
+bltouch:
+  sensor_pin: PB8
+  control_pin: PB9
+neopixel_ports:
+- id: RGB
+  pin: PD3
+filament_sensor_ports:
+- id: FIL0
+  pin: PB4
+accelerometer:
+  chip: adxl345
+  cs_pin: PB12
+  spi_bus: spi2_PB2_PB11_PB10
+notes:
+- EBB36 and EBB42 v1.1 share this pin map.
+- Thermistor pull-up and fan voltage are selected by jumpers on the board.
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB CAN V1.1 and V1.2 (STM32G0B1)/sample-bigtreetech-ebb-canbus-v1.1.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

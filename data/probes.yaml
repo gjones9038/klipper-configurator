@@ -1,0 +1,65 @@
+schema: probes/1
+
+probes:
+  - id: omron-tl-q5mc2
+    name: Omron TL-Q5MC2 (inductive, NPN NO)
+    kind: inductive
+    supply_v: 24
+    output: npn-no
+    z_endstop_capable: false        # Voron: used for QGL/Z-tilt only, not Z height
+    pin_modifier: "~!"              # Voron reference on PROBE ports
+    wiring_notes:
+      - "Outputs up to supply voltage: on 3.3V MCU inputs use a port with protection (PROBE
+        port on Octopus/Leviathan) or a BAT85 diode on a DIAG input (Voron Octopus guide)."
+    defaults: {x_offset: 0, y_offset: 25.0, z_offset: 0, speed: 10.0, samples: 3,
+               samples_result: median, sample_retract_dist: 3.0, samples_tolerance: 0.006,
+               samples_tolerance_retries: 3}
+    sources: [{repo: https://github.com/VoronDesign/Voron-2, path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg}]
+
+  - id: voron-tap
+    name: Voron Tap (optical)
+    kind: nozzle_contact
+    supply_v: [5, 24]               # depends on Tap PCB/sensor version
+    z_endstop_capable: true
+    offsets: {x_offset: 0, y_offset: 0}
+    activate_gcode_note: "Limit nozzle to about 150C before probing to avoid marking the bed
+      (Voron Tap guide)."
+    unverified: ["supply_v per version", "activate_gcode details"]
+
+  - id: klicky
+    name: Klicky / Euclid (dockable microswitch)
+    kind: dockable_switch
+    z_endstop_capable: true
+    needs_macros: true              # attach/dock macros (Klicky-macros / klicky-probe.cfg)
+    unverified: ["macro package choice"]
+
+  - id: beacon
+    name: Beacon (eddy current)
+    kind: eddy_external_module
+    interface: usb
+    z_endstop_capable: true
+    klipper_module: {repo: https://github.com/beacon3d/beacon_klipper, install: required}
+    unverified: ["config keys - generated from vendor docs at build time"]
+
+  - id: cartographer
+    name: Cartographer (eddy current)
+    kind: eddy_external_module
+    interface: [usb, can]
+    z_endstop_capable: true
+    klipper_module: {repo: https://github.com/Cartographer3D/cartographer-klipper, install: required}
+    sources: [{repo: https://github.com/Klipper3d/klipper, path: config/sample-cartographer-v3.cfg}]
+    unverified: ["module-specific keys"]
+
+  - id: btt-eddy
+    name: BTT Eddy (LDC1612)
+    kind: eddy_native
+    interface: [usb, i2c]
+    z_endstop_capable: true
+    klipper_section: probe_eddy_current   # native in Klipper (docs/Eddy_Probe.md)
+    sources: [{repo: https://github.com/Klipper3d/klipper, path: docs/Eddy_Probe.md}]
+
+  - id: bltouch
+    name: BLTouch / CR-Touch
+    kind: servo_pin
+    z_endstop_capable: true
+    uses_board_port: bltouch        # sensor_pin + control_pin from board/toolboard data

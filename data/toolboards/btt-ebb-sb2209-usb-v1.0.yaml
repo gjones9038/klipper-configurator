@@ -1,0 +1,67 @@
+schema: toolboard/1
+id: btt-ebb-sb2209-usb-v1.0
+name: BIGTREETECH EBB SB2209 USB (RP2040)
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: rp2040
+interfaces:
+- usb
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: gpio18
+  dir_pin: gpio19
+  enable_pin: '!gpio17'
+  uart_pin: gpio20
+  sense_resistor: 0.11
+heaters:
+- id: HE0
+  pin: gpio7
+  role: hotend
+thermistors:
+- id: T0
+  pin: gpio26
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: gpio27
+  typical_use: board
+fans:
+- id: FAN0
+  pin: gpio14
+  wires: 2
+- id: FAN1
+  pin: gpio4
+  wires: 2
+- id: FAN2
+  pin: gpio5
+  wires: 2
+- id: FAN3
+  pin: gpio16
+  tachometer_pin: gpio12
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: gpio6
+bltouch:
+  sensor_pin: gpio21
+  control_pin: gpio22
+neopixel_ports:
+- id: RGB
+  pin: gpio15
+accelerometer:
+  chip: lis2dw
+  cs_pin: gpio1
+  spi_bus: spi0a
+notes:
+- USB only - no CAN transceiver.
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB_SB2209_USB/sample-bigtreetech-ebb-sb-usb-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

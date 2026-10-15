@@ -1,0 +1,223 @@
+schema: mainboard/1
+id: btt-octopus-max-ez-v1.0
+name: BIGTREETECH Octopus Max EZ
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: needs-review
+mcu_variants:
+- chip: stm32h723
+  crystal_mhz: 25
+  bootloader_kib: 128
+interfaces:
+- usb
+- can
+- usb-can-bridge
+can_pins: PD0/PD1
+driver_mount: ez
+supported_drivers:
+- tmc2209
+- tmc2226
+- tmc2208
+- tmc2130
+- tmc5160
+- tmc2240
+tmc_spi:
+  bus: spi4
+driver_slots:
+- id: Motor-1
+  step_pin: PC13
+  dir_pin: PC14
+  enable_pin: '!PE6'
+  uart_pin: PG14
+  spi_cs_pin: PG14
+  diag_pin: PF0
+- id: Motor-2
+  step_pin: PE4
+  dir_pin: PE5
+  enable_pin: '!PE3'
+  uart_pin: PG13
+  spi_cs_pin: PG13
+  diag_pin: PF2
+- id: Motor-3
+  step_pin: PE1
+  dir_pin: PE0
+  enable_pin: '!PE2'
+  uart_pin: PG12
+  spi_cs_pin: PG12
+  diag_pin: PF4
+- id: Motor-4
+  step_pin: PB8
+  dir_pin: PB9
+  enable_pin: PB7
+  uart_pin: PG11
+  spi_cs_pin: PG11
+  diag_pin: PF3
+- id: Motor-5
+  step_pin: PB5
+  dir_pin: PB4
+  enable_pin: '!PB6'
+  uart_pin: PG10
+  spi_cs_pin: PG10
+- id: Motor-6
+  step_pin: PG15
+  dir_pin: PB3
+  enable_pin: '!PD5'
+  uart_pin: PG9
+  spi_cs_pin: PG9
+- id: Motor-7
+  step_pin: PD3
+  dir_pin: PD2
+  enable_pin: '!PD4'
+  uart_pin: PD7
+  spi_cs_pin: PD7
+- id: Motor-8
+  step_pin: PA10
+  dir_pin: PA9
+  enable_pin: '!PA15'
+  uart_pin: PD6
+  spi_cs_pin: PD6
+- id: Motor-9
+  step_pin: PA8
+  dir_pin: PC7
+  enable_pin: '!PC9'
+  uart_pin: PG8
+  spi_cs_pin: PG8
+- id: Motor-10
+  step_pin: PG6
+  dir_pin: PC6
+  enable_pin: '!PC8'
+  uart_pin: PG7
+  spi_cs_pin: PG7
+endstops:
+- id: M1-STOP
+  pin: PF0
+  diag_of: Motor-1
+- id: M2-STOP
+  pin: PF2
+  diag_of: Motor-2
+- id: M3-STOP
+  pin: PF4
+  diag_of: Motor-3
+- id: M4-STOP
+  pin: PF3
+  diag_of: Motor-4
+- id: M5-STOP
+  pin: PF1
+- id: M6-STOP
+  pin: PC15
+heaters:
+- id: HE0
+  pin: PF6
+  role: hotend
+- id: HE1
+  pin: PA0
+  role: hotend
+- id: HE2
+  pin: PF9
+  role: hotend
+- id: HE3
+  pin: PF7
+  role: hotend
+- id: HB
+  pin: PF5
+  role: bed
+thermistors:
+- id: T0
+  pin: PB0
+  pullup_ohms: 4700
+  alt_pullup_ohms_by_jumper: 2200
+- id: T1
+  pin: PC5
+  pullup_ohms: 4700
+  alt_pullup_ohms_by_jumper: 2200
+- id: T2
+  pin: PC4
+  pullup_ohms: 4700
+  alt_pullup_ohms_by_jumper: 2200
+- id: T3
+  pin: PA7
+  pullup_ohms: 4700
+  alt_pullup_ohms_by_jumper: 2200
+- id: TB
+  pin: PB1
+  pullup_ohms: 4700
+  typical_use: bed
+  alt_pullup_ohms_by_jumper: 2200
+fans:
+- id: FAN0
+  pin: PA6
+  wires: 2
+- id: FAN1
+  pin: PA5
+  wires: 2
+- id: FAN2
+  pin: PA4
+  wires: 2
+- id: FAN3
+  pin: PA3
+  wires: 2
+- id: FAN4
+  pin: PA1
+  tachometer_pin: PC3
+  wires: 4
+- id: FAN5
+  pin: PF8
+  tachometer_pin: PC1
+  wires: 4
+- id: FAN6
+  pin: PA2
+  tachometer_pin: PC2
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: PF11
+  note: Optocoupler-isolated; PNP or NPN selected by jumper (vendor README).
+bltouch:
+  sensor_pin: PB15
+  control_pin: PB14
+neopixel_ports:
+- id: RGB1
+  pin: PE10
+- id: RGB2
+  pin: PE9
+accelerometer_header:
+  cs_pin: PF14
+  spi_bus: spi4
+exp_aliases:
+  EXP1_1: PG2
+  EXP1_2: PD15
+  EXP1_3: PD14
+  EXP1_4: PD13
+  EXP1_5: PD12
+  EXP1_6: PD11
+  EXP1_7: PD10
+  EXP1_8: PE15
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PE13
+  EXP2_2: PE12
+  EXP2_3: PG5
+  EXP2_4: PE11
+  EXP2_5: PG4
+  EXP2_6: PE14
+  EXP2_7: PG3
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: <NC>
+notes:
+- Uses BTT EZ-format drivers (EZ2209, EZ5160 ...), not stepsticks.
+- All driver, heater and fan signals are level-shifted to 5V on-board.
+discrepancies:
+- Motor-4 enable_pin is 'PB7' (not inverted) in both the BTT and Klipper sample configs while every other
+  slot is '!'. Likely a copy error - confirm on hardware before generating configs that use Motor-4.
+sources:
+- repo: https://github.com/bigtreetech/Octopus-Max-EZ
+  path: Firmware/Klipper/generic-bigtreetech-octopus-max-ez.cfg
+  commit: 412b93d03dfb0e75926e6bec105beb9048acfc4b
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-bigtreetech-octopus-max-ez.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/bigtreetech/Octopus-Max-EZ
+  path: README.md
+  commit: 412b93d03dfb0e75926e6bec105beb9048acfc4b

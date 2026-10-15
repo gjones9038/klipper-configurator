@@ -1,0 +1,51 @@
+schema: toolheads/1
+
+# Printhead assemblies (the plastic + fans + LEDs on the carriage), as distinct
+# from toolhead *boards* (data/toolboards). They set fan roles, LEDs, the
+# compatible board form factors and the input shaper baseline.
+
+toolheads:
+  - id: stealthburner
+    name: Voron Stealthburner
+    applies_to: [voron-2.4, voron-trident]
+    compatible_extruders: [clockwork2, galileo2]
+    toolboard_form_factors: [stealthburner, nema14-back]
+    fans:
+      - {role: part_cooling, count: 2, size: "4010 blower", voltage: 24, wiring: "both on one port"}
+      - {role: hotend, count: 1, size: "3010 axial", voltage: 24}
+    leds:
+      type: neopixel
+      chain_count: 3              # 1 logo + 2 nozzle
+      color_order: GRBW
+    x_endstop_location: toolhead  # common SB setup; Voron stock places it on the gantry
+    input_shaper_baseline:
+      x: {type: mzv, freq_hz: 55}
+      y: {type: mzv, freq_hz: 40}
+      confidence: low
+    unverified: ["leds.color_order (varies by LED vendor)", "input_shaper_baseline"]
+
+  - id: stealthchanger-sb
+    name: StealthChanger tool (Stealthburner-based)
+    applies_to: [voron-2.4, voron-trident]
+    multi_tool: true
+    compatible_extruders: [clockwork2, galileo2]
+    toolboard_form_factors: [stealthburner, nema14-back]
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    fans:
+      - {role: part_cooling, count: 2, size: "4010 blower", voltage: 24, wiring: "both on one port"}
+      - {role: hotend, count: 1, size: "3010 axial", voltage: 24}
+    leds: {type: neopixel, chain_count: 3, color_order: GRBW}
+    input_shaper_baseline:
+      x: {type: mzv, freq_hz: 50}
+      y: {type: mzv, freq_hz: 38}
+      confidence: low
+    notes:
+      - "Generator v2: per-tool [extruderN], [tool N] / klipper-toolchanger sections, tool
+        offsets and dock positions. Not modelled yet."
+    unverified: ["everything in this entry beyond the SB fan layout"]
+
+  - id: custom
+    name: Other / custom toolhead
+    applies_to: [voron-2.4, voron-trident]
+    fans: []                      # user enters every fan
+    input_shaper_baseline: null   # no guess; shaper is measured or left off

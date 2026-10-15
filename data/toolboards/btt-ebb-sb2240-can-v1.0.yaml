@@ -1,0 +1,72 @@
+schema: toolboard/1
+id: btt-ebb-sb2240-can-v1.0
+name: BIGTREETECH EBB SB2240 CAN
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+status: reviewed
+mcu:
+  chip: stm32g0b1
+  crystal_mhz: 8
+  bootloader_kib: 0
+interfaces:
+- can
+- usb
+can_pins: PB0/PB1
+form_factor: stealthburner
+extruder_driver:
+  chip: tmc2240
+  interface: spi
+  step_pin: PD0
+  dir_pin: PD1
+  enable_pin: '!PD2'
+  spi_cs_pin: PA15
+  spi_bus: spi2_PB2_PB11_PB10
+  rref_ohms: 12000
+  unverified:
+  - rref value (Klipper default assumed)
+heaters:
+- id: HE0
+  pin: PB13
+  role: hotend
+thermistors:
+- id: T0
+  pin: PA3
+  pullup_ohms: 4700
+  typical_use: hotend
+- id: BOARD_NTC
+  pin: PA2
+  typical_use: board
+fans:
+- id: FAN0
+  pin: PA1
+  wires: 2
+- id: FAN1
+  pin: PA0
+  wires: 2
+- id: FAN2
+  pin: PB14
+  tachometer_pin: PB15
+  wires: 4
+probe_ports:
+- id: PROBE
+  pin: PC13
+bltouch:
+  sensor_pin: PB8
+  control_pin: PB9
+neopixel_ports:
+- id: RGB
+  pin: PD3
+accelerometer:
+  chip: adxl345
+  cs_pin: PB12
+  spi_bus: spi2_PB2_PB11_PB10
+notes:
+- Same board as SB2209 but with a TMC2240 on SPI (cs PA15, spi2_PB2_PB11_PB10).
+- 'klipper_tmc_autotune: set overvoltage_vth to measured toolhead voltage + 0.8V.'
+unverified:
+- connector labels (taken from sample config order)
+sources:
+- repo: https://github.com/bigtreetech/EBB
+  path: EBB SB2240_2209 CAN/sample-bigtreetech-ebb-sb-canbus-v1.0.cfg
+  commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe

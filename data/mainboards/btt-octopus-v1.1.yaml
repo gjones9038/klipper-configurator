@@ -1,0 +1,208 @@
+schema: mainboard/1
+id: btt-octopus-v1.1
+name: BIGTREETECH Octopus
+manufacturer: BIGTREETECH
+revisions:
+- '1.0'
+- '1.1'
+status: reviewed
+mcu_variants:
+- chip: stm32f446
+  crystal_mhz: 12
+  bootloader_kib: 32
+- chip: stm32f429
+  crystal_mhz: 8
+  bootloader_kib: 32
+- chip: stm32f407
+  crystal_mhz: 8
+  bootloader_kib: 32
+interfaces:
+- usb
+- can
+- usb-can-bridge
+driver_mount: stepstick
+supported_drivers:
+- tmc2209
+- tmc2226
+- tmc2208
+- tmc2130
+- tmc5160
+- tmc2240
+tmc_spi:
+  bus: spi1
+driver_slots:
+- id: MOTOR_0
+  step_pin: PF13
+  dir_pin: PF12
+  enable_pin: '!PF14'
+  uart_pin: PC4
+  spi_cs_pin: PC4
+  diag_pin: PG6
+- id: MOTOR_1
+  step_pin: PG0
+  dir_pin: PG1
+  enable_pin: '!PF15'
+  uart_pin: PD11
+  spi_cs_pin: PD11
+  diag_pin: PG9
+- id: MOTOR_2
+  step_pin: PF11
+  dir_pin: PG3
+  enable_pin: '!PG5'
+  uart_pin: PC6
+  spi_cs_pin: PC6
+  diag_pin: PG10
+- id: MOTOR_3
+  step_pin: PG4
+  dir_pin: PC1
+  enable_pin: '!PA0'
+  uart_pin: PC7
+  spi_cs_pin: PC7
+  diag_pin: PG11
+- id: MOTOR_4
+  step_pin: PF9
+  dir_pin: PF10
+  enable_pin: '!PG2'
+  uart_pin: PF2
+  spi_cs_pin: PF2
+- id: MOTOR_5
+  step_pin: PC13
+  dir_pin: PF0
+  enable_pin: '!PF1'
+  uart_pin: PE4
+  spi_cs_pin: PE4
+- id: MOTOR_6
+  step_pin: PE2
+  dir_pin: PE3
+  enable_pin: '!PD4'
+  uart_pin: PE1
+  spi_cs_pin: PE1
+- id: MOTOR_7
+  step_pin: PE6
+  dir_pin: PA14
+  enable_pin: '!PE0'
+  uart_pin: PD3
+  spi_cs_pin: PD3
+endstops:
+- id: DIAG_0
+  pin: PG6
+  diag_of: MOTOR_0
+- id: DIAG_1
+  pin: PG9
+  diag_of: MOTOR_1
+- id: DIAG_2
+  pin: PG10
+  diag_of: MOTOR_2
+- id: DIAG_3
+  pin: PG11
+  diag_of: MOTOR_3
+- id: DIAG_4
+  pin: PG12
+- id: DIAG_5
+  pin: PG13
+- id: DIAG_6
+  pin: PG14
+- id: DIAG_7
+  pin: PG15
+heaters:
+- id: HE0
+  pin: PA2
+  role: hotend
+- id: HE1
+  pin: PA3
+  role: hotend
+- id: HE2
+  pin: PB10
+  role: hotend
+- id: HE3
+  pin: PB11
+  role: hotend
+- id: HB
+  pin: PA1
+  role: bed
+thermistors:
+- id: T0
+  pin: PF4
+  pullup_ohms: 4700
+- id: T1
+  pin: PF5
+  pullup_ohms: 4700
+- id: T2
+  pin: PF6
+  pullup_ohms: 4700
+- id: T3
+  pin: PF7
+  pullup_ohms: 4700
+- id: TB
+  pin: PF3
+  pullup_ohms: 4700
+  typical_use: bed
+fans:
+- id: FAN0
+  pin: PA8
+  wires: 2
+- id: FAN1
+  pin: PE5
+  wires: 2
+- id: FAN2
+  pin: PD12
+  wires: 2
+- id: FAN3
+  pin: PD13
+  wires: 2
+- id: FAN4
+  pin: PD14
+  wires: 2
+- id: FAN5
+  pin: PD15
+  wires: 2
+probe_ports:
+- id: PROBE
+  pin: PB7
+  note: 'Voron: may need a pull-up to 24V for inductive probes; alternatively use DIAG_7 (PG15) with a
+    BAT85 diode.'
+bltouch:
+  sensor_pin: PB7
+  control_pin: PB6
+neopixel_ports:
+- id: RGB
+  pin: PB0
+misc:
+  caselight_pin: PB10
+exp_aliases:
+  EXP1_1: PE8
+  EXP1_2: PE7
+  EXP1_3: PE9
+  EXP1_4: PE10
+  EXP1_5: PE12
+  EXP1_6: PE13
+  EXP1_7: PE14
+  EXP1_8: PE15
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PA6
+  EXP2_2: PA5
+  EXP2_3: PB1
+  EXP2_4: PA4
+  EXP2_5: PB2
+  EXP2_6: PA7
+  EXP2_7: PC15
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: PC5
+notes:
+- Driver SPI/UART mode is set with jumpers under each stepstick; see the board manual for jumper positions.
+- DIAG jumpers must be removed under a driver if its DIAG header is used as a physical endstop (DIAG pin
+  is shared).
+unverified:
+- DIAG_4..7 <-> MOTOR_4..7 diag link
+sources:
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-bigtreetech-octopus-v1.1.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/VoronDesign/Voron-2
+  path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg
+  commit: a192410e27ea345644ae5c4b29b4c9c40cbe1a73
+- repo: https://github.com/bigtreetech/BIGTREETECH-OCTOPUS-V1.0
+  path: Firmware/Klipper/README.md
+  commit: 9526ff16f68839626cb8875a299e73f99f2e57e8

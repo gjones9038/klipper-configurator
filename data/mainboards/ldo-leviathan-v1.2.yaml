@@ -1,0 +1,220 @@
+schema: mainboard/1
+id: ldo-leviathan-v1.2
+name: LDO Leviathan
+manufacturer: LDO
+revisions:
+- '1.2'
+status: reviewed
+mcu_variants:
+- chip: stm32f446
+  crystal_mhz: 12
+  bootloader_kib: 32
+interfaces:
+- usb
+- can
+- usb-can-bridge
+power:
+  vin_v:
+  - 18
+  - 28
+  hv_v:
+  - 24
+  - 55
+driver_mount: onboard
+tmc_spi:
+  bus: spi4
+driver_slots:
+- id: HV-STEPPER-0
+  step_pin: PB10
+  dir_pin: PB11
+  enable_pin: '!PG0'
+  onboard_driver:
+    chip: tmc5160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+    max_current_a: 3.0
+    motor_power: HV input, 24-55V (48V typical)
+  spi_cs_pin: PE15
+  spi_bus: spi4
+  diag_pin: PG1
+- id: HV-STEPPER-1
+  step_pin: PF15
+  dir_pin: PF14
+  enable_pin: '!PE9'
+  onboard_driver:
+    chip: tmc5160
+    klipper_section: tmc5160
+    sense_resistor: 0.075
+    max_current_a: 3.0
+    motor_power: HV input, 24-55V (48V typical)
+  spi_cs_pin: PE11
+  spi_bus: spi4
+  diag_pin: PE10
+- id: STEPPER-0
+  step_pin: PD4
+  dir_pin: PD3
+  enable_pin: '!PD7'
+  onboard_driver:
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+    max_current_a: 2.0
+  uart_pin: PD5
+  diag_pin: PD6
+- id: STEPPER-1
+  step_pin: PC12
+  dir_pin: PC11
+  enable_pin: '!PD2'
+  onboard_driver:
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+    max_current_a: 2.0
+  uart_pin: PD0
+  diag_pin: PD1
+- id: STEPPER-2
+  step_pin: PC9
+  dir_pin: PC8
+  enable_pin: '!PC10'
+  onboard_driver:
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+    max_current_a: 2.0
+  uart_pin: PA8
+  diag_pin: PA15
+- id: STEPPER-3
+  step_pin: PG7
+  dir_pin: PG6
+  enable_pin: '!PC7'
+  onboard_driver:
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+    max_current_a: 2.0
+  uart_pin: PG8
+  diag_pin: PC6
+- id: STEPPER-4
+  step_pin: PD10
+  dir_pin: PD9
+  enable_pin: '!PD13'
+  onboard_driver:
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.11
+    max_current_a: 2.0
+  uart_pin: PD11
+endstops:
+- id: X-ENDSTOP
+  pin: PC1
+- id: Y-ENDSTOP
+  pin: PC2
+- id: Z-ENDSTOP
+  pin: PC3
+heaters:
+- id: HEATER
+  pin: PG10
+  role: hotend
+- id: HEATBED
+  pin: PG11
+  role: bed
+thermistors:
+- id: TH0
+  pin: PA1
+  pullup_ohms: 2200
+- id: TH1
+  pin: PA2
+  pullup_ohms: 2200
+- id: TH2
+  pin: PA0
+  pullup_ohms: 2200
+- id: TH3
+  pin: PA3
+  pullup_ohms: 2200
+fans:
+- id: FAN0
+  pin: PB7
+  tachometer_pin: PB8
+  wires: 3
+  voltage_options: &id001
+  - 5
+  - 24
+  voltage_select: per-port jumper
+- id: FAN1
+  pin: PB3
+  tachometer_pin: PB4
+  wires: 3
+  voltage_options: *id001
+  voltage_select: per-port jumper
+- id: FAN2
+  pin: PF7
+  tachometer_pin: PF6
+  wires: 3
+  voltage_options: *id001
+  voltage_select: per-port jumper
+- id: FAN3
+  pin: PF9
+  tachometer_pin: PF8
+  wires: 3
+  voltage_options: *id001
+  voltage_select: per-port jumper
+probe_ports:
+- id: Z-PROBE
+  pin: PF1
+  note: Selectable voltage, integrated diode (vendor README). LDO config uses ^PF1.
+neopixel_ports:
+- id: RGB
+  pin: PF10
+filament_sensor_ports:
+- id: FIL0
+  pin: PC0
+misc:
+  caselight_pin: PE6
+  led_strip: LED-Strip (PE6), flicker-free dimming
+exp_aliases:
+  EXP1_1: PG9
+  EXP1_2: PG12
+  EXP1_3: PG13
+  EXP1_4: PG14
+  EXP1_5: PC13
+  EXP1_6: PC14
+  EXP1_7: PC15
+  EXP1_8: PF0
+  EXP1_9: <GND>
+  EXP1_10: <5V>
+  EXP2_1: PA6
+  EXP2_2: PA5
+  EXP2_3: PE2
+  EXP2_4: PE4
+  EXP2_5: PE3
+  EXP2_6: PA7
+  EXP2_7: PE5
+  EXP2_8: <RST>
+  EXP2_9: <GND>
+  EXP2_10: PE4
+notes:
+- 'Thermistor pull-ups are 2.2k: every thermistor section needs ''pullup_resistor: 2200''.'
+- HV-STEPPER-0/1 (TMC5160) are intended for A/B; they need the HV input powered.
+discrepancies:
+- 'Klipper''s generic-ldo-leviathan-v1.2.cfg has copy errors: stepper_z1 reuses Z''s UART pin (PD5), stepper_z3''s
+  TMC section is named stepper_z2, and the extruder TMC section is named stepper_z. Pins here follow LDO''s
+  voron2_leviathan.cfg.'
+- 'FAN0 tachometer: LDO configs use PB8, Klipper''s generic uses PB0 (which Klipper also lists as EXP3_13).
+  Using PB8 (manufacturer).'
+- 'Bootloader: Klipper generic says 32KiB bootloader, LDO''s config says ''No bootloader''. Depends on
+  how the board was flashed (stock vs Katapult); the generator should ask.'
+- LDO README lists an STM32H743, but both v1.2 configs target STM32F446. The README probably describes
+  a later revision; confirm before adding one.
+sources:
+- repo: https://github.com/MotorDynamicsLab/Leviathan
+  path: Klipper_config/voron2_leviathan.cfg
+  commit: 878c3c4893ea353552c957f574509f9890e1e37a
+- repo: https://github.com/Klipper3d/klipper
+  path: config/generic-ldo-leviathan-v1.2.cfg
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+- repo: https://github.com/MotorDynamicsLab/Leviathan
+  path: Klipper_config/trident_leviathan.cfg
+  commit: 878c3c4893ea353552c957f574509f9890e1e37a
+- repo: https://github.com/MotorDynamicsLab/Leviathan
+  path: README.md
+  commit: 878c3c4893ea353552c957f574509f9890e1e37a
