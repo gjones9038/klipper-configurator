@@ -231,3 +231,27 @@ test('SKR 3: inductive probe on PC13, powered from elsewhere (2-pin Probe connec
   assert.match(r.files['mainboard.cfg'], /^\[probe\][^\n]*\npin: [~^!]*PC13$/m);
   assert.ok(r.issues.some((i) => i.code === 'probe_power_elsewhere' && /PROBE on BIGTREETECH SKR 3/.test(i.message)));
 });
+
+test('BTT Eddy Coil: probe_eddy_current on the toolhead board I2C bus, no MCU of its own', () => {
+  const b = example();
+  b.toolboard = { id: 'btt-ebb36-can-v1.2', connection: 'can' };
+  b.probe = 'btt-eddy-coil';
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  const pc = r.files['probe.cfg'];
+  assert.match(pc, /^\[probe_eddy_current btt_eddy\]$/m);
+  assert.match(pc, /^i2c_mcu: toolhead$/m);
+  assert.match(pc, /^i2c_bus: i2c3_PB3_PB4$/m);
+  assert.doesNotMatch(pc, /^\[mcu /m);
+  assert.doesNotMatch(pc, /^\[temperature_probe /m);
+  assert.ok(!r.mcus.some((m) => m.name === 'eddy'));
+  assert.ok(r.wiring.connections.some((c) => c.connector === 'I2C' && c.pins.startsWith('SCL PB3 / SDA PB4')));
+});
+
+test('BTT Eddy Coil needs a toolhead board with a recorded I2C header', () => {
+  const b = example();
+  b.probe = 'btt-eddy-coil';                                          // SB2209: no I2C header in the data
+  assert.ok(generate(b, db, 'test').issues.some((i) => i.code === 'probe_needs_i2c_data'));
+  delete b.toolboard;
+  assert.ok(generate(b, db, 'test').issues.some((i) => i.code === 'probe_needs_toolboard'));
+});

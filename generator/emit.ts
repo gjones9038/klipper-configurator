@@ -377,20 +377,25 @@ function probeFile(p: Plan, header: string[]): string {
     f.add(s);
     return f.render();
   }
-  const m = pr.mcu;
-  const conn = pr.connection ?? 'usb';
-  const mcu = new Section(`mcu ${m.name}`, pr.name);
-  if (conn === 'usb') mcu.set('serial', `/dev/serial/by-id/${m.serial_hint}`, 'ls /dev/serial/by-id/*').set('restart_method', 'command');
-  else mcu.set('canbus_uuid', `REPLACE_WITH_${m.name.toUpperCase()}_UUID`, '~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0');
-  f.add(mcu);
-  f.add(new Section(`temperature_sensor ${m.name}_mcu`).set('sensor_type', 'temperature_mcu').set('sensor_mcu', m.name));
-  if (pr.extra_sections) f.add(pr.extra_sections.trimEnd());
   const e = pr.eddy;
+  const m = pr.mcu;
+  if (pr.i2c) {
+    // Eddy Coil: on the toolhead board's I2C header; no MCU of its own.
+    f.add(`# ${pr.name} on the toolhead board's ${pr.i2c.port.id} header (SCL ${pr.i2c.port.scl_pin}, SDA ${pr.i2c.port.sda_pin}).`);
+  } else {
+    const conn = pr.connection ?? 'usb';
+    const mcu = new Section(`mcu ${m.name}`, pr.name);
+    if (conn === 'usb') mcu.set('serial', `/dev/serial/by-id/${m.serial_hint}`, 'ls /dev/serial/by-id/*').set('restart_method', 'command');
+    else mcu.set('canbus_uuid', `REPLACE_WITH_${m.name.toUpperCase()}_UUID`, '~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0');
+    f.add(mcu);
+    f.add(new Section(`temperature_sensor ${m.name}_mcu`).set('sensor_type', 'temperature_mcu').set('sensor_mcu', m.name));
+    if (pr.extra_sections) f.add(pr.extra_sections.trimEnd());
+  }
   const name = e.section_name ?? m.name;
   const s = new Section(`probe_eddy_current ${name}`).set('sensor_type', 'ldc1612');
   if (e.frequency) s.set('frequency', e.frequency);
   if (e.i2c_address) s.set('i2c_address', e.i2c_address);
-  s.set('i2c_mcu', e.i2c_mcu).set('i2c_bus', e.i2c_bus)
+  s.set('i2c_mcu', pr.i2c?.mcu ?? e.i2c_mcu).set('i2c_bus', pr.i2c?.bus ?? e.i2c_bus)
     .set('descend_z', 0.5, 'Klipper Eddy_Probe.md recommendation')
     .set('x_offset', pr.offset.x).set('y_offset', pr.offset.y)
     .set('speed', 5).set('lift_speed', 10)
@@ -400,7 +405,7 @@ function probeFile(p: Plan, header: string[]): string {
   if (pr.temperature_probe) {
     const t = pr.temperature_probe;
     const ts = new Section(`temperature_probe ${name}`, 'coil temperature for drift compensation')
-      .set('sensor_type', t.sensor_type).set('sensor_pin', `${m.name}:${t.sensor_pin}`);
+      .set('sensor_type', t.sensor_type).set('sensor_pin', `${m!.name}:${t.sensor_pin}`);
     if (t.horizontal_move_z) ts.set('horizontal_move_z', t.horizontal_move_z);
     f.add(ts);
   }

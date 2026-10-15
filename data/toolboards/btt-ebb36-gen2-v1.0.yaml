@@ -53,6 +53,14 @@ probe_ports:
   - 24
   note: PROBE connector (GND, VPROBE, SERVOS PB5, GND, PROBE PB8); VPROBE is 5 V or VIN by jumper. Shared
     with the BLTouch sensor input.
+i2c_ports:
+- id: I2C
+  scl_pin: PA7
+  sda_pin: PA6
+  bus: i2c3_PA7_PA6
+  supply_v:
+  - 5
+  note: 4-pin I2C header (5V, GND, SCL PA7, SDA PA6).
 bltouch:
   sensor_pin: PB8
   control_pin: PB5
@@ -67,6 +75,8 @@ accelerometer:
   cs_pin: PB1
   spi_bus: spi2_PB2_PB11_PB10
 notes:
+- 'I2C header: SCL PA7, SDA PA6, Klipper hardware bus i2c3_PA7_PA6 (BTT pin diagram; the sample config''s
+  commented BME280 block uses the same pins and bus; Klipper stm32f0_i2c.c).'
 - 'Probe input: PROBE PB8 on the PROBE connector, whose supply (VPROBE) is jumper-selected 5 V or VIN
   (BTT pin diagram). The sample config uses the same pin as the BLTouch sensor_pin. BTT notes the SERVOS
   pin has no protection circuit.'
@@ -80,3 +90,6 @@ sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB_GEN2/EBB36_GEN2/Hardware/EBB36_GEN2_pin_en.jpg
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/Klipper3d/klipper
+  path: src/stm32/stm32f0_i2c.c
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

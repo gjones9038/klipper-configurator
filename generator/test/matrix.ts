@@ -90,6 +90,7 @@ export function matrix(db: Db): Case[] {
     }
   }
   cases.push(...toolchangerCases(db, cases.length));
+  cases.push(...eddyCoilCases(db, cases.length));
   return cases;
 }
 
@@ -134,4 +135,27 @@ function toolchangerCases(db: Db, start: number): Case[] {
     out.push({ name: `${String(start + out.length).padStart(3, '0')}-${boardId}-stealthchanger-${tb.length}tools${docked ? '-docked' : ''}`, build });
   });
   return out;
+}
+
+// BTT Eddy Coil on every toolhead board with a recorded I2C header; every
+// other case homes Z with it.
+function eddyCoilCases(db: Db, start: number): Case[] {
+  const boards = Object.values(db.toolboards).filter((t) => t.i2c_ports?.length).map((t) => t.id).sort();
+  return boards.map((tb, i) => {
+    const build: Build = {
+      printer: 'voron-2.4', size: '350', variant: 'standard',
+      mainboard: { id: 'btt-octopus-pro-v1.1', connection: 'usb-can-bridge' },
+      toolboard: { id: tb, connection: 'can' },
+      toolhead: 'stealthburner',
+      drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
+      motors: { xy: 'ldo-42sth48-2504ac', z: 'ldo-42sth48-2004ac', extruder: 'ldo-36sth20-1004ahg' },
+      homing: i % 2 ? { xy: 'physical', z: 'probe_virtual_endstop' } : { xy: 'physical', z: 'nozzle_switch', zSwitchXY: [232, 350] },
+      probe: 'btt-eddy-coil',
+      extruder: 'galileo2', hotend: 'rapido2-hf',
+      thermistors: { hotend: 'semitec-104nt4', bed: 'ntc100k-3950' },
+      fans: [{ role: 'part_cooling' }, { role: 'hotend' }, { role: 'controller' }],
+      autotune: false, webUi: 'mainsail',
+    };
+    return { name: `${String(start + i).padStart(3, '0')}-eddy-coil-${tb}${i % 2 ? '-zhome' : ''}`, build };
+  });
 }

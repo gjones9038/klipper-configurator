@@ -111,7 +111,7 @@ export interface Plan {
   thermistor: { hotend: Rec; bed: Rec; chamber?: Rec };
   maxTemp: number;
   fans: FanPlan[];
-  probe?: Rec & { port?: PortUse; offset: { x: number; y: number }; output?: string; connection?: string };
+  probe?: Rec & { port?: PortUse; offset: { x: number; y: number }; output?: string; connection?: string; i2c?: { mcu: string; bus: string; port: Rec } };
   bltouch?: { board: BoardKind; sensor: string; control: string };
   accel?: Rec & { board: BoardKind };
   leds?: PortUse & { chain: number; order: string };
@@ -623,8 +623,15 @@ export function plan(build: Build, db: Db): Plan {
     const offset = build.probeOffset ?? { x: known?.x_offset ?? 0, y: known?.y_offset ?? 0 };
     if (!build.probeOffset && !known) warn('probe_offset_default', `No offset is known for ${p.name} (it depends on the mount); using 0, 0. Measure it (Klipper Probe_Calibrate.md) and set probeOffset, then recalibrate.`);
     if (p.kind === 'eddy_native') {
-      if (p.requires_toolboard_i2c) {
-        err('probe_needs_i2c_data', `${p.name} connects to a toolhead board I2C port, and no toolhead board in the data has I2C pins recorded yet.`);
+      if (p.interface === 'toolboard_i2c') {
+        // Eddy Coil: an LDC1612 on the toolhead board's I2C header, driven by that board's MCU.
+        const port = toolboard?.i2c_ports?.[0];
+        if (!toolboard) err('probe_needs_toolboard', `${p.name} connects to a toolhead board's I2C header; select a toolhead board.`);
+        else if (!port) err('probe_needs_i2c_data', `${p.name} connects to a toolhead board's I2C header, and ${toolboard.name} has no I2C header recorded.`);
+        else {
+          probe = { ...p, offset, connection: 'toolboard_i2c', i2c: { mcu: TOOLHEAD_MCU, bus: port.bus, port } };
+          addLinks([KLIPPER_DOCS.eddy], 'probe');
+        }
       } else {
         const conn = build.probeConnection ?? (Array.isArray(p.interface) ? p.interface[0] : p.interface);
         const ifaces = Array.isArray(p.interface) ? p.interface : [p.interface];

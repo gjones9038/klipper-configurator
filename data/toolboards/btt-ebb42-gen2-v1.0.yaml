@@ -53,6 +53,14 @@ probe_ports:
   - 24
   note: PROBE connector (GND, VPROBE, SERVOS PA4, GND, PROBE PA5); VPROBE is 5 V or VIN by jumper. Shared
     with the BLTouch sensor input.
+i2c_ports:
+- id: I2C
+  scl_pin: PA9
+  sda_pin: PA10
+  bus: i2c1_PA9_PA10
+  supply_v:
+  - 5
+  note: 4-pin I2C header (5V, GND, SCL PA9, SDA PA10).
 bltouch:
   sensor_pin: PA5
   control_pin: PA4
@@ -76,3 +84,6 @@ sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB_GEN2/EBB42_GEN2/Hardware/EBB42_GEN2_pin_en.jpg
   commit: 2b839d629b174dc1da4f470cd703e5b5fcb43cbe
+- repo: https://github.com/Klipper3d/klipper
+  path: src/stm32/stm32f0_i2c.c
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

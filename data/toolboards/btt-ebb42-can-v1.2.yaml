@@ -44,6 +44,15 @@ probe_ports:
   supply_v:
   - 5
   note: 5-pin Endstop connector (+5V, GND, PB6, PB5, PB7); Tap / switch signal on PB6. 5 V only.
+i2c_ports:
+- id: I2C
+  scl_pin: PB3
+  sda_pin: PB4
+  bus: i2c3_PB3_PB4
+  supply_v:
+  - 5
+  note: 4-pin I2C header (+5V, GND, PB3, PB4). The same pins are the filament sensor inputs in the sample
+    config (FIL0 PB4).
 bltouch:
   sensor_pin: PB8
   control_pin: PB9
@@ -58,6 +67,9 @@ accelerometer:
   cs_pin: PB12
   spi_bus: spi2_PB2_PB11_PB10
 notes:
+- 'I2C header: SCL PB3, SDA PB4, Klipper hardware bus i2c3_PB3_PB4 (BTT pin diagram; BTT Eddy manual 4.6/4.7
+  wires the Eddy Coil to it as 5V, GND, SCL PB3, SDA PB4; Klipper stm32f0_i2c.c lists I2C3 on PB3/PB4
+  as scl, sda).'
 - 'Tap / probe input: PB6 on the Endstop connector (BTT pin diagram; klipper-toolchanger and StealthChanger
   examples wire the Tap to PB6 on EBB boards). The connector supplies 5 V only, so 12-24 V inductive probes
   cannot be powered from it.'
@@ -77,3 +89,9 @@ sources:
 - repo: https://github.com/DraftShift/StealthChanger
   path: Klipper/Toolhead_T0.cfg
   commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099
+- repo: https://github.com/bigtreetech/Eddy
+  path: BIGTRRETECH Eddy Series User Manual 20250507.pdf
+  commit: 4e8ebf225c53554d74b70cfd6a9e201220b07554
+- repo: https://github.com/Klipper3d/klipper
+  path: src/stm32/stm32f0_i2c.c
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b

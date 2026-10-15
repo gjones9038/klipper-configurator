@@ -106,10 +106,21 @@ probes:
     kind: eddy_native
     interface: toolboard_i2c
     z_endstop_capable: true
-    offsets: {x_offset: 0, y_offset: 21.42}
-    requires_toolboard_i2c: true    # none of our toolboard records have I2C pins yet
+    offsets: {x_offset: 0, y_offset: 21.42}     # BTT sample: standard Voron Stealthburner mount
+    eddy:
+      section_name: btt_eddy        # BTT sample; i2c_mcu / i2c_bus come from the toolhead board's I2C header
+    mesh: {horizontal_move_z: 2, probe_count: [9, 9], speed: 200}
     docs:
       - {title: "BTT Eddy manual and sample configs", url: "https://github.com/bigtreetech/Eddy"}
+      - {title: "Klipper: eddy current probe setup and calibration", url: "https://www.klipper3d.org/Eddy_Probe.html"}
+    notes:
+      - "Wired to the toolhead board's I2C header (5V, GND, SCL, SDA; BTT Eddy manual 4.6/4.7) and
+        driven by the toolhead board's MCU, so there is no Eddy MCU to flash."
+      - "No temperature compensation on the Coil (BTT README / manual), unlike Eddy USB."
+    sources:
+      - {repo: https://github.com/bigtreetech/Eddy, path: sample-bigtreetech-eddy.cfg, commit: 4e8ebf225c53554d74b70cfd6a9e201220b07554}
+      - {repo: https://github.com/bigtreetech/Eddy, path: README.md, commit: 4e8ebf225c53554d74b70cfd6a9e201220b07554}
+      - {repo: https://github.com/bigtreetech/Eddy, path: BIGTRRETECH Eddy Series User Manual 20250507.pdf, commit: 4e8ebf225c53554d74b70cfd6a9e201220b07554}
 
   - id: cartographer-v3
     name: Cartographer V3 (Klipper native)

@@ -42,7 +42,11 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({ component: `Probe: ${p.probe.name}${out}`, board: p.probe.port.board, connector: p.probe.port.port, pins: bare(p.probe.port.pin),
       note: p.probe.kind === 'inductive' ? `power the probe from ${p.probe.supply_v?.join('-') ?? '12-24'} V${p.probe.port.board === 'mainboard' && !(p.board.probe_ports?.[0]?.protected) ? '; BAT85 diode on the signal (black band toward the probe)' : ''}` : undefined });
   }
-  if (p.probe?.kind === 'eddy_native' || p.probe?.kind === 'eddy_plugin') {
+  if (p.probe?.i2c) {
+    const port = p.probe.i2c.port;
+    add({ component: `Probe: ${p.probe.name}`, board: 'toolboard', connector: port.id, pins: `SCL ${port.scl_pin} / SDA ${port.sda_pin} + 5V / GND`,
+      note: `Klipper i2c_bus ${p.probe.i2c.bus}; mount it per the BTT guide and measure x/y offsets` });
+  } else if (p.probe?.kind === 'eddy_native' || p.probe?.kind === 'eddy_plugin') {
     const conn = p.probe.connection ?? 'usb';
     add({ component: `Probe: ${p.probe.name}`, board: 'mainboard', connector: conn === 'can' ? 'CAN bus' : 'host USB',
       pins: conn === 'can' ? 'CAN-H / CAN-L + 24V / GND' : 'USB cable to the host (Pi/CB1)', note: 'own MCU; mount it per the vendor guide and measure x/y offsets' });
