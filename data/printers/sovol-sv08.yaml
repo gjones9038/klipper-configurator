@@ -1,0 +1,102 @@
+schema: printer/1
+id: sovol-sv08
+name: Sovol SV08
+manufacturer: Sovol
+status: reviewed
+docs:
+  - {title: "Sovol SV08 source (configs, schematics)", url: "https://github.com/Sovol3d/SV08"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: corexy
+z_leveling: quad_gantry_level
+bed_heater: unknown
+
+sizes:
+  - id: stock
+    bed_mm: [350, 350]
+    position_max: {x: 355, y: 364, z: 347}
+    quad_gantry_level:
+      gantry_corners: [[-60, -10], [410, 420]]
+      points: [[36, 10], [36, 320], [346, 320], [346, 10]]
+
+steppers:
+  - {klipper: stepper_x,  role: B,  rotation_distance: 40, dir_inverted: true}
+  - {klipper: stepper_y,  role: A,  rotation_distance: 40, dir_inverted: true}
+  - {klipper: stepper_z,  role: Z0, rotation_distance: 40}
+  - {klipper: stepper_z1, role: Z1, rotation_distance: 40, dir_inverted: true}
+  - {klipper: stepper_z2, role: Z2, rotation_distance: 40}
+  - {klipper: stepper_z3, role: Z3, rotation_distance: 40, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 6, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 700
+    max_accel: 40000
+    max_z_velocity: 20
+    max_z_accel: 500
+    square_corner_velocity: 5.0
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 30
+    homing_retract_dist: 0
+    homing_positive_dir: true
+    position_min: 0
+    endstop_at_max: true
+    run_current: 1.5
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: -5
+    homing_speed: 15
+    second_homing_speed: 10
+    homing_retract_dist: 5
+    run_current: 0.58
+  tmc:
+    interpolate: true
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.8
+  sensorless_thresholds: {stepper_x: 65, stepper_y: 65}
+  bed:
+    max_power: 1.0
+    max_temp: 105
+    pid: {pid_kp: 73.571, pid_ki: 1.820, pid_kd: 783.849}
+  quad_gantry_level:
+    speed: 400
+    horizontal_move_z: 10
+    retries: 5
+    retry_tolerance: 0.05
+    max_adjust: 30
+  safe_z_home:
+    home_xy_position: user
+    speed: 100
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [sovol-sv08]
+  toolboard: sovol-sv08-toolhead
+  toolhead: null
+  extruder: sovol-sv08
+  hotend: sovol-sv08
+  thermistors: {hotend: sovol-sv08-hotend, bed: sovol-sv08-bed}
+  probe: sovol-sv08-probe
+  probe_options: [sovol-sv08-probe]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend, exhaust]
+
+notes:
+  - "A Voron 2.4 derivative with its own board and toolhead board (two MCUs over USB)."
+  - "This writes a mainline Klipper config. Sovol's stock image runs Sovol's Klipper fork with [probe_pressure] and [z_offset_calibration]; those are not generated, so set the Z offset with PROBE_CALIBRATE."
+  - "Sovol's config runs the Z drivers in stealthChop (threshold 999999); this uses spreadCycle everywhere."
+unverified:
+  - "Z motor positions are not stated by Sovol; stepper order follows Sovol's config (stepper_z on the Z3 connector, z1 on Z1, z2 on Z2, z3 on Z4)."
+  - "Whether the bed is mains (SSR) or 24 V is not stated in the sources."
+sources:
+  - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491}
+  - {repo: https://github.com/Sovol3d/SV08, path: README.md, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "350x350x345 mm, 4 Z motors, Voron 2.4 derivative"}

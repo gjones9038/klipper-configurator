@@ -85,6 +85,24 @@ user_choices:
       - {url: "https://e3d-online.com/products/pt100-temperature-sensor", accessed: 2026-10-15,
          quote: "High temperature ready up to 500°C; an amplifier board will be required"}
     note: "500°C is E3D's cartridge rating; other makers' PT100 cartridges may be rated lower."
+  - id: sovol-sv08-hotend
+    max_temp_c: null
+    label: "Sovol SV08 hotend thermistor (Sovol table)"
+    sensor_type: "sovol_sv08_hotend"
+    custom_definition_required: true
+    definition: {temperature1: 25, resistance1: 110000, temperature2: 100, resistance2: 7008, temperature3: 220, resistance3: 435}
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "[thermistor my_thermistor_e]; used with pullup_resistor 11500"}
+    note: "Sovol calls it my_thermistor_e; renamed here. No rated maximum is published."
+  - id: sovol-sv08-bed
+    max_temp_c: null
+    label: "Sovol SV08 bed thermistor (Sovol table)"
+    sensor_type: "sovol_sv08_bed"
+    custom_definition_required: true
+    definition: {temperature1: 25, resistance1: 100000, temperature2: 50, resistance2: 18085.4, temperature3: 100, resistance3: 5362.6}
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "[thermistor my_thermistor]"}
+    note: "Sovol calls it my_thermistor; renamed here."
   - id: ldo-cmfb103f3950
     max_temp_c: 120
     label: "LDO Nitehawk-SB chamber NTC (FH CMFB103F3950FANT)"

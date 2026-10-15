@@ -63,7 +63,8 @@ def board_pin_conflicts(b):
         use(d.get("uart_pin") or d.get("spi_cs_pin"), "extruder.uart/cs")
     for group in ("heaters", "thermistors", "fans"):
         for item in b.get(group, []):
-            use(item["pin"], f"{group}.{item['id']}")
+            for pin in item.get("pins") or [item["pin"]]:   # multi-pin fan ports (Sovol SV08 part fans)
+                use(pin, f"{group}.{item['id']}")
             if item.get("tachometer_pin"):
                 use(item["tachometer_pin"], f"{group}.{item['id']}.tach")
     for item in b.get("neopixel_ports", []):

@@ -141,6 +141,16 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const mb = new CfgFile(header('mainboard.cfg'));
   mb.add(mcuSection('mcu', p.board, b.mainboard.connection, p.mcu.chip));
   mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
+  // Thermistors Klipper does not know: their table, defined once before any heater uses it.
+  const custom = new Map<string, Rec>();
+  for (const t of [p.thermistor.hotend, p.thermistor.bed, p.thermistor.chamber, ...(p.tools ?? []).map((x) => x.thermistor)]) {
+    if (t?.definition) custom.set(t.sensor_type, t);
+  }
+  for (const [name, t] of custom) {
+    const s = new Section(`thermistor ${name}`, t.label);
+    for (const [k, v] of Object.entries(t.definition)) s.set(k, v as number);
+    mb.add(s);
+  }
   const tb = p.toolboard && !p.tools ? new CfgFile(header('toolhead.cfg')) : undefined;
   if (tb) {
     const tconn = b.toolboard!.connection ?? (p.toolboard!.interfaces.includes('can') ? 'can' : 'usb');
@@ -167,8 +177,9 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     .set('sensor_pin', p.bedSensor.pin, p.bedSensor.port);
   if (p.bedSensor.pullup !== 4700) bed.set('pullup_resistor', p.bedSensor.pullup, 'board thermistor pull-up');
   const dcBed = p.printer.bed_heater === 'dc';
+  const unknownBed = p.printer.bed_heater === 'unknown';
   const bedPid = d.bed?.pid ?? { pid_kp: 58.437, pid_ki: 2.347, pid_kd: 363.769 };
-  bed.set('max_power', b.bed?.maxPower ?? d.bed?.max_power ?? 0.6, dcBed ? `DC bed on the board's ${p.bedHeater.port} output` : 'SSR rating / (bed watts / mains volts), max 1.0')
+  bed.set('max_power', b.bed?.maxPower ?? d.bed?.max_power ?? 0.6, dcBed ? `DC bed on the board's ${p.bedHeater.port} output` : unknownBed ? 'printer maker value' : 'SSR rating / (bed watts / mains volts), max 1.0')
     .set('min_temp', 0).set('max_temp', b.bed?.maxTemp ?? d.bed?.max_temp ?? 120)
     .set('control', 'pid', 'seed values; run TUNE_PID_BED')
     .set('pid_kp', bedPid.pid_kp).set('pid_ki', bedPid.pid_ki).set('pid_kd', bedPid.pid_kd)
@@ -182,7 +193,10 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     fileFor(p.chamberSensor.board).add(c);
   }
 
-  for (const f of p.fans) fileFor(f.board).add(fanSection(f));
+  for (const f of p.fans) {
+    if (f.multi) fileFor(f.board).add(new Section(`multi_pin ${f.multi.name}`, `${f.port}: one fan output on several pins`).set('pins', f.multi.pins.join(', ')));
+    fileFor(f.board).add(fanSection(f));
+  }
 
   if (p.probe?.port) {
     const pr = p.probe;

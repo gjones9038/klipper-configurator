@@ -216,6 +216,16 @@ probes:
       - {repo: https://github.com/Sovol3d/Sv06-Source-Code, path: Marlin/Configuration.h, commit: ba1b9e11815d3202d5fd7871e35c18f7416b4ab1, note: "FIX_MOUNTED_PROBE, NOZZLE_TO_PROBE_OFFSET { 25, -25, 0 }"}
     unverified: ["speed, samples_result and sample_retract_dist are Klipper defaults (the SV06 config sets samples 2, tolerance 0.015, retries 5)"]
 
+  - id: sovol-sv08-probe
+    name: Sovol SV08 built-in probe
+    kind: integrated
+    applies_to: [sovol-sv08]
+    z_endstop_capable: true          # Sovol: stepper_z endstop_pin: probe:z_virtual_endstop
+    defaults: {x_offset: -17, y_offset: 10, z_offset: 0, speed: 5.0, samples: 2, samples_result: average,
+               sample_retract_dist: 2.0, samples_tolerance: 0.016, samples_tolerance_retries: 2}
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491}
+
   - id: bltouch
     name: BLTouch / CR-Touch
     kind: servo_pin

@@ -1,0 +1,110 @@
+schema: mainboard/1
+id: sovol-sv08
+name: Sovol SV08 mainboard
+manufacturer: Sovol
+revisions:
+- H616_JC_6Z V1.2
+status: needs-review
+# The SV08's own board: an Allwinner H616 host and an STM32F103VET6 printer MCU on one PCB,
+# linked by USB. Pins from Sovol's printer.cfg and Sovol's pin sheet (agree on every driver pin).
+mcu_variants:
+- chip: stm32f103
+  crystal_mhz: 8
+  bootloader_kib: 0
+  bootloader_note: Sovol's shipped build is linked at 0x08000000 (no bootloader)
+interfaces:
+- usb
+power:
+  vin_v: [24, 24]
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PE2
+  dir_pin: PE0
+  enable_pin: '!PE3'
+  onboard_driver: &drv
+    chip: tmc2209
+    klipper_section: tmc2209
+    sense_resistor: 0.15
+  uart_pin: PE1
+  uart_address: 3
+  diag_pin: PE15
+  diag_pin_key: diag_pin
+  diag_modifier: ''
+- id: Y
+  step_pin: PB8
+  dir_pin: PB6
+  enable_pin: '!PB9'
+  onboard_driver: *drv
+  uart_pin: PB7
+  uart_address: 3
+  diag_pin: PE13
+  diag_pin_key: diag_pin
+  diag_modifier: ''
+- id: Z3
+  step_pin: PC0
+  dir_pin: PE5
+  enable_pin: '!PC1'
+  onboard_driver: *drv
+  uart_pin: PE6
+  uart_address: 3
+  note: Sovol's config puts stepper_z on the connector labelled Z3
+- id: Z1
+  step_pin: PD3
+  dir_pin: PD1
+  enable_pin: '!PD4'
+  onboard_driver: *drv
+  uart_pin: PD2
+  uart_address: 3
+- id: Z2
+  step_pin: PD7
+  dir_pin: PD5
+  enable_pin: '!PB5'
+  onboard_driver: *drv
+  uart_pin: PD6
+  uart_address: 3
+- id: Z4
+  step_pin: PD11
+  dir_pin: PD9
+  enable_pin: '!PD12'
+  onboard_driver: *drv
+  uart_pin: PD10
+  uart_address: 3
+  note: Sovol's config puts stepper_z3 on the connector labelled Z4
+endstops: []
+heaters:
+- id: BED
+  pin: PA0
+  role: bed
+thermistors:
+- id: TB
+  pin: PC5
+  typical_use: bed
+fans:
+- id: FAN-PA2
+  pin: PA2
+  typical_use: exhaust
+- id: FAN-PA1
+  pin: PA1
+- id: FAN-PA6
+  pin: PA6
+probe_ports: []
+filament_sensor_ports:
+- id: FIL
+  pin: PE9
+misc:
+  main_led: PA3
+  pressure_sensor: PE12     # Sovol's [probe_pressure] (Sovol's Klipper fork only)
+notes:
+- The extruder, hotend, part fans and probe are on the SV08 toolhead board (a second MCU).
+- No endstop switches; X and Y home sensorless (DIAG PE15 / PE13).
+- Sovol's config also uses [probe_pressure] and [z_offset_calibration], which exist only in Sovol's Klipper fork; they are not generated.
+unverified:
+- Only Sovol's sources (config and pin sheet); Klipper has no SV08 config.
+- crystal_mhz 8 is Klipper's default; not stated by Sovol.
+- FAN-PA1 and FAN-PA6 are fan headers on the pin sheet that Sovol's config does not use.
+sources:
+- {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491}
+- {repo: https://github.com/Sovol3d/SV08, path: Motherboard/MCU_PIN_definition.pdf, commit: a60644875f8c756d20b3828c9416518b414b5491}
+- {repo: https://github.com/Sovol3d/SV08, path: Motherboard/H616_JC_6Z_V1_2_MCU.pdf, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "STM32F103VET6"}
+- {repo: https://github.com/Sovol3d/SV08, path: home/sovol/klipper/out/klipper.dict, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "MCU stm32f103xe, USB on PA11/PA12; klipper.elf .text at 0x08000000"}

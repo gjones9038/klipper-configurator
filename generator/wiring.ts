@@ -31,7 +31,8 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({ component: 'Hotend heater', board: p.hotendHeater.board, connector: p.hotendHeater.port, pins: bare(p.hotendHeater.pin) });
     add({ component: 'Hotend thermistor', board: p.hotendSensor.board, connector: p.hotendSensor.port, pins: bare(p.hotendSensor.pin), note: p.thermistor.hotend.label });
   }
-  if (p.printer.bed_heater === 'dc') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: '24 V bed, wired straight to the board output' });
+  if (p.printer.bed_heater === 'unknown') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'stock wiring; check whether your bed is mains (through an SSR) or 24 V before changing it' });
+  else if (p.printer.bed_heater === 'dc') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: '24 V bed, wired straight to the board output' });
   else add({ component: 'Bed heater (SSR control input)', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'mains goes through the SSR, never the board' });
   add({ component: 'Bed thermistor', board: 'mainboard', connector: p.bedSensor.port, pins: bare(p.bedSensor.pin), note: p.thermistor.bed.label });
   if (p.chamberSensor) add({ component: 'Chamber thermistor', board: p.chamberSensor.board, connector: p.chamberSensor.port, pins: bare(p.chamberSensor.pin) });
@@ -39,7 +40,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({ component: 'Fan: hotend', board: 'mainboard', connector: '24 V (always on)', pins: '-', note: 'stock wiring: runs whenever the printer is on' });
   }
   for (const f of p.fans) {
-    add({ component: `Fan: ${f.role.replace('_', ' ')}`, board: f.board, connector: f.port, pins: bare(f.pin) + (f.tach ? ` (tach ${bare(f.tach)})` : ''), note: `[${f.section}]` });
+    add({ component: `Fan: ${f.role.replace('_', ' ')}`, board: f.board, connector: f.port, pins: (f.multi ? f.multi.pins.map(bare).join(' + ') : bare(f.pin)) + (f.tach ? ` (tach ${bare(f.tach)})` : ''), note: `[${f.section}]` });
   }
   if (p.probe?.port) {
     const out = p.probe.output ? ` (${p.probe.output.toUpperCase()})` : '';

@@ -1,0 +1,17 @@
+{
+  "printer": "sovol-sv08",
+  "size": "stock",
+  "variant": "standard",
+  "mainboard": { "id": "sovol-sv08", "connection": "usb" },
+  "toolboard": { "id": "sovol-sv08-toolhead", "connection": "usb" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "", "z": "" },
+  "homing": { "xy": "sensorless", "z": "probe_virtual_endstop" },
+  "probe": "sovol-sv08-probe",
+  "extruder": "sovol-sv08",
+  "hotend": "sovol-sv08",
+  "thermistors": { "hotend": "sovol-sv08-hotend", "bed": "sovol-sv08-bed" },
+  "fans": [{ "role": "part_cooling" }, { "role": "hotend" }, { "role": "exhaust" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}

@@ -71,6 +71,7 @@ export interface PortUse {
 export interface FanPlan extends PortUse {
   role: string;
   enable?: string;            // fan driver enable line (Orbitool O2S part fan)
+  multi?: { name: string; pins: string[] };   // several outputs driven as one through [multi_pin] (Sovol SV08 part fans)
   options?: Rec;              // settings the board maker requires for this port (e.g. cycle_time)
   voltage?: number;
   section: string;            // full section header
@@ -372,7 +373,7 @@ export function plan(build: Build, db: Db): Plan {
     const d = toolboard!.extruder_driver;
     steppers.push(buildStepper({ klipper: 'extruder', role: 'E' }, {
       id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
-      uart_pin: d.uart_pin, tx_pin: d.tx_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
+      uart_pin: d.uart_pin, tx_pin: d.tx_pin, uart_address: d.uart_address, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
       onboard_driver: { chip: d.chip, klipper_section: db.drivers.chips[d.chip].klipper_section,
         sense_resistor: d.sense_resistor, rref: d.rref_ohms },
     }, 'toolboard', 'extruder'));
@@ -582,7 +583,7 @@ export function plan(build: Build, db: Db): Plan {
   if (!thermHotend) throw new PlanError('unknown_thermistor', `Unknown hotend thermistor "${build.thermistors.hotend}"`);
   if (!thermBed) throw new PlanError('unknown_thermistor', `Unknown bed thermistor "${build.thermistors.bed}"`);
   for (const t of [thermHotend, thermBed]) {
-    if (t.custom_definition_required) err('custom_thermistor', `${t.label} needs a custom [thermistor] definition, which the generator does not write yet.`);
+    if (t.custom_definition_required && !t.definition) err('custom_thermistor', `${t.label} needs a custom [thermistor] definition, which the data does not have yet.`);
     if (t.needs) err('thermistor_hw', `${t.label} needs extra hardware (${t.needs.join('; ')}), which the generator does not configure yet.`);
   }
   const mbHeaters: Rec[] = board.heaters;
@@ -644,10 +645,14 @@ export function plan(build: Build, db: Db): Plan {
       section = `${section}_${roleCount[f.role]}`;
     }
     if (f.tachometer && !port.tachometer_pin) warn('no_tach', `${port.id} on the ${kind} has no tachometer input; tach ignored.`);
+    const tach = f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined;
+    const multiName = `${f.role}_${kind}`.replace(/[^a-z0-9_]/gi, '_');
     fans.push({
       role: f.role, section, defaults: role.defaults, board: kind, port: port.id,
-      pin: qpin(kind, port.pin), tach: f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined,
-      enable: port.enable_pin ? qpin(kind, port.enable_pin) : undefined, options: port.klipper,
+      pin: port.pins ? `multi_pin:${multiName}` : qpin(kind, port.pin), tach,
+      multi: port.pins ? { name: multiName, pins: port.pins.map((x: string) => qpin(kind, x)) } : undefined,
+      enable: port.enable_pin ? qpin(kind, port.enable_pin) : undefined,
+      options: tach && port.tachometer_ppr ? { ...port.klipper, tachometer_ppr: port.tachometer_ppr } : port.klipper,
     });
   }
   // Nevermore filter: a fan_generic on the mainboard plus print start/end behaviour.
@@ -842,7 +847,7 @@ export function plan(build: Build, db: Db): Plan {
       const ext = need(db.extruders[spec.extruder ?? build.extruder], 'unknown_extruder', `T${n}: unknown extruder "${spec.extruder}"`);
       const he = need(db.hotends[spec.hotend ?? build.hotend], 'unknown_hotend', `T${n}: unknown hotend "${spec.hotend}"`);
       const th = need(db.thermistors[spec.hotendThermistor ?? build.thermistors.hotend], 'unknown_thermistor', `T${n}: unknown thermistor "${spec.hotendThermistor}"`);
-      if (th.custom_definition_required) err('custom_thermistor', `T${n}: ${th.label} needs a custom [thermistor] definition, which the generator does not write yet.`);
+      if (th.custom_definition_required && !th.definition) err('custom_thermistor', `T${n}: ${th.label} needs a custom [thermistor] definition, which the data does not have yet.`);
       if (th.needs) err('thermistor_hw', `T${n}: ${th.label} needs extra hardware (${th.needs.join('; ')}), which the generator does not configure yet.`);
       if (toolhead?.compatible_extruders && !toolhead.compatible_extruders.includes(ext.id)) {
         warn('tool_extruder_fit', `T${n}: ${ext.name} is not listed as fitting the ${toolhead.name}.`);
@@ -854,7 +859,7 @@ export function plan(build: Build, db: Db): Plan {
       const d = tb.extruder_driver;
       const stepper = buildStepper({ klipper: extruderName(n), role: 'E' }, {
         id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
-        uart_pin: d.uart_pin, tx_pin: d.tx_pin, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
+        uart_pin: d.uart_pin, tx_pin: d.tx_pin, uart_address: d.uart_address, spi_cs_pin: d.spi_cs_pin, spi_bus: d.spi_bus, spi_software: d.spi_software,
         onboard_driver: { chip: d.chip, klipper_section: db.drivers.chips[d.chip].klipper_section, sense_resistor: d.sense_resistor, rref: d.rref_ohms },
       }, 'toolboard', 'extruder', { extruder: ext, motor, mcu: mcuName });
       steppers.push(stepper);

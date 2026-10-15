@@ -92,6 +92,18 @@ extruders:
          note: "rotation_distance 22.23, gear_ratio 50:10 # For Mini Afterburner, microsteps 32"}
     unverified: ["pa_baseline is the Clockwork starting range"]
 
+  - id: sovol-sv08
+    name: Sovol SV08 stock extruder (direct drive)
+    drive: direct
+    rotation_distance: 6.5
+    microsteps: 16
+    full_steps_per_rotation: 200
+    run_current: 0.8
+    pa_baseline: {start: 0.025, range: [0.01, 0.05]}
+    confidence: medium
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "rotation_distance 6.5, run_current 0.8, pressure_advance 0.025"}
+
   - id: clockwork1
     name: Voron Clockwork (Afterburner)
     drive: direct

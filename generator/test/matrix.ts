@@ -241,6 +241,7 @@ function stockPrinterCases(db: Db, start: number): Case[] {
           const build: Build = {
             printer: printer.id, size: printer.sizes[0].id, variant: 'standard',
             mainboard: { id: boardId, mcu: mcu.chip, connection: board.interfaces[0] },
+            ...(st.toolboard ? { toolboard: { id: st.toolboard, connection: db.toolboards[st.toolboard].interfaces[0] } } : {}),
             drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
             motors: { xy: '', z: '' },
             homing: probe ? { xy: st.homing_xy ?? 'physical', z: 'probe_virtual_endstop' }

@@ -10,7 +10,7 @@ const db = loadDb();
 const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24-350-leviathan-sb2209.json', import.meta.url), 'utf8'));
 
 // Errors a matrix case may legitimately end in; anything else is a bug.
-const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
+const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_thermistor', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
   // matrix deliberately includes combinations the generator must refuse:
   'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path', 'probe_supply']);
 
@@ -499,4 +499,21 @@ test('Rat Rig V-Core 3.1: X at 0 and Y at max, Z-tilt from RatOS geometry, Super
   assert.match(mb, /\[probe\][^\n]*\npin: \^PB7\n/);   // RatOS: pin: ^probe_pin (NPN NC)
   assert.match(mb, /\[heater_bed\][^[]*pwm_cycle_time: 0\.02/);
   assert.match(r.files['printer.cfg'], /\[z_tilt\][^[]*z_positions:\n\s+0, 0\n\s+150, 300\n\s+300, 0/);
+});
+
+test('Sovol SV08: custom thermistor tables, both part fans on one [multi_pin], QGL from Sovol geometry', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/sovol-sv08-stock.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  const th = r.files['toolhead.cfg'];
+  // Sovol3d/SV08 printer.cfg
+  assert.match(mb, /\[thermistor sovol_sv08_hotend\][^\n]*\ntemperature1: 25\nresistance1: 110000/);
+  assert.ok(mb.indexOf('[thermistor sovol_sv08_bed]') < mb.indexOf('[heater_bed]'));
+  assert.match(mb, /\[stepper_z\][^\n]*\nstep_pin: PC0\ndir_pin: PE5/);     // the connector labelled Z3
+  assert.match(mb, /\[stepper_z3\][^\n]*\nstep_pin: PD11\ndir_pin: !PD9/);  // the connector labelled Z4
+  assert.match(th, /\[multi_pin part_cooling_toolboard\][^\n]*\npins: toolhead:PA7, toolhead:PB1/);
+  assert.match(th, /\[fan\][^\n]*\npin: multi_pin:part_cooling_toolboard/);
+  assert.match(th, /\[extruder\][^[]*sensor_type: sovol_sv08_hotend\nsensor_pin: toolhead:PA5\npullup_resistor: 11500/);
+  assert.match(r.files['printer.cfg'], /\[quad_gantry_level\][^[]*gantry_corners:\n\s+-60, -10\n\s+410, 420/);
 });
