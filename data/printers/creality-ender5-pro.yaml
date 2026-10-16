@@ -75,10 +75,15 @@ stock:
   fans: [part_cooling]
 
 notes:
-  - "Covers the Ender 5 Pro with the 32-bit Creality v4.2.2 board (Klipper's reference). The 2019 Ender 5 with the 8-bit Melzi (ATmega1284P) board is not covered."
-  - "Older Ender 5 units used an 8 mm-lead Z screw (Klipper ender5-2019: rotation_distance 8, \"use 4 for Ender5 versions after late 2019\"); this uses 4."
-  - "A BLTouch / CR-Touch is an add-on; its offset depends on the mount, so measure it."
-  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+- "For the Ender 5 Pro with the 32-bit board. The 2019 Ender 5 with the older 8-bit board isn't covered."
+- "Very early Ender 5s used a different Z lead screw. If Z moves twice as far as it should, change the Z rotation distance from 4 to 8."
+- "A BLTouch or CR Touch is an add-on. Measure how far yours sits from the nozzle and enter it on the Homing step."
+- "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."
+tech_notes:
+- "Covers the Ender 5 Pro with the 32-bit Creality v4.2.2 board (Klipper's reference). The 2019 Ender 5 with the 8-bit Melzi (ATmega1284P) board is not covered."
+- "Older Ender 5 units used an 8 mm-lead Z screw (Klipper ender5-2019: rotation_distance 8, \\\"use 4 for Ender5 versions after late 2019\\\"); this uses 4."
+- "A BLTouch / CR-Touch is an add-on; its offset depends on the mount, so measure it."
+- "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
 unverified:
   - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
 sources:

@@ -76,9 +76,13 @@ stock:
   fans: [part_cooling]
 
 notes:
-  - "Covers Ender 3 and Ender 3 Pro units with the 32-bit Creality v4.2.2 or v4.2.7 board. The original 8-bit (Melzi, ATmega1284P) Ender 3 is not covered."
-  - "A BLTouch / CR-Touch is an add-on; its offset depends on the mount, so measure it."
-  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+- "For Ender 3 and Ender 3 Pro printers with the 32-bit board (\"v4.2.2\" or \"v4.2.7\" is printed on it). The original Ender 3 with the older 8-bit board isn't covered."
+- "A BLTouch or CR Touch is an add-on. Measure how far yours sits from the nozzle and enter it on the Homing step."
+- "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."
+tech_notes:
+- "Covers Ender 3 and Ender 3 Pro units with the 32-bit Creality v4.2.2 or v4.2.7 board. The original 8-bit (Melzi, ATmega1284P) Ender 3 is not covered."
+- "A BLTouch / CR-Touch is an add-on; its offset depends on the mount, so measure it."
+- "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
 unverified:
   - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
 sources:

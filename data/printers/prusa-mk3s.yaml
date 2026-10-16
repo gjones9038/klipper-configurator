@@ -81,8 +81,11 @@ stock:
   fans: [part_cooling, hotend]
 
 notes:
-  - "Prusa's firmware homes X at its maximum (X_MAX_POS 255) and Y at -4, sensorless; Z homes with the SuperPINDA."
-  - "Both Z leadscrews run from one driver; Prusa's own Z calibration (crash into the top) is not part of Klipper."
+- "Like Prusa's own firmware, X and Y home without switches (sensorless) and the SuperPINDA probe finds the Z zero point."
+- "Both Z motors run from one driver. Prusa's Z calibration (driving the X axis to the top) isn't part of Klipper, so if the X axis is tilted, level it by hand with the power off."
+tech_notes:
+- "Prusa's firmware homes X at its maximum (X_MAX_POS 255) and Y at -4, sensorless; Z homes with the SuperPINDA."
+- "Both Z leadscrews run from one driver; Prusa's own Z calibration (crash into the top) is not part of Klipper."
 unverified:
   - "Z homing speeds are Klipper defaults (RatOS sets none)."
 discrepancies:

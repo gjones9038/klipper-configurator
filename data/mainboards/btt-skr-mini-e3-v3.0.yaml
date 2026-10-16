@@ -122,8 +122,10 @@ exp_aliases:
   EXP1_9: <GND>
   EXP1_10: <5V>
 notes:
-- All four TMC2209 drivers share one UART (PC11, TX on PC10) at uart_address X 0, Y 2, Z 1, E 3.
-- Sensorless homing needs the DIAG jumper fitted for that axis (Voron V0 config); the endstop input is then the DIAG line.
+- "For sensorless homing (no switches), fit the DIAG jumper under that axis's driver."
+tech_notes:
+- "All four TMC2209 drivers share one UART (PC11, TX on PC10) at uart_address X 0, Y 2, Z 1, E 3."
+- "Sensorless homing needs the DIAG jumper fitted for that axis (Voron V0 config); the endstop input is then the DIAG line."
 unverified:
 - crystal_mhz 8 is Klipper's default; no source states it.
 - The probe port's pull-up/polarity is not stated; a pull-up is used.

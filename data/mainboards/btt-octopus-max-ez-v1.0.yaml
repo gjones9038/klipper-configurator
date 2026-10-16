@@ -208,8 +208,12 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: <NC>
 notes:
-- Uses BTT EZ-format drivers (EZ2209, EZ5160 ...), not stepsticks.
-- All driver, heater and fan signals are level-shifted to 5V on-board.
+- "Takes BTT's EZ driver modules (EZ2209, EZ5160 and so on), not ordinary stepstick drivers."
+tech_notes:
+- "Uses BTT EZ-format drivers (EZ2209, EZ5160 ...), not stepsticks."
+- "All driver, heater and fan signals are level-shifted to 5V on-board."
+checks:
+- "Motor socket 4: both BTT's and Klipper's example configs set it up differently from every other socket, which looks like a mistake. If a motor on socket 4 won't move or won't switch off, move it to another socket."
 discrepancies:
 - Motor-4 enable_pin is 'PB7' (not inverted) in both the BTT and Klipper sample configs while every other
   slot is '!'. Likely a copy error - confirm on hardware before generating configs that use Motor-4.

@@ -83,9 +83,12 @@ filament_sensor_ports:
 - id: FIL
   pin: PA4
 notes:
-- All four drivers share one enable pin (PC3); Klipper allows that.
-- Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible.
-- Hotend and board fans are wired to 24 V and always on; only FAN (part cooling) is switchable.
+- "The motor drivers on this board can't be adjusted from Klipper. Motor current is fixed by the board, and sensorless homing (homing without switches) isn't possible."
+- "Only the part-cooling fan can be switched on and off. The hotend fan and board fan run whenever the printer is on."
+tech_notes:
+- "All four drivers share one enable pin (PC3); Klipper allows that."
+- "Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible."
+- "Hotend and board fans are wired to 24 V and always on; only FAN (part cooling) is switchable."
 unverified:
 - The driver chip (often quoted as TMC2225) is not named in either source; it does not change the config.
 - crystal_mhz 8 is Klipper's STM32F103 default; neither source states the board's crystal.

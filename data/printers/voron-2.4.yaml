@@ -42,10 +42,10 @@ steppers:
 
 variants:
   - id: standard
-    name: Standard (2 A/B motors)
+    name: Standard (two X/Y motors)
     drivers_required: {motion: 6, extruder: 1}
   - id: awd
-    name: AWD (4 A/B motors)
+    name: AWD (four X/Y motors)
     drivers_required: {motion: 8, extruder: 1}
     extra_steppers:
       # Each pair sits diagonally (B rear-left + B1 front-right): LDO LeviathanExt
@@ -53,13 +53,10 @@ variants:
       - {klipper: stepper_x1, role: B1, position: front-right, rotation_distance: 40, pairs_with: stepper_x}
       - {klipper: stepper_y1, role: A1, position: front-left,  rotation_distance: 40, pairs_with: stepper_y}
     notes:
-      - "stepper_x1/stepper_y1 carry no endstop; they share homing with their pair."
-      - "Each paired motor must turn the same way as its partner. Check one pair at a time with
-        STEPPER_BUZZ and the belts loose before the first home."
-      - "Use matched motors and drivers for each pair. If sensorless homing is used, both motors
-        in a pair need the same current and threshold."
-      - "With 9 drivers needed, most 8-slot boards only fit AWD when the extruder moves to a
-        toolhead board (CAN/USB)."
+      - "The two extra X/Y motors at the front have no endstop switches of their own. When homing, each one simply follows its partner motor at the back."
+      - "Each extra motor must turn the same way as its partner. Before the first homing, loosen the belts and run PREFLIGHT_MOTORS to check one pair at a time."
+      - "Use the same motor model and driver for both motors in a pair. With sensorless homing, both motors in a pair also need the same current and sensitivity."
+      - "AWD needs 9 motor sockets. Most 8-socket boards only have enough if the extruder motor runs from a toolhead board."
 
 defaults:
   printer:
@@ -109,9 +106,9 @@ stock:
   z_endstop: nozzle-switch     # Voron's nozzle-pin Z endstop at the rear
 
 notes:
-  - "position_max z values are Voron's reference numbers; a different toolhead or probe can
-    change the usable height."
-
+- "The maximum print height is Voron's figure for its standard toolhead; a different toolhead or probe can lower it a little."
+tech_notes:
+- "position_max z values are Voron's reference numbers; a different toolhead or probe can change the usable height."
 sources:
   - repo: https://github.com/VoronDesign/Voron-2
     path: firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg

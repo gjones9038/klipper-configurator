@@ -33,11 +33,13 @@ const statusPill = (status: string) => pill(status === 'reviewed' ? 'Reviewed' :
 function sources(rec: Rec): Child {
   const list: Rec[] = rec.sources ?? [];
   if (!list.length && !rec.unverified?.length) return null;
+  const tech: string[] = [...(rec.tech_notes ?? []), ...(rec.discrepancies ?? []).map((d: string) => `Sources disagree: ${d}`)];
   return h('details', { class: 'hint' },
     h('summary', null, `Where this data comes from (${list.length} source${list.length === 1 ? '' : 's'}${rec.unverified?.length ? `, ${rec.unverified.length} unconfirmed detail${rec.unverified.length === 1 ? '' : 's'}` : ''})`),
     h('ul', { class: 'links' }, list.map((s) => h('li', null,
       extLink(s.repo, s.repo.replace(/^https:\/\/github.com\//, '')), s.path ? ` · ${s.path}` : '', s.commit ? h('span', { class: 'mono' }, ` @ ${String(s.commit).slice(0, 7)}`) : ''))),
-    rec.unverified?.length ? h('div', null, h('b', null, 'Not confirmed by a source: '), rec.unverified.map((u: any) => (typeof u === 'string' ? u : JSON.stringify(u))).join('; ')) : null);
+    rec.unverified?.length ? h('div', null, h('b', null, 'Not confirmed by a source: '), rec.unverified.map((u: any) => (typeof u === 'string' ? u : JSON.stringify(u))).join('; ')) : null,
+    tech.length ? h('div', null, h('b', null, 'Technical details'), h('ul', null, tech.map((t) => h('li', null, t)))) : null);
 }
 
 function pickTable(head: string[], rows: Array<{ id: string; picked: boolean; name: string; sub: string; cells: Child[]; onPick: () => void }>): HTMLElement {
@@ -102,7 +104,7 @@ const mainboardStep: Step = {
     const boards = Object.values(db.mainboards).sort((a, b) => Number(stock.includes(b.id)) - Number(stock.includes(a.id)) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const variant = db.printers[build.printer].variants.find((v: Rec) => v.id === (build.variant ?? 'standard'));
     return [
-      pickTable(['Board', 'Version', 'Motor drivers', 'Pin data', `Fits the ${db.printers[build.printer].name}${variant.id === 'awd' ? ' AWD' : ''}?`], boards.map((b) => ({
+      pickTable(['Board', 'Version', 'Motor drivers', 'Pin data', `Fits your printer${variant.id === 'awd' ? ' (AWD)' : ''}?`], boards.map((b) => ({
         id: b.id, picked: b.id === build.mainboard.id, name: b.name, sub: [b.name.toLowerCase().startsWith(String(b.manufacturer).toLowerCase().split(/[ (/]/)[0]) ? '' : b.manufacturer, stock.includes(b.id) ? 'stock on this printer' : ''].filter(Boolean).join(' · '),
         onPick: () => update((x) => { x.mainboard = { id: b.id, connection: x.mainboard.connection }; }),
         cells: [h('span', { class: 'mono' }, b.revisions.join(' / ')), `${b.driver_slots.length} × ${b.driver_mount === 'onboard' ? 'built in' : b.driver_mount === 'ez' ? 'plug-in (EZ)' : 'plug-in'}`, statusPill(b.status), b.driver_slots.length >= need || !extSlots(b.id) ? fit(b.driver_slots.length)

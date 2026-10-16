@@ -232,13 +232,13 @@ export function plan(build: Build, db: Db): Plan {
     const need: number[] | undefined = p.supply_v;
     if (!pv || !port) return;
     if (!pv.length) {
-      warn('probe_power_elsewhere', `${port.id} on ${b?.name ?? `the ${kind}`} has no supply pin (signal and GND only): power ${p.name} from another connector${need ? ` at ${Math.min(...need)}-${Math.max(...need)} V` : ''}.`);
+      warn('probe_power_elsewhere', `${port.id} on ${b?.name ?? `the ${kind}`} has only signal and ground wires, no power. Power the ${p.name} from another connector${need ? ` (it needs ${Math.min(...need)}-${Math.max(...need)} V)` : ''}.`);
       return;
     }
     if (!need) return;
     const [lo, hi] = [Math.min(...need), Math.max(...need)];
     if (!pv.some((v) => v >= lo && v <= hi)) {
-      err('probe_supply', `${p.name} needs ${lo}-${hi} V, but ${port.id} on ${b?.name ?? `the ${kind}`} supplies ${pv.join(' or ')} V.`);
+      err('probe_supply', `The ${p.name} needs ${lo}-${hi} V, but ${port.id} on ${b?.name ?? `the ${kind}`} only gives ${pv.join(' or ')} V. Power it from another connector or choose another probe.`);
     }
   }
   // Voron-Tap OptoTap README (Sensor Logic): OPB9x0 sensors are totem pole and
@@ -280,7 +280,9 @@ export function plan(build: Build, db: Db): Plan {
   if (board.status !== 'reviewed') {
     warn('board_needs_review', `${board.name}: its pin list comes from a single source ("needs review"). Check the pins against the board's own pin diagram before powering on.`);
   }
-  for (const d of board.discrepancies ?? []) warn('board_discrepancy', `${board.name}: ${d}`);
+  // Things the user has to check or do (plain language); source disagreements stay in the data's details.
+  for (const c of board.checks ?? []) warn('board_check', `${board.name}: ${c}`);
+  for (const e of board.activeExtensions ?? []) for (const c of e.checks ?? []) warn('board_check', `${e.name}: ${c}`);
 
   // --- connectivity ------------------------------------------------------
   if (!board.interfaces.includes(build.mainboard.connection)) {
@@ -289,7 +291,7 @@ export function plan(build: Build, db: Db): Plan {
   if (toolboard) {
     const tconn = build.toolboard!.connection ?? (toolboard.interfaces.includes('can') ? 'can' : 'usb');
     if (!toolboard.interfaces.includes(tconn)) {
-      err('toolboard_connection', `${toolboard.name} has no ${tconn} interface.`);
+      err('toolboard_connection', `${toolboard.name} can't connect by ${tconn.toUpperCase()}; choose its other connection on the Toolhead board step.`);
     }
     if (tconn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
       err('no_can_path', `${toolboard.name} connects over CAN, which needs a path to your Pi: set the mainboard to "USB-CAN bridge", or use a separate USB-CAN adapter (Toolhead board step).`);
@@ -309,11 +311,11 @@ export function plan(build: Build, db: Db): Plan {
   const slots: Rec[] = board.driver_slots;
   if (slots.length < orderedRoles.length) {
     const hint = !extruderOnToolboard && slots.length >= orderedRoles.length - 1
-      ? ' Add a toolhead board so the extruder driver moves off the mainboard.' : '';
+      ? ' Adding a toolhead board frees one: the extruder motor then runs from the toolhead board (Toolhead board step).' : '';
     const unused = (baseBoard.extensions ?? []).filter((e: Rec) => !build.mainboard.extensions?.includes(e.id));
-    const extHint = unused.map((e: Rec) => ` The ${e.name} adds ${e.driver_slots?.length ?? 0} driver slots.`).join('');
+    const extHint = unused.map((e: Rec) => ` ${hint ? 'Or turn' : 'Turn'} on the ${e.name} on the Mainboard step: it adds ${e.driver_slots?.length ?? 0} more.`).join('');
     throw new PlanError('not_enough_drivers',
-      `${board.name} has ${slots.length} driver slots; ${printer.name} ${variant.name} needs ${orderedRoles.length}.${hint}${extHint}`);
+      `The ${board.name} has ${slots.length} motor sockets, but this ${printer.name} needs ${orderedRoles.length} (one per motor).${hint}${extHint}`);
   }
 
   // Overrides first, then HV slots for A/B, then the remaining slots in order.
@@ -341,7 +343,7 @@ export function plan(build: Build, db: Db): Plan {
   const inverted = slots.filter((s) => String(s.enable_pin).startsWith('!')).length;
   for (const [role, slot] of Object.entries(assign)) {
     if (inverted > slots.length / 2 && !String(slot.enable_pin).startsWith('!')) {
-      warn('enable_polarity', `${board.name} ${slot.id} (used for ${defByRole[role].klipper}) has a non-inverted enable pin unlike the other slots. Check it on the board before trusting this config.`);
+      warn('enable_polarity', `${board.name}: socket ${slot.id} (used for ${defByRole[role].klipper}) is set up differently from the other sockets in the sources, which may be a mistake in them. If that motor won't move or won't switch off, use another socket.`);
     }
   }
 
@@ -434,7 +436,7 @@ export function plan(build: Build, db: Db): Plan {
         pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
         // A toolhead board's driver brings its own SPI (bus or software pins); never the mainboard's.
         const spi = slot.spi_bus ? { bus: slot.spi_bus } : slot.spi_software ? { software: slot.spi_software } : boardKind === 'toolboard' ? undefined : board.tmc_spi;
-        if (!spi) err('no_tmc_spi', `The ${od.chip} driver on the toolhead board has no SPI pins in the data.`);
+        if (!spi) err('no_tmc_spi', `The data for this toolhead board is missing how its ${od.chip.toUpperCase()} driver connects, so it can't be used yet.`);
         Object.assign(pins, spiPins(spi, boardKind, mcuName));
       }
       return {
@@ -450,20 +452,20 @@ export function plan(build: Build, db: Db): Plan {
     if (!mod) throw new PlanError('unknown_driver_module', `Unknown driver module "${choice.module}"`);
     const chip = chips[mod.chip];
     if (mod.format !== board.driver_mount) {
-      err('driver_format', `${mod.id} is a ${mod.format} driver but ${board.name} takes ${board.driver_mount} drivers.`);
+      err('driver_format', `The ${mod.id} driver doesn't fit the ${board.name}'s sockets (it takes ${board.driver_mount === 'ez' ? 'EZ' : 'stepstick'} drivers). Choose another on the Motors step.`);
     }
     if (board.supported_drivers && !board.supported_drivers.includes(mod.chip)) {
-      err('driver_unsupported', `${board.name} does not list ${mod.chip} as supported.`);
+      err('driver_unsupported', `The ${board.name}'s maker doesn't list ${mod.chip.toUpperCase()} drivers as supported. Choose another driver on the Motors step.`);
     }
     const iface: Interface = choice.interface ?? chip.interfaces[0];
     if (!chip.interfaces.includes(iface)) {
-      err('driver_interface', `${mod.chip} does not support ${iface.toUpperCase()} (supports: ${chip.interfaces.join(', ')}).`);
+      err('driver_interface', `The ${mod.chip.toUpperCase()} driver can't use ${iface.toUpperCase()} mode; it supports ${chip.interfaces.map((x: string) => x.toUpperCase()).join(' and ')}.`);
     }
     const pins: Record<string, string> = {};
     if (iface === 'uart') {
       pins.uart_pin = qpin(boardKind, slot.uart_pin);
     } else {
-      if (!board.tmc_spi) err('no_tmc_spi', `${board.name} has no TMC SPI bus in the data.`);
+      if (!board.tmc_spi) err('no_tmc_spi', `The data for the ${board.name} is missing how SPI drivers connect, so use UART-mode drivers on this board.`);
       pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
       Object.assign(pins, spiPins(board.tmc_spi, boardKind, mcuName));
     }
@@ -572,7 +574,7 @@ export function plan(build: Build, db: Db): Plan {
     const sw = build.homing.zSwitchXY;
     const min = printer.defaults.stepper_xy.position_min;
     if (sw && (sw[0] < min || sw[1] < min || sw[0] > size.position_max.x || sw[1] > size.position_max.y)) {
-      err('z_switch_out_of_range', `Z switch position ${sw.join(', ')} is outside the ${size.position_max.x} x ${size.position_max.y} travel range.`);
+      err('z_switch_out_of_range', `The Z switch position (${sw.join(', ')}) is outside the area the nozzle can reach (${size.position_max.x} x ${size.position_max.y} mm). Check it on the Homing step.`);
     }
   }
 
@@ -671,9 +673,9 @@ export function plan(build: Build, db: Db): Plan {
         const voltage = nm.voltage ?? model.voltage_options[0];
         if (!model.voltage_options.includes(voltage)) err('filter_voltage', `${model.name} fans run at ${model.voltage_options.join(' or ')} V, not ${voltage} V.`);
         if (port.voltage_options && !port.voltage_options.includes(voltage)) {
-          err('fan_port_voltage', `${port.id} on ${board.name} can be set to ${port.voltage_options.join('/')} V only; the ${model.name} needs ${voltage} V. Use an external ${voltage} V supply switched by a MOSFET, or another port.`);
+          err('fan_port_voltage', `${port.id} on the ${board.name} can only give ${port.voltage_options.join(' or ')} V, but the ${model.name} needs ${voltage} V. Use another port, or power the filter from its own ${voltage} V supply switched by a MOSFET module.`);
         }
-        if (model.min_supply_a) warn('filter_current', `${model.name} needs a ${voltage} V supply of at least ${model.min_supply_a} A (manufacturer). Most board fan ports are rated well below that (e.g. Leviathan 0.5 A): check your port's rating or drive it through a MOSFET.`);
+        if (model.min_supply_a) warn('filter_current', `The ${model.name} draws up to ${model.min_supply_a} A at ${voltage} V (maker's figure), more than most board fan ports can give (the Leviathan's give 0.5 A). Check your port's rating, or run the filter through a MOSFET module.`);
         const d = db.filterDefaults;
         const fan: FanPlan = { role: 'nevermore', section: 'fan_generic nevermore', defaults: db.fanRoles.nevermore.defaults, board: 'mainboard', port: port.id, pin: qpin('mainboard', port.pin), voltage };
         fans.push(fan);
@@ -721,13 +723,13 @@ export function plan(build: Build, db: Db): Plan {
     } else if (p.kind === 'eddy_plugin') {
       extraMcus.push({ name: 'beacon', chip: 'beacon', what: p.name, klipperCheck: false });
       if (build.homing.z === 'probe_virtual_endstop' && build.homing.xy === 'sensorless') {
-        err('beacon_sensorless', `${p.name} homing cannot be combined with sensorless X/Y homing yet (Beacon's home_xy_position excludes [homing_override]).`);
+        err('beacon_sensorless', `The ${p.name} can't home Z together with sensorless X/Y homing yet. Use endstop switches for X/Y, or home Z another way.`);
       }
-      warn('plugin_required', `${p.name} needs its Klipper module installed (${p.plugin.repo}) and cannot be checked with Klipper's offline tools.`);
+      warn('plugin_required', `The ${p.name} needs its maker's Klipper plugin installed on your printer (${p.plugin.repo}).`);
       probe = { ...p, offset };
     } else if (p.kind === 'servo_pin') {
       const src = toolboard?.bltouch ? { b: 'toolboard' as BoardKind, d: toolboard.bltouch } : board.bltouch ? { b: 'mainboard' as BoardKind, d: board.bltouch } : undefined;
-      if (!src) err('no_bltouch_port', 'No BLTouch port on the selected boards.');
+      if (!src) err('no_bltouch_port', 'Neither of your boards has a BLTouch connector. Choose another probe, or a board with one.');
       else bltouch = { board: src.b, sensor: qpin(src.b, src.d.sensor_pin, '^'), control: qpin(src.b, src.d.control_pin) };
       probe = { ...p, offset };
     } else {
@@ -736,7 +738,7 @@ export function plan(build: Build, db: Db): Plan {
       const tPort = toolboard?.probe_ports?.[0];
       const mPort = board.probe_ports?.[0];
       const use = preferTool && tPort ? { b: 'toolboard' as BoardKind, port: tPort } : mPort ? { b: 'mainboard' as BoardKind, port: mPort } : tPort ? { b: 'toolboard' as BoardKind, port: tPort } : undefined;
-      if (!use) err('no_probe_port', `No probe input for ${p.name}.`);
+      if (!use) err('no_probe_port', `Your boards have no free input for the ${p.name}.`);
       checkProbeSupply(p, use?.port, use?.b ?? 'mainboard', use?.b === 'toolboard' ? toolboard : board);
       if (p.id === 'voron-tap' && use?.b === 'toolboard') tapSignalWarning(toolboard!);
       let mods: string;
@@ -745,7 +747,7 @@ export function plan(build: Build, db: Db): Plan {
         output = p.output ?? build.probeOutput;
         if (!output) err('probe_output_needed', `Choose your inductive probe's output type on the Homing step (NPN or PNP, NO or NC). It is printed on the probe or its listing.`);
         if (output?.startsWith('pnp') && use && !use.port.pnp_capable) {
-          err('pnp_unsupported_port', `${p.name} is a PNP probe; its output sits at supply voltage (12-24 V) when active. ${use.port.id} on the ${use.b} is not marked PNP-capable. Use an NPN probe or a board with a PNP-selectable probe port.`);
+          err('pnp_unsupported_port', `The ${p.name} is a PNP probe: when triggered it sends out its full 12-24 V, and ${use.port.id} on the ${use.b} isn't known to accept that. Use an NPN probe, or a board whose probe port has a PNP setting.`);
         }
         // A probe whose polarity its maker documents (RatOS: ^probe_pin for SuperPINDA-type NPN NC)
         // wins; otherwise the port modifier, which is for the NC reference probe. NO flips the inversion.
@@ -759,7 +761,7 @@ export function plan(build: Build, db: Db): Plan {
         mods = use?.port.modifier ?? p.pin_modifier ?? '^';
       }
       probe = { ...p, offset, output, port: use && { board: use.b, port: use.port.id, pin: qpin(use.b, use.port.pin, mods) } };
-      if (p.needs_macros) warn('probe_macros', `${p.name} needs its attach/dock macros installed separately.`);
+      if (p.needs_macros) warn('probe_macros', `The ${p.name} needs its own pick-up and dock macros, which this tool doesn't write. Install them from the probe's instructions.`);
     }
     if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
       err('probe_not_z_endstop', `The ${p.name} cannot set Z zero. Choose a nozzle switch or Z endstop switch for Z homing.`);
@@ -838,7 +840,7 @@ export function plan(build: Build, db: Db): Plan {
       const mcuName = toolMcu(n);
       const tb = need(db.toolboards[spec.toolboard.id], 'unknown_toolboard', `T${n}: unknown toolhead board "${spec.toolboard.id}"`);
       const conn = spec.toolboard.connection ?? (tb.interfaces.includes('can') ? 'can' : 'usb');
-      if (!tb.interfaces.includes(conn)) err('toolboard_connection', `T${n}: ${tb.name} has no ${conn} interface.`);
+      if (!tb.interfaces.includes(conn)) err('toolboard_connection', `T${n}: ${tb.name} can't connect by ${conn.toUpperCase()}; choose its other connection.`);
       if (conn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
         err('no_can_path', `T${n}: ${tb.name} connects over CAN, which needs a path to your Pi: set the mainboard to "USB-CAN bridge", or use a separate USB-CAN adapter.`);
       }
@@ -906,13 +908,13 @@ export function plan(build: Build, db: Db): Plan {
     const yMin = tcSpec.travel?.yMin ?? printer.defaults.stepper_xy.position_min;
     const zMax = tcSpec.travel?.zMax ?? size.position_max.z;
     const pathZ = Math.max(...[...tcRec.dropoff_path, ...tcRec.pickup_path].map((q: Rec) => q.z ?? 0));
-    warn('toolchanger_travel', `Docks are reached outside the normal print area. Klipper moves only within stepper_y position_min (now ${yMin}) and stepper_z position_max (now ${zMax}). Set both to what your printer can physically reach before measuring docks, or Klipper refuses the moves.`);
+    warn('toolchanger_travel', `The docks sit outside the normal print area, and Klipper only moves where it's allowed to (Y down to ${yMin}, Z up to ${zMax} right now). Set "Y travel minimum" and "Z travel maximum" on the Homing step to what your printer can really reach before measuring the docks.`);
     for (const t of tools) {
       if (!t.dock) continue;
-      if (t.dock.y < yMin) err('dock_out_of_range', `T${t.n} dock Y ${t.dock.y} is below stepper_y position_min ${yMin}. Set the Y travel minimum to ${t.dock.y} or lower.`);
-      if (t.dock.z + pathZ > zMax) err('dock_out_of_range', `T${t.n} dock Z ${t.dock.z} plus the ${pathZ} mm docking path is above stepper_z position_max ${zMax}. Set the Z travel maximum to at least ${r2(t.dock.z + pathZ)}.`);
+      if (t.dock.y < yMin) err('dock_out_of_range', `T${t.n}'s dock (Y ${t.dock.y}) is further forward than Klipper may move (Y ${yMin}). Set "Y travel minimum" to ${t.dock.y} or lower on the Homing step.`);
+      if (t.dock.z + pathZ > zMax) err('dock_out_of_range', `T${t.n}'s dock (Z ${t.dock.z}, plus ${pathZ} mm for the docking move) is higher than Klipper may move (Z ${zMax}). Set "Z travel maximum" to at least ${r2(t.dock.z + pathZ)} on the Homing step.`);
     }
-    if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y ${tcSpec.safeY} is beyond the ${size.position_max.y} mm Y travel.`);
+    if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y (${tcSpec.safeY}) is further than Y can travel (${size.position_max.y} mm).`);
     const docked = tools.filter((t) => t.dock).map((t) => t.dock!.y);
     toolchanger = {
       rec: tcRec, safeY: tcSpec.safeY, yMin: tcSpec.travel?.yMin, zMax: tcSpec.travel?.zMax, zProbe: shuttle ? 'shuttle' : 'per_tool',

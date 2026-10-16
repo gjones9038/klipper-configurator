@@ -186,7 +186,9 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: PC5
 notes:
-- HE0 is PA0 and HE2 is PB0 on v1.1 (swapped vs v1.0); MOTOR_3 enable is PA2.
+- "Versions 1.0 and 1.1 are wired differently, and picking the wrong one could switch a heater on by mistake. Pick the version printed on your board."
+tech_notes:
+- "HE0 is PA0 and HE2 is PB0 on v1.1 (swapped vs v1.0); MOTOR_3 enable is PA2."
 unverified:
 - HV motor power input rating
 sources:

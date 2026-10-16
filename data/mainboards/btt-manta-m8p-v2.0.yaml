@@ -192,8 +192,8 @@ exp_aliases:
   EXP2_8: <RST>
   EXP2_9: <GND>
   EXP2_10: <NC>
-notes:
-- TMC SPI is software SPI on PG6 (MOSI) / PG7 (MISO) / PG8 (SCK).
+tech_notes:
+- "TMC SPI is software SPI on PG6 (MOSI) / PG7 (MISO) / PG8 (SCK)."
 sources:
 - repo: https://github.com/bigtreetech/Manta-M8P
   path: V2.0/Firmware/generic-bigtreetech-manta-m8p-V2_0.cfg

@@ -137,7 +137,9 @@ exp_aliases:
   EXP2_8: <RST>
   EXP2_10: <NC>
 notes:
-- 'Only 5 drivers: Trident only, with the extruder on a CAN toolhead board.'
+- "Only 5 motor sockets. That's enough for a Voron Trident only if the extruder motor runs from a toolhead board."
+tech_notes:
+- "Only 5 drivers: Trident only, with the extruder on a CAN toolhead board."
 unverified:
 - single source (Klipper generic)
 - fans[*]

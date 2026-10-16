@@ -192,7 +192,7 @@ extensions:
   - '1.1'
   status: needs-review
   connects: 30-pin extension port on the Leviathan (SPI2 + GPIO); powered from the Leviathan HV input
-  note: Adds 2 HV TMC5160 drivers (9 in total), 2 fans and 2 thermistors, so AWD fits.
+  note: Adds 2 more motor sockets (9 in all), 2 fan ports and 2 thermistor inputs. That's enough sockets for AWD (four X/Y motors).
   driver_slots:
   - id: EXT-HV-STEPPER-2
     label: HV STEPPER 2 (extension)
@@ -255,9 +255,12 @@ extensions:
     pin: PB1
     kind: passive     # README "piezo buzzer"; LDO drives it as pwm_cycle_time (pitch = cycle time)
   notes:
-  - LDO's config puts stepper_x1 (B1) on HV STEPPER 2 and stepper_y1 (A1) on HV STEPPER 3; the generator does the same.
-  - The extension's drivers sit on SPI2, the Leviathan's own on SPI4.
-  - 'The buzzer (PB1) is set up as [pwm_cycle_time _beeper] with an M300 macro (M300 S<Hz> P<ms>), as in LDO''s config; the macro follows Klipper''s config/sample-macros.cfg. Unless turned off (build beeps: false), PRINT_END plays a tune and PAUSE beeps via the Mainsail/Fluidd user_pause_macro hook.'
+  - "The two extra AWD motors plug into HV STEPPER 2 (front-right motor) and HV STEPPER 3 (front-left motor), as in LDO's own setup."
+  - "The buzzer can beep: type M300 S1000 P200 in the console for a 1 kHz beep lasting 0.2 seconds."
+  tech_notes:
+  - "LDO's config puts stepper_x1 (B1) on HV STEPPER 2 and stepper_y1 (A1) on HV STEPPER 3; the generator does the same."
+  - "The extension's drivers sit on SPI2, the Leviathan's own on SPI4."
+  - "The buzzer (PB1) is set up as [pwm_cycle_time _beeper] with an M300 macro, as in LDO's config; the macro follows Klipper's config/sample-macros.cfg. Unless turned off (build beeps: false), PRINT_END plays a tune and PAUSE beeps via the Mainsail/Fluidd user_pause_macro hook."
   unverified:
   - Only LDO sources (config and schematic, which agree on every pin); Klipper has no config for this board, so it stays needs-review.
   - Fan voltage: README says 12V/24V selectable; the schematic has one FAN_V rail for both ports. The selector itself was not identified.
@@ -302,8 +305,12 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: PE4
 notes:
-- 'Thermistor pull-ups are 2.2k: every thermistor section needs ''pullup_resistor: 2200''.'
-- HV-STEPPER-0/1 (TMC5160) are intended for A/B; they need the HV input powered.
+- "The two high-voltage sockets (HV-STEPPER-0 and HV-STEPPER-1) are for the main X and Y motors. They only work with the separate high-voltage power input connected."
+tech_notes:
+- "Thermistor pull-ups are 2.2k: every thermistor section needs ''pullup_resistor: 2200''."
+- "HV-STEPPER-0/1 (TMC5160) are intended for A/B; they need the HV input powered."
+checks:
+- "Guides disagree on the Leviathan's bootloader offset. Use the one that matches how your board was flashed (Mainboard step); if unsure, follow LDO's guide."
 discrepancies:
 - 'Klipper''s generic-ldo-leviathan-v1.2.cfg has copy errors: stepper_z1 reuses Z''s UART pin (PD5), stepper_z3''s
   TMC section is named stepper_z2, and the extruder TMC section is named stepper_z. Pins here follow LDO''s

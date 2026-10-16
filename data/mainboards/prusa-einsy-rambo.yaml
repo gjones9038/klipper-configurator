@@ -109,8 +109,13 @@ filament_sensor_ports:
   pin: PK0
   modifier: '!'
 notes:
-- Four TMC2130 on the AVR's hardware SPI bus; X/Y DIAG1 lines are wired for sensorless homing (Prusa homes X/Y sensorless).
-- An 8-bit AVR: Klipper's AVR build runs fine, but leave headroom (no input-shaper accelerometer on this MCU).
+- "Prusa's own board. X and Y home without switches (sensorless), the same way Prusa's firmware does."
+- "It has a slower 8-bit chip. Klipper runs fine on it, but you can't connect an accelerometer to it."
+tech_notes:
+- "Four TMC2130 drivers on the AVR's hardware SPI bus; X/Y DIAG1 lines are wired for sensorless homing."
+- "8-bit AVR (ATmega2560): no input-shaper accelerometer on this MCU."
+checks:
+- "Sources disagree on which fan pin is which. If the part-cooling and hotend fans turn out swapped, swap their ports on the Fans step."
 unverified:
 - Prusa's firmware gives pins as Arduino numbers; they were mapped to AVR ports by the ATmega2560 Arduino pinout.
 discrepancies:

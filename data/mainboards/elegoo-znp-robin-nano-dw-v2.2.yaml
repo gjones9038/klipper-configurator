@@ -90,7 +90,9 @@ filament_sensor_ports:
 misc:
   top_led_pin: PB9          # Klipper [led top_LEDs] / Elegoo LED3_PIN
 notes:
-- Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible.
+- "The motor drivers on this board can't be adjusted from Klipper. Motor current is fixed by the board, and sensorless homing (homing without switches) isn't possible."
+tech_notes:
+- "Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible."
 unverified:
 - crystal_mhz 8 is Klipper's default; neither source states it.
 - Z-STOP (PC13) comes from Elegoo's Marlin only; the stock printer homes Z with its probe.

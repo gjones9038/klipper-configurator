@@ -190,7 +190,9 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: <NC>
 notes:
-- M6-M8 pins and FAN4 tach differ from v1.0 - do not mix the two pin maps.
+- "Versions 1.0 and 1.1 are wired differently. Pick the version printed on your board."
+tech_notes:
+- "M6-M8 pins and FAN4 tach differ from v1.0 - do not mix the two pin maps."
 sources:
 - repo: https://github.com/Klipper3d/klipper
   path: config/generic-bigtreetech-manta-m8p-v1.1.cfg

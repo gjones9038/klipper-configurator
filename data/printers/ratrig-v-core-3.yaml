@@ -97,8 +97,11 @@ stock:
   fans: [part_cooling, hotend, controller]
 
 notes:
-  - "A kit: RatOS's printer template uses a BTT Octopus 1.1, an LGX Lite and a Rapido; pick what you built."
-  - "X homes at 0 and Y at its maximum (RatOS physical endstop files); Z homes with the probe."
+- "A kit: pick the board, extruder and hotend you actually built with. The starting choices are RatOS's example setup."
+- "X homes on its left switch, Y on its back switch, and the probe finds the Z zero point."
+tech_notes:
+- "A kit: RatOS's printer template uses a BTT Octopus 1.1, an LGX Lite and a Rapido; pick what you built."
+- "X homes at 0 and Y at its maximum (RatOS physical endstop files); Z homes with the probe."
 unverified:
   - "second_homing_speed 5 is Klipper's default (homing_speed / 2)."
   - "The probe offset -27.8, -12 is RatOS's default probe mount; measure yours."

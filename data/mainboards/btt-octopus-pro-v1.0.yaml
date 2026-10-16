@@ -192,8 +192,9 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: PC5
 notes:
-- 'Do NOT use the Octopus Pro v1.1 pin map on this board: HE0/HE2 and the MOTOR_3 enable pin differ and
-  a heater could be switched on unintentionally.'
+- "Versions 1.0 and 1.1 are wired differently, and picking the wrong one could switch a heater on by mistake. Pick the version printed on your board."
+tech_notes:
+- "Do NOT use the Octopus Pro v1.1 pin map on this board: HE0/HE2 and the MOTOR_3 enable pin differ and a heater could be switched on unintentionally."
 unverified:
 - HV motor power input rating
 sources:

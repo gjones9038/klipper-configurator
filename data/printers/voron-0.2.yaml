@@ -77,8 +77,11 @@ stock:
   fans: [part_cooling, hotend, controller]
 
 notes:
-  - "A kit: Voron publishes configs for several boards; the SKR Mini E3 V3 is the one in this data. Pick your board, hotend and thermistors."
-  - "X/Y home sensorless at max; Z homes to a switch at Z max (the bed drops to it)."
+- "A kit: pick the board, hotend and thermistors you built with."
+- "X and Y home without switches (sensorless). Z homes when the bed lowers onto a switch at the bottom of the printer."
+tech_notes:
+- "A kit: Voron publishes configs for several boards; the SKR Mini E3 V3 is the one in this data. Pick your board, hotend and thermistors."
+- "X/Y home sensorless at max; Z homes to a switch at Z max (the bed drops to it)."
 unverified:
   - "stepper_xy run_current 0.6 is not from a source: Voron's config says to calculate it (rated current x 0.707, start at 60-70%). Choose your motor."
   - "The stock hotend is a choice in the V0 (Voron's config leaves sensor_type blank); revo-voron and a 3950 bed thermistor are placeholders."

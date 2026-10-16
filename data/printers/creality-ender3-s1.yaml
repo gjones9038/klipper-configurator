@@ -80,8 +80,11 @@ stock:
   fans: [part_cooling, hotend]
 
 notes:
-  - "Ships with a CR Touch that homes Z; the Z-STOP input is unused on a stock S1."
-  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+- "Comes with a CR Touch probe, which also finds the Z zero point."
+- "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."
+tech_notes:
+- "Ships with a CR Touch that homes Z; the Z-STOP input is unused on a stock S1."
+- "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
 unverified:
   - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
 sources:

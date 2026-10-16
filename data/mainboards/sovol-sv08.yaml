@@ -96,9 +96,13 @@ misc:
   main_led: PA3
   pressure_sensor: PE12     # Sovol's [probe_pressure] (Sovol's Klipper fork only)
 notes:
-- The extruder, hotend, part fans and probe are on the SV08 toolhead board (a second MCU).
-- No endstop switches; X and Y home sensorless (DIAG PE15 / PE13).
-- Sovol's config also uses [probe_pressure] and [z_offset_calibration], which exist only in Sovol's Klipper fork; they are not generated.
+- "The extruder, hotend, part fans and probe connect to the SV08's own toolhead board."
+- "There are no X/Y endstop switches: X and Y home sensorless (no switches)."
+- "Sovol's own firmware has a pressure-sensor tool for setting the Z offset. Standard Klipper doesn't have it, so set the Z offset with PROBE_CALIBRATE instead."
+tech_notes:
+- "The extruder, hotend, part fans and probe are on the SV08 toolhead board (a second MCU)."
+- "No endstop switches; X and Y home sensorless (DIAG PE15 / PE13)."
+- "Sovol's config also uses [probe_pressure] and [z_offset_calibration], which exist only in Sovol's Klipper fork; they are not generated."
 unverified:
 - Only Sovol's sources (config and pin sheet); Klipper has no SV08 config.
 - crystal_mhz 8 is Klipper's default; not stated by Sovol.

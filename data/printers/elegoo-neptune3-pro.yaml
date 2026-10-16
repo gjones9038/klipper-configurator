@@ -79,8 +79,11 @@ stock:
   fans: [part_cooling, hotend]
 
 notes:
-  - "Stock drivers are standalone: run_current and sensorless homing do not apply."
-  - "The top LED bar (PB9) is not generated; Klipper's reference config has an [led top_LEDs] example."
+- "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."
+- "The light bar on top of the printer isn't set up by this tool."
+tech_notes:
+- "Stock drivers are standalone: run_current and sensorless homing do not apply."
+- "The top LED bar (PB9) is not generated; Klipper's reference config has an [led top_LEDs] example."
 unverified:
   - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
   - "second_homing_speed 5 is Klipper's default (homing_speed / 2)."

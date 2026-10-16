@@ -91,9 +91,11 @@ stock:
   fans: [part_cooling, hotend, exhaust]
 
 notes:
-  - "A Voron 2.4 derivative with its own board and toolhead board (two MCUs over USB)."
-  - "This writes a mainline Klipper config. Sovol's stock image runs Sovol's Klipper fork with [probe_pressure] and [z_offset_calibration]; those are not generated, so set the Z offset with PROBE_CALIBRATE."
-  - "Sovol's config runs the Z drivers in stealthChop (threshold 999999); this uses spreadCycle everywhere."
+- "Sovol's version of the Voron 2.4, with its own mainboard and toolhead board."
+- "This makes a config for standard Klipper. Sovol's own firmware has a pressure-sensor tool for setting the Z offset that standard Klipper doesn't have, so set the Z offset with PROBE_CALIBRATE instead."
+tech_notes:
+- "Sovol's config runs the Z drivers in stealthChop (threshold 999999); this uses spreadCycle everywhere."
+- "Sovol's stock image runs Sovol's Klipper fork with [probe_pressure] and [z_offset_calibration]; those are not generated."
 unverified:
   - "Z motor positions are not stated by Sovol; stepper order follows Sovol's config (stepper_z on the Z3 connector, z1 on Z1, z2 on Z2, z3 on Z4)."
   - "Whether the bed is mains (SSR) or 24 V is not stated in the sources."

@@ -189,7 +189,7 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: <NC>
 notes:
-- Host (CB1/CM4) mounts on the board; the MCU is reached over internal USB.
+- "The small computer (CB1 or CM4) plugs straight onto this board, so no separate USB cable is needed."
 unverified:
 - 4-wire fan ports
 sources:

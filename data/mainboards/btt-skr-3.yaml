@@ -154,14 +154,13 @@ bltouch:
   sensor_pin: PC13
   control_pin: PE5
 notes:
-- 'Probe input PC13 on the 2-pin Probe connector (GND, PC13); BLTouch servo on PE5 (SERVOS: GND, +5V,
-  PE5). BTT README and pin diagram; Marlin pins_BTT_SKR_V3_0_common.h (Z_MIN_PROBE_PIN PC13, SERVO0_PIN
-  PE5).'
-- 'SKR 3 and SKR 3 EZ share one pin map: Marlin''s pins_BTT_SKR_V3_0_EZ.h only sets the board name and
-  includes the common file; BTT''s README pin table covers both (the EZ shifts driver and MOSFET signals
-  to 5 V).'
-- 'Only 5 drivers: a Voron 2.4 is not possible; a Trident needs the extruder on a CAN toolhead board.'
-- 'SKR 3 EZ takes EZ-format drivers and its PT1000 jumper gives 2.2k (SKR 3: 1k).'
+- "Only 5 motor sockets: not enough for a Voron 2.4. A Trident fits only if the extruder motor runs from a toolhead board."
+- "The SKR 3 and SKR 3 EZ use the same pins. The EZ version takes EZ driver modules."
+tech_notes:
+- "Probe input PC13 on the 2-pin Probe connector (GND, PC13); BLTouch servo on PE5 (SERVOS: GND, +5V, PE5). BTT README and pin diagram; Marlin pins_BTT_SKR_V3_0_common.h (Z_MIN_PROBE_PIN PC13, SERVO0_PIN PE5)."
+- "SKR 3 and SKR 3 EZ share one pin map: Marlin''s pins_BTT_SKR_V3_0_EZ.h only sets the board name and includes the common file; BTT''s README pin table covers both (the EZ shifts driver and MOSFET signals to 5 V)."
+- "Only 5 drivers: a Voron 2.4 is not possible; a Trident needs the extruder on a CAN toolhead board."
+- "SKR 3 EZ takes EZ-format drivers and its PT1000 jumper gives 2.2k (SKR 3: 1k)."
 unverified: []
 sources:
 - repo: https://github.com/Klipper3d/klipper

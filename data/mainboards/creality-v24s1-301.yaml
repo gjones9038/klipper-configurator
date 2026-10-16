@@ -92,9 +92,14 @@ filament_sensor_ports:
   pin: PC15
   modifier: '!'
 notes:
-- All four drivers share one enable pin (PC3); Klipper allows that.
-- Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible.
-- The hotend fan is switched (FAN1, PC0), unlike the v4.2.x boards.
+- "The motor drivers on this board can't be adjusted from Klipper. Motor current is fixed by the board, and sensorless homing (homing without switches) isn't possible."
+- "The hotend fan switches on by itself when the hotend heats up."
+tech_notes:
+- "All four drivers share one enable pin (PC3); Klipper allows that."
+- "Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible."
+- "The hotend fan is switched (FAN1, PC0), unlike the v4.2.x boards."
+checks:
+- "Your board has either an STM32F103 or a STM32F401 chip. Read the marking on the large square chip and choose the same one on the Mainboard step."
 unverified:
 - crystal_mhz 8 is Klipper's default; neither source states the board's crystal.
 - The Z-STOP pull-up/polarity is not given by either source (stock S1 homes Z with its CR Touch); a pull-up is used.

@@ -107,9 +107,12 @@ filament_sensor_ports:
 - id: FIL
   pin: PA4
 notes:
-- All four drivers share one enable pin (PC3); each has its own UART pin, all at uart_address 3.
-- X/Y DIAG lines are the X-STOP/Y-STOP inputs; the stock SV06 homes X and Y sensorless.
-- Hotend and board fans are always on; only FAN (part cooling) is switchable.
+- "There are no X/Y endstop switches: the SV06 homes X and Y sensorless (no switches)."
+- "Only the part-cooling fan can be switched on and off. The hotend fan and board fan run whenever the printer is on."
+tech_notes:
+- "All four drivers share one enable pin (PC3); each has its own UART pin, all at uart_address 3."
+- "X/Y DIAG lines are the X-STOP/Y-STOP inputs; the stock SV06 homes X and Y sensorless."
+- "Hotend and board fans are always on; only FAN (part cooling) is switchable."
 unverified:
 - crystal_mhz 8 is Klipper's default; neither source states it.
 - Thermistor pull-ups are not stated; Klipper's default 4.7k is used, as in Klipper's config.

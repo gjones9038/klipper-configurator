@@ -192,9 +192,11 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: PC5
 notes:
-- Driver SPI/UART mode is set with jumpers under each stepstick; see the board manual for jumper positions.
-- DIAG jumpers must be removed under a driver if its DIAG header is used as a physical endstop (DIAG pin
-  is shared).
+- "Each driver socket has small jumpers under it. The wiring list on the Export step tells you which ones to fit."
+- "If you plug an endstop switch into a socket's DIAG header, take that socket's DIAG jumper off."
+tech_notes:
+- "Driver SPI/UART mode is set with jumpers under each stepstick; see the board manual for jumper positions."
+- "DIAG jumpers must be removed under a driver if its DIAG header is used as a physical endstop (DIAG pin is shared)."
 unverified:
 - DIAG_4..7 <-> MOTOR_4..7 diag link
 sources:

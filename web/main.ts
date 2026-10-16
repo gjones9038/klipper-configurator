@@ -106,7 +106,7 @@ function issueList(issues: Issue[]): Child {
   return h('ul', { class: 'issues' }, issues.map((i) => {
     const s = stepOf(i);
     const at = s ? STEPS.indexOf(s) : -1;
-    return h('li', { class: `issue ${i.level}` }, h('code', null, i.code), i.message,
+    return h('li', { class: `issue ${i.level}`, title: i.code }, i.message,
       at >= 0 && at !== step ? [' ', h('button', { type: 'button', class: 'btn', style: 'min-height:32px;padding:4px 10px;margin-top:6px', onClick: () => goto(at) }, `Go to ${s!.name}`)] : null);
   }));
 }

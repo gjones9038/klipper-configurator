@@ -78,8 +78,11 @@ stock:
   fans: [part_cooling]
 
 notes:
-  - "The V2 Neo ships with a CR Touch (choose BLTouch / CR-Touch as the probe); the V2 homes Z on its endstop switch."
-  - "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
+- "The V2 Neo comes with a CR Touch probe: choose \"BLTouch / CR-Touch\" on the Homing step. The plain V2 uses its Z endstop switch instead."
+- "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."
+tech_notes:
+- "The V2 Neo ships with a CR Touch (choose BLTouch / CR-Touch as the probe); the V2 homes Z on its endstop switch."
+- "Stock drivers are standalone: run_current, stealthChop and sensorless homing do not apply until the board is replaced."
 unverified:
   - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
 sources:

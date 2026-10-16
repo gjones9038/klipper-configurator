@@ -172,8 +172,12 @@ exp_aliases:
   EXP2_2: PA5
   EXP2_1: PA6
 notes:
-- Spider has had several revisions (v1.0/1.1/2.x/3.x) with different thermistor and HV-slot layouts. This
-  record follows Klipper's generic (F446) pin map.
+- "The Spider has had several versions with different layouts. This uses Klipper's own Spider layout (STM32F446 chip), so compare it with your board's pin diagram."
+tech_notes:
+- "Spider has had several revisions (v1.0/1.1/2.x/3.x) with different thermistor and HV-slot layouts. This record follows Klipper's generic (F446) pin map."
+checks:
+- "Guides disagree on the Spider's bootloader offset. If your board came with firmware already on it, use the offset from FYSETC's guide for your version (Mainboard step)."
+- "The bed thermistor pin differs between Spider versions. Check it on your board's pin diagram."
 discrepancies:
 - Klipper generic flashes to 0x08000000 (no bootloader); other guides use a 32KiB bootloader. Confirm
   per board.

@@ -80,8 +80,11 @@ stock:
   fans: [part_cooling]
 
 notes:
-  - "Stock homing: X and Y sensorless (TMC2209 DIAG), Z with the built-in inductive probe."
-  - "Both Z leadscrews run from one driver; if the gantry is out of level, level it by hand (turn a leadscrew with the motors off)."
+- "X and Y home without switches (sensorless), and the built-in probe finds the Z zero point."
+- "Both Z motors run from one driver. If the X axis is tilted, turn one lead screw by hand (power off) until it's level."
+tech_notes:
+- "Stock homing: X and Y sensorless (TMC2209 DIAG), Z with the built-in inductive probe."
+- "Both Z leadscrews run from one driver; if the gantry is out of level, level it by hand (turn a leadscrew with the motors off)."
 unverified:
   - "second_homing_speed 2 is Klipper's default (homing_speed / 2)."
 discrepancies:

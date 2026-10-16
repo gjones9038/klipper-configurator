@@ -218,9 +218,10 @@ exp_aliases:
   EXP2_9: <GND>
   EXP2_10: <NC>
 notes:
-- All 8 drivers are on-board TMC2160s configured in Klipper as [tmc5160]. S1-S4 are high-current (0.022
-  ohm sense), S5-S8 use 0.075 ohm.
-- 'Very high current capability on S1-S4: run_current must still respect the motor''s rating.'
+- "Motor sockets S1 to S4 can push far more current than a normal motor can take. Don't raise a motor's current above its rating."
+tech_notes:
+- "All 8 drivers are on-board TMC2160s configured in Klipper as [tmc5160]. S1-S4 are high-current (0.022 ohm sense), S5-S8 use 0.075 ohm."
+- "Very high current capability on S1-S4: run_current must still respect the motor''s rating."
 unverified:
 - per-slot max current
 sources:

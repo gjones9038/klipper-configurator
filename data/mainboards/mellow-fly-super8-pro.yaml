@@ -196,15 +196,18 @@ bltouch:
   control_pin: PC6
 neopixel_ports: []
 notes:
-- 'Mellow: early Super8 Pro boards use an STM32H743 and are not marked "pro"; later boards marked "pro" use an STM32H723.
-  Check the chip before building firmware.'
-- Mellow and the community docs both state the Super8 Pro has the Super8 pin map.
-- 'Pins: Mellow pin diagram (Super8 v1.3), Mellow sample config (Trident; drivers 0, 1, 3, 4, 5) and the community
-  pin table (v1.2) agree. Drivers 2, 6, 7 come from the diagram and the community table.'
-- DIAG0-6 share the IO0-IO6 inputs; DIAG7 shares HV IN. With physical endstops on stepsticks, remove the DIAG jumper
-  of that driver.
-- Thermistor pull-ups are not stated; the Mellow sample sets no pullup_resistor (Klipper default 4.7k).
-- No RGB/neopixel header on the diagram.
+- "Early Super8 Pro boards have an STM32H743 chip and no \"Pro\" marking; later ones are marked \"Pro\" and have an STM32H723. Check yours and choose it on the Mainboard step."
+- "If you plug an endstop switch into a driver's IO/DIAG input, take that driver's DIAG jumper off."
+- "There is no RGB light header on this board."
+tech_notes:
+- "Mellow: early Super8 Pro boards use an STM32H743 and are not marked \"pro\"; later boards marked \"pro\" use an STM32H723. Check the chip before building firmware."
+- "Mellow and the community docs both state the Super8 Pro has the Super8 pin map."
+- "Pins: Mellow pin diagram (Super8 v1.3), Mellow sample config (Trident; drivers 0, 1, 3, 4, 5) and the community pin table (v1.2) agree. Drivers 2, 6, 7 come from the diagram and the community table."
+- "DIAG0-6 share the IO0-IO6 inputs; DIAG7 shares HV IN. With physical endstops on stepsticks, remove the DIAG jumper of that driver."
+- "Thermistor pull-ups are not stated; the Mellow sample sets no pullup_resistor (Klipper default 4.7k)."
+- "No RGB/neopixel header on the diagram."
+checks:
+- "Guides disagree on the bootloader offset for the STM32H723 version. Use the one that matches how your board was flashed (Mainboard step)."
 unverified:
 - probe pin polarity (no modifier in the sources beyond the sample's ^PF3)
 - thermistor pull-up values

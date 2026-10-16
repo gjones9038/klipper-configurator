@@ -80,7 +80,7 @@ test('AWD on the 7-slot Leviathan is refused with a clear reason', () => {
   const r = generate(b, db, 'test');
   assert.equal(r.ok, false);
   assert.equal(r.issues[0].code, 'not_enough_drivers');
-  assert.match(r.issues[0].message, /LDO Leviathan Extension Board adds 2 driver slots/);
+  assert.match(r.issues[0].message, /LDO Leviathan Extension Board on the Mainboard step: it adds 2 more/);
 });
 
 test('AWD on the Leviathan with its extension board: B1/A1 on the extension HV slots (LDO layout)', () => {
