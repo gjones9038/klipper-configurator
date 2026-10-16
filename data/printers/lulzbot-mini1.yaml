@@ -25,7 +25,7 @@ variants:
   drivers_required: {motion: 3, extruder: 1}
 defaults:
   printer: {max_velocity: 300, max_accel: 2000, max_z_velocity: 7, max_z_accel: 500}
-  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 2, homing_positive_dir: false,
     position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
   axes:
     x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -3, position_min: -3, homing_speed: 50, homing_retract_dist: 2}

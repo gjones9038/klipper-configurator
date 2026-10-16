@@ -1,0 +1,98 @@
+# Imported from Klipper's config/printer-bq-hephestos-2014.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: bq-hephestos
+name: BQ Prusa i3 Hephestos
+manufacturer: BQ
+status: needs-review
+docs:
+- {title: 'Klipper: BQ Prusa i3 Hephestos reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-bq-hephestos-2014.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+heated_bed: false
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-bq-hephestos-2014.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [215, 210]
+  position_max: {x: 215, y: 210, z: 200}
+  bed_screws:
+  - [40, 40]
+  - [180, 40]
+  - [180, 160]
+  - [40, 160]
+  - [110, 100]
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 0.8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 3, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: 0, homing_speed: 3, second_homing_speed: 1.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed: {max_power: 1.0, max_temp: 100}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [bq-hephestos-board]
+  toolhead: null
+  extruder: bq-hephestos-extruder
+  hotend: bq-hephestos-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling]
+  display: {lcd_type: hd44780, rs_pin: PH1, e_pin: PH0, d4_pin: PA1, d5_pin: PA3, d6_pin: PA5, d7_pin: PA7, encoder_pins: '^PC4,
+      ^PC6', click_pin: ^!PC2, kill_pin: ^!PG0}
+stock_parts:
+  extruders:
+  - id: bq-hephestos-extruder
+    name: BQ Prusa i3 Hephestos stock extruder
+    drive: unknown
+    rotation_distance: 31.825
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [bq-hephestos]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-bq-hephestos-2014.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: bq-hephestos-hotend
+    name: BQ Prusa i3 Hephestos stock hotend
+    maker: BQ
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [bq-hephestos]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-bq-hephestos-2014.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 19.462, pid_ki: 0.713, pid_kd: 132.83}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'This printer has no heated bed, so the bed settings are left out and print start ignores the bed
+    temperature.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-bq-hephestos-2014.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

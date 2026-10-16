@@ -9,6 +9,7 @@ check them against your printer before powering on.
 |---|---|---|---|---|
 | ADIMLab 3D printer (2018) | ADIMLab | ADIMLab 3D printer (2018) mainboard | Needs review | [config/printer-adimlab-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-adimlab-2018.cfg) |
 | Alfawise U30 | Alfawise | Alfawise U30 mainboard | Needs review | [config/printer-alfawise-u30-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-alfawise-u30-2018.cfg) |
+| Anet A4 | Anet | Anet A4 mainboard | Needs review | [config/printer-anet-a4-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anet-a4-2018.cfg) |
 | Anet A8 (2016-2017) | Anet | Anet A8 (2016-2017) mainboard | Needs review | [config/printer-anet-a8-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anet-a8-2017.cfg) |
 | Anet A8 Plus | Anet | Anet A8 Plus mainboard | Needs review | [config/printer-anet-a8-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anet-a8-2019.cfg) |
 | Anet E10 | Anet | Anet E10 mainboard | Needs review | [config/printer-anet-e10-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anet-e10-2018.cfg) |
@@ -18,12 +19,15 @@ check them against your printer before powering on.
 | Anycubic i3 Mega (Ultrabase) | Anycubic | Anycubic i3 Mega (Ultrabase) mainboard | Needs review | [config/printer-anycubic-i3-mega-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-i3-mega-2017.cfg) |
 | Anycubic Kobra Go | Anycubic | Anycubic Kobra Go mainboard | Needs review | [config/printer-anycubic-kobra-go-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kobra-go-2022.cfg) |
 | Anycubic Kobra Plus | Anycubic | Anycubic Kobra Plus mainboard | Needs review | [config/printer-anycubic-kobra-plus-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kobra-plus-2022.cfg) |
+| Anycubic Kossel (2016) | Anycubic | Anycubic Kossel (2016) mainboard | Needs review | [config/printer-anycubic-kossel-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kossel-2016.cfg) |
+| Anycubic Kossel Linear / Pulley Plus | Anycubic | Anycubic Kossel Linear / Pulley Plus mainboard | Needs review | [config/printer-anycubic-kossel-plus-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kossel-plus-2017.cfg) |
 | Anycubic Vyper | Anycubic | Anycubic Vyper mainboard | Needs review | [config/printer-anycubic-vyper-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-vyper-2021.cfg) |
 | Artillery Genius Pro | Artillery | Artillery Genius Pro mainboard | Needs review | [config/printer-artillery-genius-pro-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-artillery-genius-pro-2022.cfg) |
 | Artillery Sidewinder X2 | Artillery | Artillery Sidewinder X2 mainboard | Needs review | [config/printer-artillery-sidewinder-x2-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-artillery-sidewinder-x2-2022.cfg) |
 | Artillery Sidewinder X3 Plus / X3 Pro | Artillery | Artillery Sidewinder X3 Plus / X3 Pro mainboard | Needs review | [config/printer-artillery-sidewinder-x3-plus-2024.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-artillery-sidewinder-x3-plus-2024.cfg) |
 | BIQU B1 SE Plus | BIQU | BIQU B1 SE Plus mainboard | Needs review | [config/printer-biqu-b1-se-plus-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-biqu-b1-se-plus-2022.cfg) |
 | BIQU BX | BIQU | BIQU BX mainboard | Needs review | [config/printer-biqu-bx-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-biqu-bx-2021.cfg) |
+| BQ Prusa i3 Hephestos | BQ | BQ Prusa i3 Hephestos mainboard | Needs review | [config/printer-bq-hephestos-2014.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-bq-hephestos-2014.cfg) |
 | Creality CR-10 (2017) | Creality | Creality CR-10 (2017) mainboard | Needs review | [config/printer-creality-cr10-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr10-2017.cfg) |
 | Creality CR-10 Mini | Creality | Creality CR-10 Mini mainboard | Needs review | [config/printer-creality-cr10mini-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr10mini-2017.cfg) |
 | Creality CR-10 Smart Pro | Creality | Creality CR-10 Smart Pro mainboard | Needs review | [config/printer-creality-cr10-smart-pro-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr10-smart-pro-2022.cfg) |
@@ -56,7 +60,10 @@ check them against your printer before powering on.
 | Elegoo Neptune 3 Pro | Elegoo | Elegoo ZNP Robin Nano_DW V2.2 | Reviewed | [config/printer-elegoo-neptune3-pro-2023.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-elegoo-neptune3-pro-2023.cfg) |
 | Eryone ER-20 | Eryone | Eryone ER-20 mainboard | Needs review | [config/printer-eryone-er20-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-er20-2021.cfg) |
 | Eryone Thinker Series V2 | Eryone | Eryone Thinker Series V2 mainboard | Needs review | [config/printer-eryone-thinker-series-v2-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-thinker-series-v2-2020.cfg) |
+| FLSUN Q5 | FLSUN | FLSUN Q5 mainboard | Needs review | [config/printer-flsun-q5-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flsun-q5-2020.cfg) |
+| FLSUN QQ-S | FLSUN | FLSUN QQ-S mainboard | Needs review | [config/printer-flsun-qqs-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flsun-qqs-2020.cfg) |
 | FOKOOS Odin-5 F3 | FOKOOS | FOKOOS Odin-5 F3 mainboard | Needs review | [config/printer-fokoos-odin5-f3-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-fokoos-odin5-f3-2021.cfg) |
+| Geeetech 301 | Geeetech | Geeetech 301 mainboard | Needs review | [config/printer-geeetech-301-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-geeetech-301-2019.cfg) |
 | Geeetech A10T / A20T | Geeetech | Geeetech A10T / A20T mainboard | Needs review | [config/printer-geeetech-A10T-A20T-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-geeetech-A10T-A20T-2021.cfg) |
 | Hiprecy Leo | Hiprecy | Hiprecy Leo mainboard | Needs review | [config/printer-hiprecy-leo-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-hiprecy-leo-2019.cfg) |
 | Kingroon KP3S | Kingroon | Kingroon KP3S mainboard | Needs review | [config/printer-kingroon-kp3s-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-kingroon-kp3s-2020.cfg) |
@@ -67,6 +74,8 @@ check them against your printer before powering on.
 | LulzBot TAZ 6 | LulzBot | LulzBot TAZ 6 mainboard | Needs review | [config/printer-lulzbot-taz6-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-taz6-2017.cfg) |
 | MakerGear M2 (2012, V3A extruder) | MakerGear | MakerGear M2 (2012, V3A extruder) mainboard | Needs review | [config/printer-makergear-m2-2012.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-makergear-m2-2012.cfg) |
 | MakerGear M2 (2016, V4 extruder) | MakerGear | MakerGear M2 (2016, V4 extruder) mainboard | Needs review | [config/printer-makergear-m2-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-makergear-m2-2016.cfg) |
+| Micromake D1 | Micromake | Micromake D1 mainboard | Needs review | [config/printer-micromake-d1-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-micromake-d1-2016.cfg) |
+| Monoprice Mini Delta | Monoprice | Monoprice Mini Delta mainboard | Needs review | [config/printer-monoprice-mini-delta-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-mini-delta-2017.cfg) |
 | Monoprice Select Mini V1 | Monoprice | Monoprice Select Mini V1 mainboard | Needs review | [config/printer-monoprice-select-mini-v1-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-select-mini-v1-2016.cfg) |
 | Monoprice Select Mini V2 | Monoprice | Monoprice Select Mini V2 mainboard | Needs review | [config/printer-monoprice-select-mini-v2-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-select-mini-v2-2018.cfg) |
 | MTW Create | MTW | MTW Create mainboard | Needs review | [config/printer-mtw-create-2015.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-mtw-create-2015.cfg) |
@@ -75,6 +84,7 @@ check them against your printer before powering on.
 | Rat Rig V-Core 3.1 | Rat Rig | BIGTREETECH Octopus 1.0/1.1 | Reviewed | [printers/v-core-3/v-core-3.cfg](https://github.com/Rat-OS/RatOS-configuration/blob/master/printers/v-core-3/v-core-3.cfg) |
 | Rat Rig V-Minion | Rat Rig | Rat Rig V-Minion mainboard | Needs review | [config/printer-ratrig-v-minion-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-ratrig-v-minion-2021.cfg) |
 | Robo3D R2 | Robo3D | Robo3D R2 mainboard | Needs review | [config/printer-robo3d-r2-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-robo3d-r2-2017.cfg) |
+| SeeMeCNC Rostock Max V2 | SeeMeCNC | SeeMeCNC Rostock Max V2 mainboard | Needs review | [config/printer-seemecnc-rostock-max-v2-2015.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-seemecnc-rostock-max-v2-2015.cfg) |
 | Sovol SV01 | Sovol | Sovol SV01 mainboard | Needs review | [config/printer-sovol-sv01-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv01-2020.cfg) |
 | Sovol SV05 | Sovol | Creality v4.2.2 | Reviewed | [config/printer-sovol-sv05-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv05-2022.cfg) |
 | Sovol SV06 | Sovol | Sovol V131 | Reviewed | [config/printer-sovol-sv06-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-2022.cfg) |
@@ -96,17 +106,19 @@ check them against your printer before powering on.
 | Two Trees Sapphire Plus V1.1 (SP-5) | Two Trees | Two Trees Sapphire Plus V1.1 (SP-5) mainboard | Needs review | [config/printer-twotrees-sapphire-plus-sp-5-v1.1-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-twotrees-sapphire-plus-sp-5-v1.1-2021.cfg) |
 | Two Trees Sapphire Pro (SP-3) | Two Trees | Two Trees Sapphire Pro (SP-3) mainboard | Needs review | [config/printer-twotrees-sapphire-pro-sp-3-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-twotrees-sapphire-pro-sp-3-2020.cfg) |
 | Velleman K8200 / 3Drag | Velleman | Velleman K8200 / 3Drag mainboard | Needs review | [config/printer-velleman-k8200-2013.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-velleman-k8200-2013.cfg) |
+| Velleman K8800 (Vertex Delta) | Velleman | Velleman K8800 (Vertex Delta) mainboard | Needs review | [config/printer-velleman-k8800-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-velleman-k8800-2017.cfg) |
 | Voron 0.2 | Voron Design | BIGTREETECH SKR Mini E3 3.0 | Reviewed | [Firmware/bigtreetech-skr-mini-e3-v3.0.cfg](https://github.com/VoronDesign/Voron-0/blob/master/Firmware/bigtreetech-skr-mini-e3-v3.0.cfg) |
 | Voron 2.4 (R2) | Voron Design | your choice (kit) | Reviewed | [firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg](https://github.com/VoronDesign/Voron-2/blob/master/firmware/klipper_configurations/Octopus/Voron2_Octopus_Config.cfg) |
 | Voron Trident | Voron Design | your choice (kit) | Reviewed | [Firmware/Octopus/Trident_Octopus_Config.cfg](https://github.com/VoronDesign/Voron-Trident/blob/master/Firmware/Octopus/Trident_Octopus_Config.cfg) |
 | Voxelab Aquila | Voxelab | Voxelab Aquila mainboard | Needs review | [config/printer-voxelab-aquila-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-voxelab-aquila-2021.cfg) |
 | Wanhao Duplicator 6 / Monoprice Ultimate | Wanhao | Wanhao Duplicator 6 / Monoprice Ultimate mainboard | Needs review | [config/printer-wanhao-duplicator-6-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-6-2016.cfg) |
 | Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 | Wanhao | Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 mainboard | Needs review | [config/printer-wanhao-duplicator-9-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-9-2018.cfg) |
+| Wanhao Duplicator i3 Mini | Wanhao | Wanhao Duplicator i3 Mini mainboard | Needs review | [config/printer-wanhao-duplicator-i3-mini-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-mini-2017.cfg) |
 | Wanhao Duplicator i3 Plus | Wanhao | Wanhao Duplicator i3 Plus mainboard | Needs review | [config/printer-wanhao-duplicator-i3-plus-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-plus-2017.cfg) |
 | Wanhao Duplicator i3 Plus Mark II | Wanhao | Wanhao Duplicator i3 Plus Mark II mainboard | Needs review | [config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg) |
 | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select | Wanhao | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select mainboard | Needs review | [config/printer-wanhao-duplicator-i3-v2.1-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-v2.1-2017.cfg) |
 
-98 printers.
+110 printers.
 
 # Not supported yet
 
@@ -114,19 +126,7 @@ Klipper reference configs that are not in the configurator yet, and why.
 
 | Klipper config | Why |
 |---|---|
-| printer-anet-a4-2018.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-anycubic-kossel-2016.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-anycubic-kossel-plus-2017.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-bq-hephestos-2014.cfg | no heated bed (not supported yet) |
 | printer-creality-cr30-2021.cfg | belt printer (endless Z belt; not supported yet) |
 | printer-flashforge-creator-pro-2018.cfg | two extruders (not supported yet) |
-| printer-flsun-q5-2020.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-flsun-qqs-2020.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-geeetech-301-2019.cfg | delta printer (delta kinematics are not supported yet) |
 | printer-lulzbot-taz6-dual-v3-2017.cfg | two extruders (not supported yet) |
-| printer-micromake-d1-2016.cfg | delta printer (delta kinematics are not supported yet) |
 | printer-modix-big60-2020.cfg | two extruders (not supported yet) |
-| printer-monoprice-mini-delta-2017.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-seemecnc-rostock-max-v2-2015.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-velleman-k8800-2017.cfg | delta printer (delta kinematics are not supported yet) |
-| printer-wanhao-duplicator-i3-mini-2017.cfg | no heated bed (not supported yet) |

@@ -145,7 +145,11 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
         elif tc:
             f.write(GCODE_TOOLCHANGER + (GCODE_TOOLCHANGES if docked else "PRINT_END\n"))
         else:
-            f.write(GCODE_EDDY if eddy else script(GCODE, defined_macros(cfg)))
+            text = GCODE_EDDY if eddy else script(GCODE, defined_macros(cfg))
+            # A delta's bed is centred on 0,0: move to the centre instead of 100,100.
+            if "kinematics: delta" in open(os.path.join(cfg, "printer.cfg")).read():
+                text = text.replace("G1 X100 Y100 Z30", "G1 X0 Y0 Z30")
+            f.write(text)
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
             "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]

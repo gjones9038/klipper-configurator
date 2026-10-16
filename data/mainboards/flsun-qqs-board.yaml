@@ -1,0 +1,62 @@
+# Imported from Klipper's config/printer-flsun-qqs-2020.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: flsun-qqs-board
+name: FLSUN QQ-S mainboard
+manufacturer: FLSUN
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 28, check_dict: stm32f103-usart3}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {interface: Serial (on USART3 PB11/PB10), flash: 'Note that the "make flash" command does not work with MKS Robin
+    boards. After running "make", run the following command: ./scripts/update_mks_robin.py out/klipper.bin out/Robin_mini.bin
+    Copy the file out/Robin_mini.bin to an SD card and then restart the printer with that SD card.'}
+driver_mount: onboard
+driver_slots:
+- id: A
+  step_pin: PE3
+  dir_pin: PE2
+  enable_pin: '!PE4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: B
+  step_pin: PE0
+  dir_pin: PB9
+  enable_pin: '!PE1'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: C
+  step_pin: PB5
+  dir_pin: PB4
+  enable_pin: '!PB8'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PD6
+  dir_pin: PD3
+  enable_pin: '!PB3'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: A-STOP, pin: PA15, modifier: ''}
+- {id: B-STOP, pin: PA12, modifier: ''}
+- {id: C-STOP, pin: PC4, modifier: ''}
+heaters:
+- {id: HEATER, pin: PC3, role: hotend}
+- {id: BED, pin: PA0, role: bed}
+thermistors:
+- {id: TH0, pin: PC1, typical_use: hotend}
+- {id: TB, pin: PC0, typical_use: bed}
+fans:
+- {id: FAN0, pin: PB1, typical_use: part_cooling}
+probe_ports:
+- {id: PROBE, pin: PA11, modifier: '!'}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-flsun-qqs-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

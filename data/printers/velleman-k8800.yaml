@@ -1,0 +1,102 @@
+# Imported from Klipper's config/printer-velleman-k8800-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: velleman-k8800
+name: Velleman K8800 (Vertex Delta)
+manufacturer: Velleman
+status: needs-review
+docs:
+- {title: 'Klipper: Velleman K8800 (Vertex Delta) reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-velleman-k8800-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: delta
+z_leveling: null
+bed_heater: unknown
+delta: {delta_radius: 100, print_radius: 105, arm_length: 207, position_endstop: 295, minimum_z_position: -1, calibrate_radius: 75}
+heated_bed: false
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-velleman-k8800-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_radius: 105
+  bed_mm: [210, 210]
+  position_max: {x: 105, y: 105, z: 295}
+steppers:
+- {klipper: stepper_a, role: A, rotation_distance: 55}
+- {klipper: stepper_b, role: B, rotation_distance: 55}
+- {klipper: stepper_c, role: C, rotation_distance: 55}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 250, max_accel: 4000, max_z_velocity: 250}
+  stepper_xy: {microsteps: 32, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, second_homing_speed: 25.0,
+    homing_positive_dir: false, position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes: {}
+  stepper_z: {microsteps: 32, position_endstop: 295, position_min: 0, homing_speed: 50, second_homing_speed: 25.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed: {max_power: 1.0, max_temp: 100}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [velleman-k8800-board]
+  toolhead: null
+  extruder: velleman-k8800-extruder
+  hotend: velleman-k8800-hotend
+  thermistors: {hotend: semitec-104gt2, bed: semitec-104gt2}
+  probe_options: [velleman-k8800-probe]
+  homing_xy: physical
+  homing_z: physical_max
+  fans: [part_cooling, controller]
+  probe: velleman-k8800-probe
+  display: {lcd_type: uc1701, contrast: 55, cs_pin: PA7, a0_pin: PA5, encoder_pins: '^!PH1, ^!PH0', click_pin: ^!PA1}
+stock_parts:
+  extruders:
+  - id: velleman-k8800-extruder
+    name: Velleman K8800 (Vertex Delta) stock extruder
+    drive: unknown
+    rotation_distance: 42.4666
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [velleman-k8800]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-velleman-k8800-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: velleman-k8800-hotend
+    name: Velleman K8800 (Vertex Delta) stock hotend
+    maker: Velleman
+    flow_class: standard
+    max_temp: 295
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [velleman-k8800]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-velleman-k8800-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 295'}
+    pid_seed: {pid_kp: 15.2, pid_ki: 1.75, pid_kd: 50.42}
+  probes:
+  - id: velleman-k8800-probe
+    name: Velleman K8800 (Vertex Delta) built-in probe
+    kind: integrated
+    applies_to: [velleman-k8800]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, speed: 12}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-velleman-k8800-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'This printer has no heated bed, so the bed settings are left out and print start ignores the bed
+    temperature.', 'A delta printer: before the first print, run CALIBRATE_DELTA (it measures the printer''s geometry), then
+    SAVE_CONFIG.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-velleman-k8800-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

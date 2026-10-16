@@ -66,6 +66,7 @@ export interface PortUse {
   pin: string;
   tach?: string;
   maxPower?: number;          // heater cap from the board maker (Orbitool: 0.995 for short-circuit auto-recovery)
+  multi?: { name: string; pins: string[] };   // several outputs switched as one through [multi_pin] (Geeetech 301 heater)
 }
 
 export interface FanPlan extends PortUse {
@@ -113,10 +114,10 @@ export interface Plan {
   hotend: Rec;
   hotendHeater: PortUse;
   hotendSensor: PortUse & { pullup: number };
-  bedHeater: PortUse;
-  bedSensor: PortUse & { pullup: number };
+  bedHeater?: PortUse;                       // undefined when the printer has no heated bed
+  bedSensor?: PortUse & { pullup: number };
   chamberSensor?: PortUse & { pullup?: number };
-  thermistor: { hotend: Rec; bed: Rec; chamber?: Rec };
+  thermistor: { hotend: Rec; bed?: Rec; chamber?: Rec };
   maxTemp: number;
   fans: FanPlan[];
   probe?: Rec & { port?: PortUse; offset: { x: number; y: number }; output?: string; connection?: string; i2c?: { mcu: string; bus: string; port: Rec } };
@@ -134,6 +135,28 @@ export interface Plan {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Where macros may move the nozzle. Cartesian/CoreXY beds have 0,0 in a corner; a delta's
+ * round bed is centred on 0,0 with a radius, and its full height is only reachable near the
+ * centre (so parking goes to the centre before rising).
+ */
+export function bedGeometry(p: { printer: Rec; size: Rec }) {
+  if (p.printer.kinematics === 'delta') {
+    const r = p.size.bed_radius;
+    const y = -r2(r * 0.85);
+    const half = r2(Math.sqrt(r * r - y * y) * 0.8);
+    return {
+      delta: true, radius: r, center: [0, 0] as [number, number], front: [0, -r2(r * 0.6)] as [number, number],
+      purge: { x0: -half, x1: half - 10, x2: half, y }, park: [0, 0] as [number, number],
+    };
+  }
+  const [bx, by] = p.size.bed_mm;
+  return {
+    delta: false, radius: 0, center: [bx / 2, by / 2] as [number, number], front: [bx / 2, 20] as [number, number],
+    purge: { x0: 20, x1: 100, x2: 110, y: 5 }, park: [bx / 2, by - 10] as [number, number],
+  };
+}
 
 /** Split "!^PA1" into modifiers and bare pin. */
 function splitPin(raw: string): [string, string] {
@@ -546,7 +569,16 @@ export function plan(build: Build, db: Db): Plan {
     return { port: ep.id, pin: qpin('mainboard', ep.pin, ep.modifier ?? '^'), board: 'mainboard' as BoardKind };
   };
   const byName = (n: string) => steppers.find((s) => s.name === n);
-  for (const [name, axis] of [['stepper_x', 'X'], ['stepper_y', 'Y']] as const) {
+  const delta = printer.kinematics === 'delta';
+  if (delta) {
+    // A delta homes all three towers upward onto their endstops together; there is no separate Z.
+    if (homingXY === 'sensorless') err('sensorless_unsupported', 'Sensorless homing is not set up for delta printers here; use the tower endstop switches (Homing step).');
+    for (const [name, axis] of [['stepper_a', 'A'], ['stepper_b', 'B'], ['stepper_c', 'C']] as const) {
+      const s = byName(name);
+      if (s) s.endstop = pickEndstop(s, axis);
+    }
+  }
+  for (const [name, axis] of (delta ? [] : [['stepper_x', 'X'], ['stepper_y', 'Y']]) as Array<[string, string]>) {
     const s = byName(name)!;
     if (homingXY === 'physical') {
       s.endstop = pickEndstop(s, axis);
@@ -563,8 +595,10 @@ export function plan(build: Build, db: Db): Plan {
   if (homingXY === 'sensorless') {
     for (const s of steppers) if (s.pairsWith) homingCurrent[s.name] = r2(s.runCurrent * 0.7);
   }
-  const zs = byName('stepper_z')!;
-  if (build.homing.z === 'probe_virtual_endstop') {
+  const zs = byName('stepper_z');
+  if (!zs) {
+    // delta: towers handled above
+  } else if (build.homing.z === 'probe_virtual_endstop') {
     zs.endstop = 'probe';
   } else {
     zs.endstop = pickEndstop(zs, 'Z');
@@ -583,17 +617,18 @@ export function plan(build: Build, db: Db): Plan {
   const thermHotend = db.thermistors[build.thermistors.hotend];
   const thermBed = db.thermistors[build.thermistors.bed];
   if (!thermHotend) throw new PlanError('unknown_thermistor', `Unknown hotend thermistor "${build.thermistors.hotend}"`);
-  if (!thermBed) throw new PlanError('unknown_thermistor', `Unknown bed thermistor "${build.thermistors.bed}"`);
-  for (const t of [thermHotend, thermBed]) {
+  const heatedBed = printer.heated_bed !== false;
+  if (!thermBed && heatedBed) throw new PlanError('unknown_thermistor', `Unknown bed thermistor "${build.thermistors.bed}"`);
+  for (const t of heatedBed ? [thermHotend, thermBed] : [thermHotend]) {
     if (t.custom_definition_required && !t.definition) err('custom_thermistor', `${t.label} needs a custom [thermistor] definition, which the data does not have yet.`);
     if (t.needs) err('thermistor_hw', `${t.label} needs extra hardware (${t.needs.join('; ')}), which the generator does not configure yet.`);
   }
   const mbHeaters: Rec[] = board.heaters;
   const mbTherms: Rec[] = board.thermistors;
-  const bedHeaterRec = need(pick(mbHeaters, (h) => h.role === 'bed'), 'no_bed_heater', `${board.name} has no bed heater output.`);
+  const bedHeaterRec = heatedBed ? need(pick(mbHeaters, (h) => h.role === 'bed'), 'no_bed_heater', `${board.name} has no bed heater output.`) : undefined;
   const isBedTherm = (t: Rec) => t.typical_use === 'bed' || ['TB', 'THB'].includes(t.id);
-  const bedThermRec = pick(mbTherms, isBedTherm) ?? mbTherms[1];
-  const usedTherm = new Set<string>([bedThermRec.id]);
+  const bedThermRec = heatedBed ? pick(mbTherms, isBedTherm) ?? mbTherms[1] : undefined;
+  const usedTherm = new Set<string>(bedThermRec ? [bedThermRec.id] : []);
   let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number };
   if (toolboard) {
     const h = toolboard.heaters[0];
@@ -604,7 +639,9 @@ export function plan(build: Build, db: Db): Plan {
     const h = need(pick(mbHeaters, (x) => x.role === 'hotend'), 'no_hotend_heater', `${board.name} has no hotend heater output.`);
     const t = need(pick(mbTherms, (x) => !isBedTherm(x) && !usedTherm.has(x.id)), 'no_thermistor', 'No free thermistor port for the hotend.');
     usedTherm.add(t.id);
-    hotendHeater = { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
+    hotendHeater = h.pins
+      ? { board: 'mainboard', port: h.id, pin: 'multi_pin:hotend_heater', multi: { name: 'hotend_heater', pins: h.pins.map((x: string) => qpin('mainboard', x)) }, maxPower: h.max_power }
+      : { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
     hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700 };
   }
   let chamberSensor: (PortUse & { pullup?: number }) | undefined;
@@ -650,7 +687,8 @@ export function plan(build: Build, db: Db): Plan {
     const tach = f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined;
     const multiName = `${f.role}_${kind}`.replace(/[^a-z0-9_]/gi, '_');
     fans.push({
-      role: f.role, section, defaults: role.defaults, board: kind, port: port.id,
+      // Without a heated bed, fans that follow the bed (electronics, exhaust) follow the hotend.
+      role: f.role, section, defaults: !heatedBed && role.defaults.heater === 'heater_bed' ? { ...role.defaults, heater: 'extruder' } : role.defaults, board: kind, port: port.id,
       pin: port.pins ? `multi_pin:${multiName}` : qpin(kind, port.pin), tach,
       multi: port.pins ? { name: multiName, pins: port.pins.map((x: string) => qpin(kind, x)) } : undefined,
       enable: port.enable_pin ? qpin(kind, port.enable_pin) : undefined,
@@ -763,13 +801,13 @@ export function plan(build: Build, db: Db): Plan {
       probe = { ...p, offset, output, port: use && { board: use.b, port: use.port.id, pin: qpin(use.b, use.port.pin, mods) } };
       if (p.needs_macros) warn('probe_macros', `The ${p.name} needs its own pick-up and dock macros, which this tool doesn't write. Install them from the probe's instructions.`);
     }
-    if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
+    if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable && !delta) {
       err('probe_not_z_endstop', `The ${p.name} cannot set Z zero. Choose a nozzle switch or Z endstop switch for Z homing.`);
     }
   } else if (tcRec && !shuttle) {
     // Each tool's Tap sensor is the probe; Klipper sees one probe object (tool_probe_endstop).
     probe = { id: 'tool_probe', name: 'Tap sensor on each tool ([tool_probe])', kind: 'tool_probe', z_endstop_capable: true, offset: { x: 0, y: 0 } };
-  } else if (build.homing.z === 'probe_virtual_endstop') {
+  } else if (build.homing.z === 'probe_virtual_endstop' && !delta) {
     err('no_probe', 'Z homing with a probe needs a probe: choose one on the Homing step.');
   }
   if (printer.z_leveling && !build.probe && !tcRec) err('no_probe_for_leveling', `${printer.name} needs a probe to level its ${printer.z_leveling === 'quad_gantry_level' ? 'gantry' : 'bed'}: choose one on the Homing step.`);
@@ -926,9 +964,9 @@ export function plan(build: Build, db: Db): Plan {
   return {
     build, printer, size, variant, board, mcu, toolboard, toolhead, steppers, extruder, hotend,
     hotendHeater, hotendSensor,
-    bedHeater: { board: 'mainboard', port: bedHeaterRec.id, pin: qpin('mainboard', bedHeaterRec.pin) },
-    bedSensor: { board: 'mainboard', port: bedThermRec.id, pin: qpin('mainboard', bedThermRec.pin), pullup: bedThermRec.pullup_ohms ?? 4700 },
-    chamberSensor, thermistor: { hotend: thermHotend, bed: thermBed, chamber: thermChamber }, maxTemp,
+    bedHeater: bedHeaterRec && { board: 'mainboard', port: bedHeaterRec.id, pin: qpin('mainboard', bedHeaterRec.pin) },
+    bedSensor: bedThermRec && { board: 'mainboard', port: bedThermRec.id, pin: qpin('mainboard', bedThermRec.pin), pullup: bedThermRec.pullup_ohms ?? 4700 },
+    chamberSensor, thermistor: { hotend: thermHotend, bed: heatedBed ? thermBed : undefined, chamber: thermChamber }, maxTemp,
     fans, probe, bltouch, accel, leds, paBaseline, nevermore, homingCurrent, issues,
     links: finishLinks(),
     mcus: [

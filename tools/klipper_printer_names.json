@@ -87,8 +87,7 @@
  "bq-hephestos-2014": {
   "id": "bq-hephestos",
   "name": "BQ Prusa i3 Hephestos",
-  "maker": "BQ",
-  "skip": "no heated bed (not supported yet)"
+  "maker": "BQ"
  },
  "creality-cr10-2017": {
   "id": "creality-cr10",
@@ -424,8 +423,7 @@
  "wanhao-duplicator-i3-mini-2017": {
   "id": "wanhao-duplicator-i3-mini",
   "name": "Wanhao Duplicator i3 Mini",
-  "maker": "Wanhao",
-  "skip": "no heated bed (not supported yet)"
+  "maker": "Wanhao"
  },
  "wanhao-duplicator-i3-plus-2017": {
   "id": "wanhao-duplicator-i3-plus",
@@ -441,5 +439,55 @@
   "id": "wanhao-duplicator-i3-v2.1",
   "name": "Wanhao Duplicator i3 v2.1 / Monoprice Maker Select",
   "maker": "Wanhao"
+ },
+ "anet-a4-2018": {
+  "id": "anet-a4",
+  "name": "Anet A4",
+  "maker": "Anet"
+ },
+ "anycubic-kossel-2016": {
+  "id": "anycubic-kossel",
+  "name": "Anycubic Kossel (2016)",
+  "maker": "Anycubic"
+ },
+ "anycubic-kossel-plus-2017": {
+  "id": "anycubic-kossel-plus",
+  "name": "Anycubic Kossel Linear / Pulley Plus",
+  "maker": "Anycubic"
+ },
+ "flsun-q5-2020": {
+  "id": "flsun-q5",
+  "name": "FLSUN Q5",
+  "maker": "FLSUN"
+ },
+ "flsun-qqs-2020": {
+  "id": "flsun-qqs",
+  "name": "FLSUN QQ-S",
+  "maker": "FLSUN"
+ },
+ "geeetech-301-2019": {
+  "id": "geeetech-301",
+  "name": "Geeetech 301",
+  "maker": "Geeetech"
+ },
+ "micromake-d1-2016": {
+  "id": "micromake-d1",
+  "name": "Micromake D1",
+  "maker": "Micromake"
+ },
+ "monoprice-mini-delta-2017": {
+  "id": "monoprice-mini-delta",
+  "name": "Monoprice Mini Delta",
+  "maker": "Monoprice"
+ },
+ "seemecnc-rostock-max-v2-2015": {
+  "id": "seemecnc-rostock-max-v2",
+  "name": "SeeMeCNC Rostock Max V2",
+  "maker": "SeeMeCNC"
+ },
+ "velleman-k8800-2017": {
+  "id": "velleman-k8800",
+  "name": "Velleman K8800 (Vertex Delta)",
+  "maker": "Velleman"
  }
 }

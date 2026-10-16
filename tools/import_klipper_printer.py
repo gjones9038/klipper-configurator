@@ -163,9 +163,9 @@ def signature(b):
     slots = tuple(sorted((s["step_pin"], bare(s["dir_pin"]), s["enable_pin"], (s.get("onboard_driver") or {}).get("chip"),
                           s.get("uart_pin"), s.get("uart_address"), s.get("spi_cs_pin")) for s in b["driver_slots"]))
     return (slots,
-            tuple(sorted(h["pin"] for h in b.get("heaters", []))),
+            tuple(sorted(h.get("pin") or ",".join(h["pins"]) for h in b.get("heaters", []))),
             tuple(sorted(t["pin"] for t in b.get("thermistors", []))),
-            tuple(sorted(f["pin"] for f in b.get("fans", []))),
+            tuple(sorted(f.get("pin") or ",".join(f["pins"]) for f in b.get("fans", []))),
             tuple(sorted((e["pin"], e.get("modifier", "^")) for e in b.get("endstops", []))))
 
 
@@ -187,7 +187,8 @@ def importer(klipper, name, commit, boards):
     pid = meta["id"]
     src = {"repo": "https://github.com/Klipper3d/klipper", "path": f"config/printer-{name}.cfg", "commit": commit}
     kin = S.get("printer", {}).get("kinematics", "cartesian")
-    if kin not in ("cartesian", "corexy"):
+    delta = kin == "delta"
+    if kin not in ("cartesian", "corexy", "delta"):
         raise SystemExit(f"{name}: kinematics {kin} not supported yet")
     if any(re.match(r"extruder\d+$", s) for s in S):
         raise SystemExit(f"{name}: more than one extruder not supported yet")
@@ -205,9 +206,9 @@ def importer(klipper, name, commit, boards):
         m = re.match(r"(tmc\d+) (\S+)$", sec_name)
         if m:
             tmc_of[m.group(2)] = (m.group(1), sec)
-    stepper_names = [s for s in order if re.match(r"stepper_[xyz]\d*$", s)] + ["extruder"]
+    stepper_names = [s for s in order if re.match(r"stepper_([xyz]\d*|[abc])$", s)] + ["extruder"]
     corexy = kin == "corexy"
-    xy_role = {"stepper_x": "B" if corexy else "X", "stepper_y": "A" if corexy else "Y"}
+    xy_role = {"stepper_a": "A", "stepper_b": "B", "stepper_c": "C"} if delta else {"stepper_x": "B" if corexy else "X", "stepper_y": "A" if corexy else "Y"}
     for sn in stepper_names:
         sec = S[sn]
         sid = {"stepper_x": "X", "stepper_y": "Y", "stepper_z": "Z", "extruder": "E"}.get(sn, sn.replace("stepper_", "").upper())
@@ -253,7 +254,7 @@ def importer(klipper, name, commit, boards):
     # --- endstops, homing ---------------------------------------------------------
     endstops = []
     axes, homing_xy, homing_z = {}, "physical", "physical_min"
-    for sn, axis in (("stepper_x", "x"), ("stepper_y", "y"), ("stepper_z", "z")):
+    for sn, axis in ((("stepper_a", "a"), ("stepper_b", "b"), ("stepper_c", "c")) if delta else (("stepper_x", "x"), ("stepper_y", "y"), ("stepper_z", "z"))):
         sec = S.get(sn, {})
         ep = resolve(sec.get("endstop_pin", ""), al)
         if not ep:
@@ -284,10 +285,12 @@ def importer(klipper, name, commit, boards):
         if sec.get("homing_retract_dist"):
             out["homing_retract_dist"] = num(sec["homing_retract_dist"])
         return out
-    axes = {"x": axis_cfg(S["stepper_x"]), "y": axis_cfg(S["stepper_y"])}
-    zsec = S["stepper_z"]
+    axes = {} if delta else {"x": axis_cfg(S["stepper_x"]), "y": axis_cfg(S["stepper_y"])}
+    zsec = S["stepper_a"] if delta else S["stepper_z"]
     zmax, zend = num(zsec.get("position_max")), num(zsec.get("position_endstop"))
-    if homing_z != "probe_virtual_endstop" and zend is not None and zmax is not None and zend >= zmax:
+    if delta:
+        homing_z, zmax = "physical_max", zend
+    elif homing_z != "probe_virtual_endstop" and zend is not None and zmax is not None and zend >= zmax:
         homing_z = "physical_max"
 
     # --- heaters, sensors, fans ---------------------------------------------------
@@ -308,7 +311,13 @@ def importer(klipper, name, commit, boards):
                          "sources": [src], "note": f"Defined in Klipper's {meta['name']} config as [thermistor {st}]."}
         raise SystemExit(f"{name}: unknown sensor_type {st!r}")
     therms = []
-    heaters = [{"id": "HEATER", "pin": resolve(ex["heater_pin"], al), "role": "hotend"}]
+    multi = {n.split(" ", 1)[1]: [resolve(x.strip(), al) for x in sec["pins"].split(",")] for n, sec in S.items() if n.startswith("multi_pin ")}
+    def out_pin(raw):
+        """A pin, or the pins of the [multi_pin] it names (Geeetech 301: heater on three outputs)."""
+        raw = resolve(raw, al)
+        return ("pins", multi[raw.split(":", 1)[1]]) if raw.startswith("multi_pin:") else ("pin", raw)
+    k, v = out_pin(ex["heater_pin"])
+    heaters = [{"id": "HEATER", k: v, "role": "hotend"}]
     if bed.get("heater_pin"):
         heaters.append({"id": "BED", "pin": resolve(bed["heater_pin"], al), "role": "bed"})
     def therm_port(id_, sec, use):
@@ -336,8 +345,12 @@ def importer(klipper, name, commit, boards):
             role = None
         else:
             role = {"fan": "part_cooling", "heater_fan": "hotend", "controller_fan": "controller"}.get(kind)
-        mods, pin = split_pin(resolve(sec["pin"], al))
-        port = {"id": f"FAN{len(fans)}", "pin": mods + pin}
+        k, v = out_pin(sec["pin"])
+        if k == "pins":
+            port = {"id": f"FAN{len(fans)}", "pins": v}
+        else:
+            mods, pin = split_pin(v)
+            port = {"id": f"FAN{len(fans)}", "pin": mods + pin}
         if role:
             port["typical_use"] = role
             if role not in stock_fans:
@@ -434,8 +447,29 @@ def importer(klipper, name, commit, boards):
 
     # --- printer record -----------------------------------------------------------
     pr = S.get("printer", {})
-    pmax = {"x": num(S["stepper_x"].get("position_max")), "y": num(S["stepper_y"].get("position_max")), "z": zmax}
-    size = {"id": "stock", "bed_mm": [pmax["x"], pmax["y"]], "position_max": pmax}
+    dgeom = None
+    if delta:
+        # Klipper: print_radius defaults to delta_radius; tower angles default to 210/330/90.
+        dr = num(pr.get("delta_radius"))
+        prad = num(pr.get("print_radius")) or dr
+        dc = S.get("delta_calibrate", {})
+        dgeom = {"delta_radius": dr, "print_radius": prad, "arm_length": num(S["stepper_a"].get("arm_length")),
+                 "position_endstop": num(S["stepper_a"].get("position_endstop"))}
+        if pr.get("minimum_z_position"):
+            dgeom["minimum_z_position"] = num(pr["minimum_z_position"])
+        angles = {sn: num(S[sn]["angle"]) for sn in ("stepper_a", "stepper_b", "stepper_c") if S[sn].get("angle")}
+        if angles:
+            dgeom["tower_angles"] = angles
+        dgeom["calibrate_radius"] = num(dc.get("radius")) or round(prad * 0.8)
+        if dc.get("horizontal_move_z"):
+            dgeom["calibrate_horizontal_move_z"] = num(dc["horizontal_move_z"])
+        if dc.get("speed"):
+            dgeom["calibrate_speed"] = num(dc["speed"])
+        pmax = {"x": prad, "y": prad, "z": dgeom["position_endstop"]}
+        size = {"id": "stock", "bed_radius": prad, "bed_mm": [prad * 2, prad * 2], "position_max": pmax}
+    else:
+        pmax = {"x": num(S["stepper_x"].get("position_max")), "y": num(S["stepper_y"].get("position_max")), "z": zmax}
+        size = {"id": "stock", "bed_mm": [pmax["x"], pmax["y"]], "position_max": pmax}
     if "bed_screws" in S:
         screws = [S["bed_screws"][k] for k in sorted(S["bed_screws"], key=lambda k: int(re.sub(r"\D", "", k) or 0)) if re.match(r"screw\d+$", k)]
         size["bed_screws"] = [[num(x) for x in s.split(",")] for s in screws]
@@ -443,10 +477,12 @@ def importer(klipper, name, commit, boards):
     def run_current(sn, default):
         t = tmc_of.get(sn)
         return num(t[1].get("run_current")) if t and num(t[1].get("run_current")) else default
-    xy0 = {"microsteps": num(S["stepper_x"].get("microsteps")) or 16, "full_steps_per_rotation": 200,
-           "homing_speed": num(S["stepper_x"].get("homing_speed")) or 50, "homing_retract_dist": 5,
+    xsec = S["stepper_a"] if delta else S["stepper_x"]
+    xy0 = {"microsteps": num(xsec.get("microsteps")) or 16, "full_steps_per_rotation": 200,
+           "homing_speed": num(xsec.get("homing_speed")) or 50, "homing_retract_dist": num(xsec.get("homing_retract_dist")) or 5,
+           **({"second_homing_speed": num(xsec.get("second_homing_speed")) or (num(xsec.get("homing_speed")) or 50) / 2} if delta else {}),
            "homing_positive_dir": False, "position_min": 0, "endstop_at_max": False, "position_endstop": 0,
-           "run_current": run_current("stepper_x", 0.58)}
+           "run_current": run_current("stepper_a" if delta else "stepper_x", 0.58)}
     defaults = {
         "printer": {k: num(pr[k]) for k in ("max_velocity", "max_accel", "max_z_velocity", "max_z_accel", "square_corner_velocity") if pr.get(k)},
         "stepper_xy": xy0, "axes": axes,
@@ -494,8 +530,14 @@ def importer(klipper, name, commit, boards):
                  {"title": "Klipper: configuration checks (first power-on)", "url": "https://www.klipper3d.org/Config_checks.html"}],
         "kinematics": kin, "z_leveling": None, "bed_heater": "unknown",
     }
+    if dgeom:
+        printer["delta"] = dgeom
+    if "heater_bed" not in S:
+        printer["heated_bed"] = False
     if hotend_fan:
         printer["hotend_fan"] = hotend_fan
+    if dgeom and not S.get("delta_calibrate", {}).get("radius"):
+        printer["unverified"] = [f"Klipper's config has no [delta_calibrate] radius; {dgeom['calibrate_radius']} (80% of the print radius) is used. Keep it inside the area the probe or nozzle can reach."]
     printer.update({
         "imported_from": src,
         "sizes": [size], "steppers": steppers,
@@ -506,6 +548,8 @@ def importer(klipper, name, commit, boards):
             "Made from Klipper's reference config for this printer. Check the pins against your printer before powering on, and run PREFLIGHT first." ,
             "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply." if standalone else None,
             "Both Z motors run from separate drivers but nothing levels them automatically; if the X axis is tilted, level it by hand." if zcount > 1 else None,
+            "This printer has no heated bed, so the bed settings are left out and print start ignores the bed temperature." if "heater_bed" not in S else None,
+            "A delta printer: before the first print, run CALIBRATE_DELTA (it measures the printer's geometry), then SAVE_CONFIG." if delta else None,
         ] if n],
         "sources": [src],
     })

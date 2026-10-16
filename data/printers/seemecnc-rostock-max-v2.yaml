@@ -1,0 +1,96 @@
+# Imported from Klipper's config/printer-seemecnc-rostock-max-v2-2015.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: seemecnc-rostock-max-v2
+name: SeeMeCNC Rostock Max V2
+manufacturer: SeeMeCNC
+status: needs-review
+docs:
+- {title: 'Klipper: SeeMeCNC Rostock Max V2 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-seemecnc-rostock-max-v2-2015.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: delta
+z_leveling: null
+bed_heater: unknown
+delta: {delta_radius: 174.75, print_radius: 174.75, arm_length: 290.8, position_endstop: 380, calibrate_radius: 140}
+unverified: ['Klipper''s config has no [delta_calibrate] radius; 140 (80% of the print radius) is used. Keep it inside the
+    area the probe or nozzle can reach.']
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-seemecnc-rostock-max-v2-2015.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_radius: 174.75
+  bed_mm: [349.5, 349.5]
+  position_max: {x: 174.75, y: 174.75, z: 380}
+steppers:
+- {klipper: stepper_a, role: A, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_b, role: B, rotation_distance: 40}
+- {klipper: stepper_c, role: C, rotation_distance: 40, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 150}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, second_homing_speed: 25.0,
+    homing_positive_dir: false, position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes: {}
+  stepper_z: {microsteps: 16, position_endstop: 380, position_min: 0, homing_speed: 50, second_homing_speed: 25.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 300
+    pid: {pid_kp: 46.51, pid_ki: 1.04, pid_kd: 500}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [seemecnc-rostock-max-v2-board]
+  toolhead: null
+  extruder: seemecnc-rostock-max-v2-extruder
+  hotend: seemecnc-rostock-max-v2-hotend
+  thermistors: {hotend: semitec-104gt2, bed: semitec-104gt2}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_max
+  fans: [part_cooling, hotend]
+  display: {lcd_type: hd44780, rs_pin: PG4, e_pin: PG3, d4_pin: PJ2, d5_pin: PJ3, d6_pin: PJ7, d7_pin: PJ4, encoder_pins: '^PJ5,
+      ^PJ6', click_pin: ^!PE2}
+stock_parts:
+  extruders:
+  - id: seemecnc-rostock-max-v2-extruder
+    name: SeeMeCNC Rostock Max V2 stock extruder
+    drive: unknown
+    rotation_distance: 34.538
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [seemecnc-rostock-max-v2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-seemecnc-rostock-max-v2-2015.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: seemecnc-rostock-max-v2-hotend
+    name: SeeMeCNC Rostock Max V2 stock hotend
+    maker: SeeMeCNC
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [seemecnc-rostock-max-v2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-seemecnc-rostock-max-v2-2015.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 300'}
+    pid_seed: {pid_kp: 20.97, pid_ki: 1.34, pid_kd: 80.56}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'A delta printer: before the first print, run CALIBRATE_DELTA (it measures the printer''s geometry),
+    then SAVE_CONFIG.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-seemecnc-rostock-max-v2-2015.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,59 @@
+# Imported from Klipper's config/printer-anet-a4-2018.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: anet-a4-board
+name: Anet A4 mainboard
+manufacturer: Anet
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega1284p, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)', flash: 'Note that the "make flash" command does
+    not work with Anet boards - the boards are typically flashed with this command: avrdude -p atmega1284p -c arduino -b 57600
+    -P /dev/ttyUSB0 -U out/klipper.elf.hex See docs/Config_Reference.md for a description of parameters.'}
+driver_mount: onboard
+driver_slots:
+- id: A
+  step_pin: PD7
+  dir_pin: PC5
+  enable_pin: '!PD6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: B
+  step_pin: PC6
+  dir_pin: PC7
+  enable_pin: '!PD6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: C
+  step_pin: PB3
+  dir_pin: PB2
+  enable_pin: '!PA5'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB1
+  dir_pin: PB0
+  enable_pin: '!PD6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: A-STOP, pin: PC2, modifier: ^!}
+- {id: B-STOP, pin: PC3, modifier: ^!}
+- {id: C-STOP, pin: PC4, modifier: ^!}
+heaters:
+- {id: HEATER, pin: PD5, role: hotend}
+- {id: BED, pin: PD4, role: bed}
+thermistors:
+- {id: TH0, pin: PA7, typical_use: hotend}
+- {id: TB, pin: PA6, typical_use: bed}
+fans:
+- {id: FAN0, pin: PB4, typical_use: part_cooling}
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anet-a4-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,66 @@
+# Imported from Klipper's config/printer-geeetech-301-2019.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: geeetech-301-board
+name: Geeetech 301 mainboard
+manufacturer: Geeetech
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 0, check_dict: stm32f103-serial}
+interfaces: [usb-serial]
+firmware: {interface: Serial (on USART1 PA10/PA9), flash: 'To use this config, the firmware should be compiled for the STM32F103
+    with "No bootloader", serial (on USART1 PA10/PA9) communication and GPIO pins to set at micro-controller startup set to
+    "!PB4,!PB5,!PB0,!PB1" The "make flash" command does not work on the Geeetech 301. Instead, after running "make", run the
+    following command to flash the board: stm32flash -w out/klipper.bin -v -i rts,-dtr,dtr -b 115200 /dev/ttyUSB0 See docs/Config_Reference.md
+    for a description of parameters.'}
+driver_mount: onboard
+driver_slots:
+- id: A
+  step_pin: PC6
+  dir_pin: PD13
+  enable_pin: '!PA8'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: B
+  step_pin: PA12
+  dir_pin: PA11
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: C
+  step_pin: PD6
+  dir_pin: PD3
+  enable_pin: '!PB3'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PC14
+  dir_pin: PC13
+  enable_pin: '!PC15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: A-STOP, pin: PE4, modifier: ^}
+- {id: B-STOP, pin: PE2, modifier: ^}
+- {id: C-STOP, pin: PE0, modifier: ^}
+heaters:
+- id: HEATER
+  pins: [PB4, PB5, PB0]
+  role: hotend
+- {id: BED, pin: PB1, role: bed}
+thermistors:
+- {id: TH0, pin: PC0, typical_use: hotend, pullup_ohms: 4700}
+- {id: TB, pin: PC3, typical_use: bed}
+fans:
+- id: FAN0
+  pins: [PB7, PB8, PB9]
+  typical_use: hotend
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-geeetech-301-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

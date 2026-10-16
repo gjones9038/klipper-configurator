@@ -1,8 +1,10 @@
 // Render a Plan into Klipper config files. No decisions here beyond formatting.
 import { CfgFile, Section } from './cfg.ts';
 import type { Plan, StepperPlan, FanPlan, PortUse } from './plan.ts';
-import { TOOLHEAD_MCU } from './plan.ts';
+import { TOOLHEAD_MCU, bedGeometry } from './plan.ts';
 import type { Db, Rec } from './types.ts';
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
 import { toolFile, toolchangerFile } from './toolchanger.ts';
 import { homingMacros, levelingMacros, preflightMacros, printMacros, tuningMacros } from './macros.ts';
 
@@ -46,7 +48,20 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const d = p.printer.defaults;
   const pr = new Section('printer').set('kinematics', p.printer.kinematics);
   for (const [k, v] of Object.entries(d.printer)) pr.set(k, v as number);
+  const dg = p.printer.delta;   // delta geometry (Klipper [printer] for kinematics: delta)
+  if (dg) {
+    pr.set('delta_radius', dg.delta_radius, 'DELTA_CALIBRATE refines it (stored by SAVE_CONFIG)')
+      .set('print_radius', dg.print_radius)
+      .set('minimum_z_position', dg.minimum_z_position);
+  }
   pc.add(pr);
+  if (dg) {
+    // DELTA_CALIBRATE: with a probe it probes; without one, METHOD=manual walks you through a paper test.
+    pc.add(new Section('delta_calibrate', 'run DELTA_CALIBRATE (or DELTA_CALIBRATE METHOD=manual without a probe), then SAVE_CONFIG')
+      .set('radius', dg.calibrate_radius)
+      .set('horizontal_move_z', dg.calibrate_horizontal_move_z ?? 5)
+      .set('speed', dg.calibrate_speed ?? 50));
+  }
   pc.add(new Section('idle_timeout').set('timeout', d.idle_timeout));
   pc.add(new Section('respond'));
   pc.add(new Section('exclude_object', 'needed for adaptive meshes and object cancelling'));
@@ -67,7 +82,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
   // sensorless homing uses homing_override, which also excludes it.
   // A Z endstop switch (bed-slingers) homes anywhere: no safe_z_home needed.
-  if (!sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max'].includes(b.homing.z)) {
+  if (!dg && !sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max'].includes(b.homing.z)) {
     // Probe homing: put the probe (not the nozzle) over the bed centre, within travel.
     const off = p.probe?.offset ?? { x: 0, y: 0 };
     const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
@@ -109,12 +124,19 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     const mesh = p.probe?.mesh ?? {};
     const scan = eddy || beacon;
     const bm = new Section('bed_mesh')
-      .set('speed', mesh.speed ?? 300)
-      .set('horizontal_move_z', mesh.horizontal_move_z ?? 10, scan ? 'scan height for eddy probes (vendor sample)' : undefined)
-      .set('mesh_min', `${lo(off.x)}, ${lo(off.y)}`, `probe coordinates (offset ${off.x}, ${off.y}), ${margin} mm margin`)
-      .set('mesh_max', `${hi(bedX, off.x)}, ${hi(bedY, off.y)}`)
-      .set('probe_count', (mesh.probe_count ?? [5, 5]).join(', '))
-      .set('algorithm', 'bicubic')
+      .set('speed', mesh.speed ?? (dg ? 50 : 300))
+      .set('horizontal_move_z', mesh.horizontal_move_z ?? (dg ? 5 : 10), scan ? 'scan height for eddy probes (vendor sample)' : undefined);
+    if (dg) {
+      // Round bed: a circle around the centre, inside the print radius by the probe offset and a margin.
+      const rr = r2(dg.print_radius - Math.max(Math.abs(off.x), Math.abs(off.y)) - 10);
+      bm.set('mesh_radius', rr, `print radius minus the probe offset and 10 mm`).set('mesh_origin', '0, 0')
+        .set('round_probe_count', 5, 'odd number of points across');
+    } else {
+      bm.set('mesh_min', `${lo(off.x)}, ${lo(off.y)}`, `probe coordinates (offset ${off.x}, ${off.y}), ${margin} mm margin`)
+        .set('mesh_max', `${hi(bedX, off.x)}, ${hi(bedY, off.y)}`)
+        .set('probe_count', (mesh.probe_count ?? [5, 5]).join(', '));
+    }
+    bm.set('algorithm', 'bicubic')
       .set('bicubic_tension', 0.2, 'Klipper default')
       .set('mesh_pps', '2, 2', 'Klipper default')
       .set('fade_start', 1.0)
@@ -128,7 +150,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   if (p.accel) {
     pc.add(new Section('resonance_tester')
       .set('accel_chip', p.tools ? `${p.accel.chip} T0` : p.accel.chip, p.tools ? 'change to the tool you are measuring; shapers are per tool' : undefined)
-      .set('probe_points', [`${bedX / 2}, ${bedY / 2}, 20`]));
+      .set('probe_points', [`${bedGeometry(p).center.join(', ')}, 20`]));
   } else if (p.toolhead?.input_shaper_baseline) {
     const s = p.toolhead.input_shaper_baseline;
     pc.add(new Section('input_shaper', `baseline for ${p.toolhead.name} (${s.confidence} confidence) - measure to replace`)
@@ -165,6 +187,10 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     heater: p.hotendHeater, sensor: p.hotendSensor, thermistor: p.thermistor.hotend,
     hotend: p.hotend, extruder: p.extruder, maxTemp: p.maxTemp, pa: p.paBaseline,
   });
+  if (p.hotendHeater.multi) {
+    fileFor(p.hotendHeater.board).add(new Section(`multi_pin ${p.hotendHeater.multi.name}`, `${p.hotendHeater.port}: one heater on several outputs`)
+      .set('pins', p.hotendHeater.multi.pins.join(', ')));
+  }
   for (const s of p.steppers) {
     if (p.tools && s.board === 'toolboard') continue;   // tools/Tn.cfg
     const f = fileFor(s.board);
@@ -173,20 +199,24 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   }
 
 
-  const bed = new Section('heater_bed')
-    .set('heater_pin', p.bedHeater.pin, `${p.bedHeater.port}`)
-    .set('sensor_type', p.thermistor.bed.sensor_type)
-    .set('sensor_pin', p.bedSensor.pin, p.bedSensor.port);
-  if (p.bedSensor.pullup !== 4700) bed.set('pullup_resistor', p.bedSensor.pullup, 'board thermistor pull-up');
-  const dcBed = p.printer.bed_heater === 'dc';
-  const unknownBed = p.printer.bed_heater === 'unknown';
-  const bedPid = d.bed?.pid ?? { pid_kp: 58.437, pid_ki: 2.347, pid_kd: 363.769 };
-  bed.set('max_power', b.bed?.maxPower ?? d.bed?.max_power ?? 0.6, dcBed ? `DC bed on the board's ${p.bedHeater.port} output` : unknownBed ? 'printer maker value' : 'SSR rating / (bed watts / mains volts), max 1.0')
-    .set('min_temp', 0).set('max_temp', b.bed?.maxTemp ?? d.bed?.max_temp ?? 120)
-    .set('control', 'pid', 'seed values; run TUNE_PID_BED')
-    .set('pid_kp', bedPid.pid_kp).set('pid_ki', bedPid.pid_ki).set('pid_kd', bedPid.pid_kd)
-    .set('pwm_cycle_time', d.bed?.pwm_cycle_time, d.bed?.pwm_cycle_time ? 'mains bed: avoids flickering lights (printer maker)' : undefined);
-  mb.add(bed);
+  // No [heater_bed] on printers without a heated bed (Anycubic Kossel 2016, BQ Hephestos ...).
+  const { bedHeater, bedSensor } = p;
+  if (bedHeater && bedSensor) {
+    const bed = new Section('heater_bed')
+      .set('heater_pin', bedHeater.pin, `${bedHeater.port}`)
+      .set('sensor_type', p.thermistor.bed!.sensor_type)
+      .set('sensor_pin', bedSensor.pin, bedSensor.port);
+    if (bedSensor.pullup !== 4700) bed.set('pullup_resistor', bedSensor.pullup, 'board thermistor pull-up');
+    const dcBed = p.printer.bed_heater === 'dc';
+    const unknownBed = p.printer.bed_heater === 'unknown';
+    const bedPid = d.bed?.pid ?? { pid_kp: 58.437, pid_ki: 2.347, pid_kd: 363.769 };
+    bed.set('max_power', b.bed?.maxPower ?? d.bed?.max_power ?? 0.6, dcBed ? `DC bed on the board's ${bedHeater.port} output` : unknownBed ? 'printer maker value' : 'SSR rating / (bed watts / mains volts), max 1.0')
+      .set('min_temp', 0).set('max_temp', b.bed?.maxTemp ?? d.bed?.max_temp ?? 120)
+      .set('control', 'pid', 'seed values; run TUNE_PID_BED')
+      .set('pid_kp', bedPid.pid_kp).set('pid_ki', bedPid.pid_ki).set('pid_kd', bedPid.pid_kd)
+      .set('pwm_cycle_time', d.bed?.pwm_cycle_time, d.bed?.pwm_cycle_time ? 'mains bed: avoids flickering lights (printer maker)' : undefined);
+    mb.add(bed);
+  }
 
   if (p.chamberSensor && p.thermistor.chamber) {
     const c = new Section('temperature_sensor chamber')
@@ -376,6 +406,20 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
         sensorless ? (p.build.autotune ? 'autotune: must exceed rotation_distance' : 'Klipper: rotation_distance / 2') : undefined)
       .set('homing_retract_dist', sensorless ? 0 : xy.homing_retract_dist)
       .set('homing_positive_dir', xy.homing_positive_dir);
+  } else if (/^stepper_[abc]$/.test(s.name) && p.printer.delta) {
+    // Delta tower: homes upward to its endstop. Height and arm length on stepper_a apply to all
+    // three towers (Klipper); per-tower values come from DELTA_CALIBRATE via SAVE_CONFIG.
+    const dg = p.printer.delta;
+    const xy = d.stepper_xy;
+    sec.set('endstop_pin', (s.endstop as any).pin, (s.endstop as any).port)
+      .set('homing_speed', xy.homing_speed).set('second_homing_speed', xy.second_homing_speed)
+      .set('homing_retract_dist', xy.homing_retract_dist);
+    if (s.name === 'stepper_a') {
+      sec.set('position_endstop', dg.position_endstop, 'nozzle height when homed; DELTA_CALIBRATE refines it')
+        .set('arm_length', dg.arm_length);
+    }
+    const angle = dg.tower_angles?.[s.name];
+    if (angle !== undefined) sec.set('angle', angle);
   } else if (s.name === 'stepper_z') {
     const z = d.stepper_z;
     if (s.endstop === 'probe') {

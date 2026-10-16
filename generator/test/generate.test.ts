@@ -64,7 +64,7 @@ test('Leviathan puts A/B on the HV TMC5160 slots', () => {
   assert.equal(p.steppers.find((s) => s.name === 'stepper_x')!.slot, 'HV-STEPPER-0');
   assert.equal(p.steppers.find((s) => s.name === 'stepper_y')!.slot, 'HV-STEPPER-1');
   assert.equal(p.hotendSensor.pullup, 4700); // on the toolboard
-  assert.equal(p.bedSensor.pullup, 2200);    // Leviathan 2.2k
+  assert.equal(p.bedSensor!.pullup, 2200);    // Leviathan 2.2k
 });
 
 test('run current: maker recommendation wins, capped by motor rating', () => {
@@ -549,4 +549,48 @@ test('Elegoo Neptune 3 Pro: Klipper reference pins, X endstop at -5, built-in pr
   assert.match(mb, /\[extruder\][^[]*rotation_distance: 8\.42[^[]*max_temp: 260/);
   assert.doesNotMatch(mb, /\[tmc/);
   assert.match(r.files['FIRMWARE.md'], /32KiB bootloader[\s\S]*ZNP_ROBIN_NANO\.bin/);
+});
+
+// --- delta printers and printers without a heated bed --------------------------
+const stockBuild = (printerId: string): Build => {
+  const p = db.printers[printerId];
+  const st = p.stock;
+  return {
+    printer: printerId, size: p.sizes[0].id, variant: 'standard',
+    mainboard: { id: st.mainboards[0], connection: db.mainboards[st.mainboards[0]].interfaces[0] },
+    drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } }, motors: { xy: '', z: '' },
+    homing: { xy: st.homing_xy ?? 'physical', z: st.homing_z ?? 'physical_min' },
+    ...(st.probe ? { probe: st.probe } : {}),
+    extruder: st.extruder, hotend: st.hotend, thermistors: { ...st.thermistors },
+    fans: (st.fans ?? ['part_cooling']).map((role: string) => ({ role })), autotune: false, webUi: 'mainsail',
+  };
+};
+
+test('FLSUN Q5 (delta): delta geometry, towers home up, round mesh, centred purge and park', () => {
+  const r = generate(stockBuild('flsun-q5'), db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const pc = r.files['printer.cfg'];
+  const mb = r.files['mainboard.cfg'];
+  // printer-flsun-q5-2020.cfg
+  assert.match(pc, /\[printer\]\nkinematics: delta[^[]*delta_radius: 107\.5[^\n]*\nprint_radius: 100/);
+  assert.match(pc, /\[delta_calibrate\][^\n]*\nradius: 95\nhorizontal_move_z: 25\nspeed: 10/);
+  assert.match(pc, /\[bed_mesh\][^[]*mesh_radius: 90[^\n]*\nmesh_origin: 0, 0/);
+  assert.doesNotMatch(pc, /safe_z_home|mesh_min/);
+  assert.match(mb, /\[stepper_a\][^[]*endstop_pin: PA15[^[]*position_endstop: 220[^\n]*\narm_length: 215\nangle: 210/);
+  assert.match(mb, /\[stepper_c\][^[]*angle: 90/);
+  assert.doesNotMatch(mb, /\[stepper_[xyz]\]/);
+  const pm = r.files['macros/print.cfg'];
+  assert.match(pm, /G0 X-42\.14 Y-85 Z5/);                      // purge inside the 100 mm circle
+  assert.match(pm, /G0 X0 Y0 F6000[^\n]*\n\s*G0 Z\{z\}/);       // park at the centre, then rise
+  assert.match(r.files['macros/leveling.cfg'], /\[gcode_macro CALIBRATE_DELTA\][^[]*DELTA_CALIBRATE\n/);
+});
+
+test('Anycubic Kossel (delta, no probe, no heated bed): manual delta calibration, no bed sections', () => {
+  const r = generate(stockBuild('anycubic-kossel'), db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  assert.match(r.files['macros/leveling.cfg'], /DELTA_CALIBRATE METHOD=manual/);
+  assert.doesNotMatch(r.files['mainboard.cfg'], /heater_bed/);
+  assert.doesNotMatch(r.files['macros/print.cfg'], /M190/);
+  assert.doesNotMatch(r.files['macros/tuning.cfg'], /TUNE_PID_BED/);
+  assert.doesNotMatch(r.files['macros/preflight.cfg'], /heater_bed/);
 });

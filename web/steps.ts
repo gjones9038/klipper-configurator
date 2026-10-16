@@ -331,9 +331,11 @@ const homingStep: Step = {
       if (switchDraft.x !== undefined && switchDraft.y !== undefined) b.homing.zSwitchXY = [switchDraft.x, switchDraft.y];
       else delete b.homing.zSwitchXY;
     });
+    const delta = db.printers[build.printer].kinematics === 'delta';
     return [
+      delta ? h('p', { class: 'hint' }, 'This is a delta printer: all three towers home together by moving up until they touch their endstop switches. There is nothing to choose for homing. Before the first print, run CALIBRATE_DELTA to measure the printer\'s geometry.') : null,
       h('div', { class: 'grid' },
-        segmented('X / Y homing', build.homing.xy, Object.entries(db.homing.xy_methods).map(([id, m]: [string, any]) => ({ value: id as 'physical' | 'sensorless', label: m.name })),
+        delta ? null : segmented('X / Y homing', build.homing.xy, Object.entries(db.homing.xy_methods).map(([id, m]: [string, any]) => ({ value: id as 'physical' | 'sensorless', label: m.name })),
           (v) => update((b) => { b.homing.xy = v; }), db.homing.xy_methods[build.homing.xy]?.description),
         select('Probe', build.probe ?? '', [{ value: '', label: 'No probe' },
           ...Object.values(db.probes).filter((p) => !p.applies_to || p.applies_to.includes(build.printer)).map((p) => ({ value: p.id, label: p.name, group: PROBE_KINDS[p.kind] ?? p.kind }))],
@@ -349,7 +351,7 @@ const homingStep: Step = {
         numberField('Probe Y offset (mm)', build.probeOffset?.y, (v) => update((b) => { b.probeOffset = { x: b.probeOffset?.x ?? known?.x_offset ?? 0, y: v ?? 0 }; }),
           { step: 0.1, placeholder: String(known?.y_offset ?? 0) })) : null,
       probe?.docs?.length ? h('ul', { class: 'links' }, probe.docs.map((d: Rec) => h('li', null, extLink(d.url, d.title)))) : null,
-      h('div', { class: 'grid' },
+      delta ? null : h('div', { class: 'grid' },
         segmented('Z homing', build.homing.z, Object.entries(zm).map(([id, m]: [string, any]) => ({
           value: id as Build['homing']['z'], label: m.name, disabled: id === 'probe_virtual_endstop' && !probe?.z_endstop_capable,
         })), (v) => update((b) => { b.homing.z = v; }), zm[build.homing.z]?.description)),
@@ -439,6 +441,7 @@ const hotendStep: Step = {
     const fits = (id: string) => !toolhead?.compatible_extruders || toolhead.compatible_extruders.includes(id);
     const therm = Object.values(db.thermistors).filter(forPrinter(build)).map((t) => ({ value: t.id, label: t.label }));
     const hotend = db.hotends[build.hotend];
+    const bedless = db.printers[build.printer].heated_bed === false;
     return [
       h('div', { class: 'grid' },
         select('Extruder', build.extruder, Object.values(db.extruders).filter(forPrinter(build)).map((e) => ({
@@ -449,12 +452,13 @@ const hotendStep: Step = {
           (v) => update((b) => { b.hotend = v; }), hotend.common_thermistor ? `Usually ships with: ${db.thermistors[hotend.common_thermistor]?.label ?? hotend.common_thermistor}` : undefined)),
       h('div', { class: 'grid' },
         select('Hotend thermistor', build.thermistors.hotend, therm, (v) => update((b) => { b.thermistors.hotend = v; }), 'The temperature sensor in the heater block. The wrong type reads the wrong temperature.'),
-        select('Bed thermistor', build.thermistors.bed, therm, (v) => update((b) => { b.thermistors.bed = v; })),
+        bedless ? null : select('Bed thermistor', build.thermistors.bed, therm, (v) => update((b) => { b.thermistors.bed = v; })),
         select('Chamber thermistor', build.thermistors.chamber ?? '', [{ value: '', label: 'None' }, ...therm],
           (v) => update((b) => { if (v) b.thermistors.chamber = v; else delete b.thermistors.chamber; }), 'Optional. Measures the air inside an enclosed printer.')),
+      bedless ? h('p', { class: 'hint' }, 'This printer has no heated bed, so there are no bed settings.') : null,
       h('div', { class: 'grid' },
-        numberField('Bed max power (0-1)', build.bed?.maxPower, (v) => update((b) => { b.bed = { ...b.bed, maxPower: v }; }), { min: 0.1, max: 1, step: 0.05, placeholder: '1.0', hint: '1 means full power. Lower it if a large mains-powered bed trips your fuse.' }),
-        numberField('Bed max temp (°C)', build.bed?.maxTemp, (v) => update((b) => { b.bed = { ...b.bed, maxTemp: v }; }), { min: 60, max: 150, step: 1, placeholder: '120', hint: 'Klipper shuts the printer down if the bed goes above this.' }),
+        bedless ? null : numberField('Bed max power (0-1)', build.bed?.maxPower, (v) => update((b) => { b.bed = { ...b.bed, maxPower: v }; }), { min: 0.1, max: 1, step: 0.05, placeholder: '1.0', hint: '1 means full power. Lower it if a large mains-powered bed trips your fuse.' }),
+        bedless ? null : numberField('Bed max temp (°C)', build.bed?.maxTemp, (v) => update((b) => { b.bed = { ...b.bed, maxTemp: v }; }), { min: 60, max: 150, step: 1, placeholder: '120', hint: 'Klipper shuts the printer down if the bed goes above this.' }),
         numberField('Nozzle diameter (mm)', build.nozzleDiameter, (v) => update((b) => { b.nozzleDiameter = v; }), { min: 0.1, max: 1.2, step: 0.05, placeholder: '0.4' })),
       sources(db.extruders[build.extruder]),
     ];

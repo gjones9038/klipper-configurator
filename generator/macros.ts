@@ -1,6 +1,7 @@
 // G-code macro files. Kept as plain templates: easy to read and diff against
 // what users already know from Voron/Klipper docs.
 import type { Plan } from './plan.ts';
+import { bedGeometry } from './plan.ts';
 
 const hdr = (lines: string[]) => lines.map((l) => `# ${l}`).join('\n');
 const block = (s: string) => s.replace(/^\n/, '').replace(/\n\s*$/, '');
@@ -12,7 +13,8 @@ function levelCmd(p: Plan): string {
 const hasProbe = (p: Plan) => !!(p.probe || p.bltouch);
 
 export function printMacros(p: Plan, header: string[]): string {
-  const [bx, by] = p.size.bed_mm;
+  const g = bedGeometry(p);
+  const [cx, cy] = g.center;
   const tc = !!p.tools;
   const nm = p.nevermore;
   // Buzzer (Leviathan extension): M300 is in mainboard.cfg.
@@ -63,15 +65,15 @@ gcode:
     G28
     G90${tc ? '\n    SET_DISPLAY_TEXT MSG="T0 levels and meshes (reference tool)"\n    T0' : ''}
 ${nevermoreOn}
-    SET_DISPLAY_TEXT MSG="Bed: {BED}C"
-    G0 X${bx / 2} Y${by / 2} Z30 F6000
+${p.bedHeater ? `    SET_DISPLAY_TEXT MSG="Bed: {BED}C"
+    G0 X${cx} Y${cy} Z30 F6000
     M190 S{BED}
     {% if HOT %}
 ${chamberWait}
     {% else %}
         SET_DISPLAY_TEXT MSG="Bed soak: {SOAK} min"
         G4 P{SOAK * 60000}
-    {% endif %}
+    {% endif %}` : `    G0 X${cx} Y${cy} Z30 F6000   ; no heated bed on this printer: BED is ignored`}
     SET_DISPLAY_TEXT MSG="Hotend: 150C"
     M109 S150
 ${levelCmd(p) ? `    SET_DISPLAY_TEXT MSG="Leveling"
@@ -80,7 +82,7 @@ ${levelCmd(p) ? `    SET_DISPLAY_TEXT MSG="Leveling"
 ` : ''}${hasProbe(p) ? `    SET_DISPLAY_TEXT MSG="Bed mesh"
     BED_MESH_CALIBRATE ADAPTIVE=1${scan}` : ''}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
     SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
-    G0 X${bx / 2} Y20 Z10 F6000
+    G0 X${g.front[0]} Y${g.front[1]} Z10 F6000
     M109 S{EXTRUDER}
     PURGE_LINE
     SET_DISPLAY_TEXT MSG="Printing"
@@ -93,11 +95,11 @@ gcode:
     SAVE_GCODE_STATE NAME=purge
     G90
     M83
-    G0 X20 Y5 Z5 F6000
+    G0 X${g.purge.x0} Y${g.purge.y} Z5 F6000
     G0 Z0.3 F600
     G1 E8 F300
-    G1 X100 E10 F1200
-    G1 X110 F6000
+    G1 X${g.purge.x1} E10 F1200
+    G1 X${g.purge.x2} F6000
     G0 Z2 F600
     RESTORE_GCODE_STATE NAME=purge
 `)}
@@ -112,8 +114,9 @@ gcode:
     G92 E0
     G1 E-5 F1800
     G90
-    G0 Z{z} F3000
-    G0 X${bx / 2} Y${by - 10} F6000
+${g.delta ? `    G0 X${g.park[0]} Y${g.park[1]} F6000   ; a delta reaches full height only near the centre
+    G0 Z{z} F3000` : `    G0 Z{z} F3000
+    G0 X${g.park[0]} Y${g.park[1]} F6000`}
     TURN_OFF_HEATERS
     M107${hasProbe(p) ? '\n    BED_MESH_CLEAR' : ''}${nm ? `\n    UPDATE_DELAYED_GCODE ID=_NEVERMORE_OFF DURATION=${nm.postMinutes * 60}` : ''}${beeps ? '\n    _BEEP_DONE' : ''}
 `)}
@@ -156,7 +159,7 @@ gcode:
 }
 
 export function levelingMacros(p: Plan, header: string[]): string {
-  const [bx, by] = p.size.bed_mm;
+  const [bx, by] = bedGeometry(p).center.map((v) => v * 2);
   const lvl = levelCmd(p);
   const status = p.printer.z_leveling === 'quad_gantry_level' ? 'quad_gantry_level' : 'z_tilt';
   const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
@@ -193,6 +196,15 @@ gcode:
     {% endif %}
 `)}
 
+` : ''}${p.printer.delta ? `${block(`
+[gcode_macro CALIBRATE_DELTA]
+description: Measure the delta's geometry${hasProbe(p) ? ' with the probe' : ' with a paper test at each point (no probe)'}, then SAVE_CONFIG keeps it. Do this before the first print.
+gcode:
+    G28
+    DELTA_CALIBRATE${hasProbe(p) ? '' : ' METHOD=manual'}
+    RESPOND MSG="${hasProbe(p) ? 'Delta calibration done. Run SAVE_CONFIG to keep it.' : 'At each point, lower the nozzle until it just grips a sheet of paper (TESTZ Z=-0.1), then ACCEPT. Finish with SAVE_CONFIG.'}"
+`)}
+
 ` : ''}${hasProbe(p) ? `${block(`
 [gcode_macro LEVEL_BED]
 description: Full leveling for a fresh start: ${lvl ? 'level if needed, then ' : 'home, then '}a full bed mesh saved as "default".
@@ -205,7 +217,7 @@ gcode:
 }
 
 export function preflightMacros(p: Plan, header: string[]): string {
-  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), 'heater_bed', ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
+  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), ...(p.bedHeater ? ['heater_bed'] : []), ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
   const motors = p.steppers.map((s) =>
     `    RESPOND MSG="${s.name}: ${s.board === 'toolboard' ? (p.tools ? `T${p.tools.find((t) => t.stepper === s)?.n} board` : 'toolhead board') : s.slot} (${s.role}${s.position ? ' ' + s.position : ''})"\n    STEPPER_BUZZ STEPPER=${s.name}`).join('\n');
   const fans = [...p.fans, ...(p.tools ?? []).flatMap((t) => t.fans)].map((f) => {
@@ -274,14 +286,14 @@ gcode:
     RESPOND MSG="Hotend PID done. Run SAVE_CONFIG to keep it."
 `)}
 
-${block(`
+${p.bedHeater ? block(`
 [gcode_macro TUNE_PID_BED]
 description: PID-tune the bed. TEMP=100 by default.
 gcode:
     {% set T = params.TEMP|default(100)|float %}
     PID_CALIBRATE HEATER=heater_bed TARGET={T}
     RESPOND MSG="Bed PID done. Run SAVE_CONFIG to keep it."
-`)}
+`) : ''}
 ${accel ? `
 ${block(`
 [gcode_macro TUNE_SHAPER]
@@ -297,8 +309,7 @@ ${block(`
 [gcode_macro TUNE_ALL]
 description: Every automatic tuning step in order, then SAVE_CONFIG (Klipper restarts).
 gcode:
-    TUNE_PID_HOTEND
-    TUNE_PID_BED${accel ? '\n    TUNE_SHAPER' : ''}
+    TUNE_PID_HOTEND${p.bedHeater ? '\n    TUNE_PID_BED' : ''}${accel ? '\n    TUNE_SHAPER' : ''}
     SAVE_CONFIG
 `)}
 
@@ -453,7 +464,7 @@ gcode:${tc ? '\n    INITIALIZE_TOOLCHANGER' : ''}
 function probeMacros(p: Plan): string {
   const pr = p.probe;
   if (!pr) return '';
-  const [bx, by] = p.size.bed_mm;
+  const [bx, by] = bedGeometry(p).center.map((v) => v * 2);   // bx / 2, by / 2 below = bed centre
   const homes = p.build.homing.z === 'probe_virtual_endstop';
   if (pr.kind === 'eddy_plugin') {
     return block(`

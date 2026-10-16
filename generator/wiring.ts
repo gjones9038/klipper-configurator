@@ -8,7 +8,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
   const c: WireConnection[] = [];
   const add = (x: Omit<WireConnection, 'num'>) => c.push({ num: c.length + 1, ...x });
   const label = (s: { role: string; position?: string; name: string }) =>
-    s.role === 'E' ? 'Extruder motor' : `${s.role} motor${s.position ? ` · ${s.position}` : ''}`;
+    s.role === 'E' ? 'Extruder motor' : /^stepper_[abc]$/.test(s.name) ? `Tower ${s.role} motor` : `${s.role} motor${s.position ? ` · ${s.position}` : ''}`;
 
   const toolOf = (s: { name: string }) => p.tools?.find((t) => t.stepper.name === s.name);
   for (const s of p.steppers) {
@@ -22,19 +22,21 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
   }
   for (const s of p.steppers) {
     if (s.endstop && typeof s.endstop === 'object') {
-      add({ component: `${s.name === 'stepper_z' ? 'Z' : s.name === 'stepper_x' ? 'X' : 'Y'} endstop`, board: s.endstop.board,
+      add({ component: `${/^stepper_[abc]$/.test(s.name) ? `Tower ${s.name.slice(-1).toUpperCase()}` : s.name.replace('stepper_', '').toUpperCase()} endstop`, board: s.endstop.board,
         connector: s.endstop.port, pins: bare(s.endstop.pin),
         note: s.name === 'stepper_z' ? 'nozzle switch' : 'wire the switch normally closed (NC)' });
     }
   }
   if (!p.tools) {
-    add({ component: 'Hotend heater', board: p.hotendHeater.board, connector: p.hotendHeater.port, pins: bare(p.hotendHeater.pin) });
+    add({ component: 'Hotend heater', board: p.hotendHeater.board, connector: p.hotendHeater.port, pins: p.hotendHeater.multi ? p.hotendHeater.multi.pins.map(bare).join(' + ') : bare(p.hotendHeater.pin) });
     add({ component: 'Hotend thermistor', board: p.hotendSensor.board, connector: p.hotendSensor.port, pins: bare(p.hotendSensor.pin), note: p.thermistor.hotend.label });
   }
-  if (p.printer.bed_heater === 'unknown') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'stock wiring; check whether your bed is mains (through an SSR) or 24 V before changing it' });
-  else if (p.printer.bed_heater === 'dc') add({ component: 'Bed heater', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: '24 V bed, wired straight to the board output' });
-  else add({ component: 'Bed heater (SSR control input)', board: 'mainboard', connector: p.bedHeater.port, pins: bare(p.bedHeater.pin), note: 'mains goes through the SSR, never the board' });
-  add({ component: 'Bed thermistor', board: 'mainboard', connector: p.bedSensor.port, pins: bare(p.bedSensor.pin), note: p.thermistor.bed.label });
+  const { bedHeater, bedSensor } = p;
+  if (!bedHeater || !bedSensor) { /* no heated bed */ }
+  else if (p.printer.bed_heater === 'unknown') add({ component: 'Bed heater', board: 'mainboard', connector: bedHeater.port, pins: bare(bedHeater.pin), note: 'stock wiring; check whether your bed is mains (through an SSR) or 24 V before changing it' });
+  else if (p.printer.bed_heater === 'dc') add({ component: 'Bed heater', board: 'mainboard', connector: bedHeater.port, pins: bare(bedHeater.pin), note: '24 V bed, wired straight to the board output' });
+  else add({ component: 'Bed heater (SSR control input)', board: 'mainboard', connector: bedHeater.port, pins: bare(bedHeater.pin), note: 'mains goes through the SSR, never the board' });
+  if (bedSensor) add({ component: 'Bed thermistor', board: 'mainboard', connector: bedSensor.port, pins: bare(bedSensor.pin), note: p.thermistor.bed!.label });
   if (p.chamberSensor) add({ component: 'Chamber thermistor', board: p.chamberSensor.board, connector: p.chamberSensor.port, pins: bare(p.chamberSensor.pin) });
   if (p.printer.hotend_fan === 'always_on' && !p.fans.some((f) => f.role === 'hotend')) {
     add({ component: 'Fan: hotend', board: 'mainboard', connector: '24 V (always on)', pins: '-', note: 'stock wiring: runs whenever the printer is on' });
@@ -112,7 +114,8 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     j.push(`Probe port ${p.probe.port.port}: set it for an ${p.probe.output === 'npn-no' ? 'NPN' : 'PNP'} probe if the board has a selector jumper, and check its voltage setting.`);
   }
   for (const s of [p.hotendSensor, p.bedSensor]) {
-    if ((s === p.hotendSensor ? p.thermistor.hotend : p.thermistor.bed).id === 'pt1000') {
+    if (!s) continue;
+    if ((s === p.hotendSensor ? p.thermistor.hotend : p.thermistor.bed)?.id === 'pt1000') {
       j.push(`${s.port}: PT1000 selected. If the board has a pull-up jumper for PT1000, set it and update pullup_resistor to match.`);
     }
   }

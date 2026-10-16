@@ -1,0 +1,104 @@
+# Imported from Klipper's config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: monoprice-mini-delta
+name: Monoprice Mini Delta
+manufacturer: Monoprice
+status: needs-review
+docs:
+- {title: 'Klipper: Monoprice Mini Delta reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-mini-delta-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: delta
+z_leveling: null
+bed_heater: unknown
+delta: {delta_radius: 63, print_radius: 63, arm_length: 120.8, position_endstop: 125, minimum_z_position: -10, calibrate_radius: 50,
+  calibrate_horizontal_move_z: 5, calibrate_speed: 50}
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_radius: 63
+  bed_mm: [126, 126]
+  position_max: {x: 63, y: 63, z: 125}
+steppers:
+- {klipper: stepper_a, role: A, rotation_distance: 56}
+- {klipper: stepper_b, role: B, rotation_distance: 56}
+- {klipper: stepper_c, role: C, rotation_distance: 56}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 150, max_accel: 1200, max_z_velocity: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, second_homing_speed: 25.0,
+    homing_positive_dir: false, position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes: {}
+  stepper_z: {microsteps: 16, position_endstop: 125, position_min: 0, homing_speed: 50, second_homing_speed: 25.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 51.249, pid_ki: 4.437, pid_kd: 147.983}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [monoprice-mini-delta-board]
+  toolhead: null
+  extruder: monoprice-mini-delta-extruder
+  hotend: monoprice-mini-delta-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [monoprice-mini-delta-probe]
+  homing_xy: physical
+  homing_z: physical_max
+  fans: [part_cooling]
+  probe: monoprice-mini-delta-probe
+stock_parts:
+  extruders:
+  - id: monoprice-mini-delta-extruder
+    name: Monoprice Mini Delta stock extruder
+    drive: unknown
+    rotation_distance: 65.984
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [monoprice-mini-delta]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: monoprice-mini-delta-hotend
+    name: Monoprice Mini Delta stock hotend
+    maker: Monoprice
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [monoprice-mini-delta]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 300'}
+    pid_seed: {pid_kp: 22.2, pid_ki: 1.08, pid_kd: 114}
+  probes:
+  - id: monoprice-mini-delta-probe
+    name: Monoprice Mini Delta built-in probe
+    kind: integrated
+    applies_to: [monoprice-mini-delta]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, speed: 5, samples: 1, samples_result: average, sample_retract_dist: 2,
+      samples_tolerance: 0.1, samples_tolerance_retries: 0}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'A delta printer: before the first print, run CALIBRATE_DELTA (it measures the printer''s geometry),
+    then SAVE_CONFIG.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,62 @@
+# Imported from Klipper's config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: monoprice-mini-delta-board
+name: Monoprice Mini Delta mainboard
+manufacturer: Monoprice
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f070, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb]
+firmware: {interface: USB for communication, flash: 'Note 1: Some controller boards only trigger the bootloader when an update
+    file is "printed" from the LCD, rather than supporting bootloader triggering during bootup. It may be preferable to use
+    an ST-Link V2 to flash the firmware instead. Follow this link for an example of the commands needed to do this: https://github.com/arkorobotics/MiniDeltaBootloader  Note
+    2: Klipper does not currently support the LCD interface used on this printer.'}
+driver_mount: onboard
+driver_slots:
+- id: A
+  step_pin: PB12
+  dir_pin: PB11
+  enable_pin: '!PB10'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: B
+  step_pin: PB2
+  dir_pin: PB1
+  enable_pin: '!PB10'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: C
+  step_pin: PB14
+  dir_pin: PB13
+  enable_pin: '!PB10'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PA7
+  dir_pin: PA6
+  enable_pin: '!PB0'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: A-STOP, pin: PC14, modifier: ^}
+- {id: B-STOP, pin: PC15, modifier: ^}
+- {id: C-STOP, pin: PC13, modifier: ^}
+heaters:
+- {id: HEATER, pin: PA1, role: hotend}
+- {id: BED, pin: PA5, role: bed}
+thermistors:
+- {id: TH0, pin: PA0, typical_use: hotend}
+- {id: TB, pin: PA4, typical_use: bed}
+fans:
+- {id: FAN0, pin: PA8, typical_use: part_cooling}
+probe_ports:
+- {id: PROBE, pin: PB7, modifier: ^!}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-mini-delta-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

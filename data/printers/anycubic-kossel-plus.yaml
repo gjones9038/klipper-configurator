@@ -1,0 +1,94 @@
+# Imported from Klipper's config/printer-anycubic-kossel-plus-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: anycubic-kossel-plus
+name: Anycubic Kossel Linear / Pulley Plus
+manufacturer: Anycubic
+status: needs-review
+docs:
+- {title: 'Klipper: Anycubic Kossel Linear / Pulley Plus reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kossel-plus-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: delta
+z_leveling: null
+bed_heater: unknown
+delta: {delta_radius: 134.4, print_radius: 134.4, arm_length: 269, position_endstop: 295.6, calibrate_radius: 115}
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kossel-plus-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_radius: 134.4
+  bed_mm: [268.8, 268.8]
+  position_max: {x: 134.4, y: 134.4, z: 295.6}
+steppers:
+- {klipper: stepper_a, role: A, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_b, role: B, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_c, role: C, rotation_distance: 40, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 500, max_accel: 3000, max_z_velocity: 200}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 60, homing_retract_dist: 5, second_homing_speed: 30.0,
+    homing_positive_dir: false, position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes: {}
+  stepper_z: {microsteps: 16, position_endstop: 295.6, position_min: 0, homing_speed: 60, second_homing_speed: 30.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 73.517, pid_ki: 1.132, pid_kd: 1193.728}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [anycubic-kossel-plus-board]
+  toolhead: null
+  extruder: anycubic-kossel-plus-extruder
+  hotend: anycubic-kossel-plus-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_max
+  fans: [part_cooling, hotend]
+  display: {lcd_type: hd44780, rs_pin: PH1, e_pin: PH0, d4_pin: PA1, d5_pin: PA3, d6_pin: PA5, d7_pin: PA7, encoder_pins: '^PC6,
+      ^PC4', click_pin: ^!PC2, kill_pin: ^!PG0}
+stock_parts:
+  extruders:
+  - id: anycubic-kossel-plus-extruder
+    name: Anycubic Kossel Linear / Pulley Plus stock extruder
+    drive: unknown
+    rotation_distance: 33.333
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [anycubic-kossel-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kossel-plus-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: anycubic-kossel-plus-hotend
+    name: Anycubic Kossel Linear / Pulley Plus stock hotend
+    maker: Anycubic
+    flow_class: standard
+    max_temp: 275
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [anycubic-kossel-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kossel-plus-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 275'}
+    pid_seed: {pid_kp: 25.349, pid_ki: 1.216, pid_kd: 132.13}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'A delta printer: before the first print, run CALIBRATE_DELTA (it measures the printer''s geometry),
+    then SAVE_CONFIG.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kossel-plus-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
