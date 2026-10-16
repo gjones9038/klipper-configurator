@@ -2,6 +2,7 @@
 // what users already know from Voron/Klipper docs.
 import type { Plan } from './plan.ts';
 import { bedGeometry } from './plan.ts';
+import { extraHeaters } from './emit.ts';
 
 const hdr = (lines: string[]) => lines.map((l) => `# ${l}`).join('\n');
 const block = (s: string) => s.replace(/^\n/, '').replace(/\n\s*$/, '');
@@ -67,7 +68,7 @@ gcode:
 ${nevermoreOn}
 ${p.bedHeater ? `    SET_DISPLAY_TEXT MSG="Bed: {BED}C"
     G0 X${cx} Y${cy} Z30 F6000
-    M190 S{BED}
+    M190 S{BED}${extraHeaters(p).map((x) => `\n    SET_HEATER_TEMPERATURE HEATER=${x.name} TARGET={BED}`).join('')}
     {% if HOT %}
 ${chamberWait}
     {% else %}
@@ -217,7 +218,7 @@ gcode:
 }
 
 export function preflightMacros(p: Plan, header: string[]): string {
-  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), ...(p.bedHeater ? ['heater_bed'] : []), ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
+  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), ...(p.bedHeater ? ['heater_bed'] : []), ...extraHeaters(p).map((x) => `heater_generic ${x.name}`), ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
   const motors = p.steppers.map((s) =>
     `    RESPOND MSG="${s.name}: ${s.board === 'toolboard' ? (p.tools ? `T${p.tools.find((t) => t.stepper === s)?.n} board` : 'toolhead board') : s.slot} (${s.role}${s.position ? ' ' + s.position : ''})"\n    STEPPER_BUZZ STEPPER=${s.name}`).join('\n');
   const fans = [...p.fans, ...(p.tools ?? []).flatMap((t) => t.fans)].map((f) => {

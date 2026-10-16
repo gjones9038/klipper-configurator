@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-anycubic-kossel-plus-2017.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-anycubic-kossel-plus-2017.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: anycubic-kossel-plus-board
 name: Anycubic Kossel Linear / Pulley Plus mainboard

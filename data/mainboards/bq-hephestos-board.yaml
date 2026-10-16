@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-bq-hephestos-2014.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-bq-hephestos-2014.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: bq-hephestos-board
 name: BQ Prusa i3 Hephestos mainboard

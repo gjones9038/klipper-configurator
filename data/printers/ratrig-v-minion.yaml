@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-ratrig-v-minion-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-ratrig-v-minion-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: ratrig-v-minion
 name: Rat Rig V-Minion

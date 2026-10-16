@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-sovol-sv06-plus-2023.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-sovol-sv06-plus-2023.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: sovol-sv06-plus
 name: Sovol SV06 Plus

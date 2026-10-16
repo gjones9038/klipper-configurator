@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-alfawise-u30-2018.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-alfawise-u30-2018.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: alfawise-u30
 name: Alfawise U30

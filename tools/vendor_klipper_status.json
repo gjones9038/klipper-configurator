@@ -1,0 +1,9 @@
+{
+ "_about": "Printers that ship with their maker's own version of Klipper and are not in the configurator yet, with the reason. Shown in docs/PRINTERS.md.",
+ "Creality K1 / K1C / K1 Max, Ender 3 V3 KE, CR-10 SE, K2, Hi": "Creality's boards run Creality's own Klipper fork (firmware built for GD32F303 chips with Creality-only code, and a strain-gauge probe module, prtouch, that standard Klipper does not have). A standard-Klipper config would not run on them. Sources: CrealityOfficial/*_Klipper on GitHub.",
+ "Qidi X-Plus 3, X-Max 3, Q1 Pro, Plus4": "Qidi publishes printer configs for the Q1 Pro and Plus4 (with Qidi-only modules such as qdprobe) but not the boards' firmware settings, so the firmware notes could not be sourced. Pending.",
+ "Sovol SV07 / SV07 Plus": "Sovol's published configs are standard Klipper, but no Sovol source names the mainboard's chip or firmware settings. Pending a source.",
+ "Sovol SV08 Max": "Sovol publishes everything needed (two boards, an eddy probe on the toolhead board). Needs hand-curating like the SV08. Pending.",
+ "FlashForge Adventurer 5M / 5M Pro": "FlashForge's repo (FlashForge/AD5M_Series_Klipper) has firmware source but no printer config. Pending a source.",
+ "Anycubic Kobra 2 / 3": "Anycubic publishes firmware sources for these (ANYCUBIC-3D/Kobra2, Kobra3, Klipper-go), not standard Klipper printer configs. Pending a source."
+}

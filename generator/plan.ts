@@ -721,7 +721,8 @@ export function plan(build: Build, db: Db): Plan {
       }
     }
   }
-  if (!fans.some((f) => f.role === 'hotend') && printer.hotend_fan !== 'always_on') err('no_hotend_fan', 'Add a hotend fan (Fans step). Without it, heat creeps up the hotend and jams the filament.');
+  // hotend_fan: always_on (wired to 24 V) or controller_fan (one fan cools hotend and board: Neptune 4).
+  if (!fans.some((f) => f.role === 'hotend') && !printer.hotend_fan) err('no_hotend_fan', 'Add a hotend fan (Fans step). Without it, heat creeps up the hotend and jams the filament.');
 
   // --- probe ---------------------------------------------------------------
   let probe: Plan['probe'];

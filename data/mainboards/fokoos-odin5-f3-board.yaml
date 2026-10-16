@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-fokoos-odin5-f3-2021.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-fokoos-odin5-f3-2021.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: fokoos-odin5-f3-board
 name: FOKOOS Odin-5 F3 mainboard

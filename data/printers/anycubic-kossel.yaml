@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-anycubic-kossel-2016.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-anycubic-kossel-2016.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: anycubic-kossel
 name: Anycubic Kossel (2016)

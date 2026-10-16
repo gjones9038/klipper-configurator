@@ -489,5 +489,92 @@
   "id": "velleman-k8800",
   "name": "Velleman K8800 (Vertex Delta)",
   "maker": "Velleman"
+ },
+ "opennept4une-n4": {
+  "id": "elegoo-neptune4",
+  "name": "Elegoo Neptune 4",
+  "maker": "Elegoo",
+  "mcu": {
+   "chip": "stm32f401",
+   "bootloader_kib": 32,
+   "comm": "Serial (on USART1 PA10/PA9)",
+   "flash": "Use OpenNept4une's installer to flash Klipper to the board (OpenNept4une.sh, menu option 4). Elegoo's original firmware can be restored from an SD card (ElegooSD-restore.bin, see OpenNept4une's mcu-firmware/README.md)."
+  },
+  "source": {
+   "repo": "https://github.com/OpenNeptune3D/OpenNept4une",
+   "path": "printer-confs/base.cfg + printer-confs/n4/",
+   "commit": "33f60559fddcf11cfd6283ddc8f0a09e9228b253",
+   "note": "community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered; firmware settings from mcu-firmware/mcu.config resolved with Klipper's Kconfig"
+  },
+  "source_label": "the community OpenNept4une project's config (not Elegoo's own)",
+  "notes": [
+   "This config is for standard Klipper, as installed by OpenNept4une. Elegoo's stock software runs its own Klipper and does not use it.",
+   "Neptune 4 and 4 Pro printers shipped with either 0.8 A or 1.2 A motors. This uses 0.8 A; if yours are 1.2 A motors, set the X/Y current to 1.2 on the Motors step."
+  ]
+ },
+ "opennept4une-n4pro": {
+  "id": "elegoo-neptune4-pro",
+  "name": "Elegoo Neptune 4 Pro",
+  "maker": "Elegoo",
+  "mcu": {
+   "chip": "stm32f401",
+   "bootloader_kib": 32,
+   "comm": "Serial (on USART1 PA10/PA9)",
+   "flash": "Use OpenNept4une's installer to flash Klipper to the board (OpenNept4une.sh, menu option 4). Elegoo's original firmware can be restored from an SD card (ElegooSD-restore.bin, see OpenNept4une's mcu-firmware/README.md)."
+  },
+  "source": {
+   "repo": "https://github.com/OpenNeptune3D/OpenNept4une",
+   "path": "printer-confs/base.cfg + printer-confs/n4pro/",
+   "commit": "33f60559fddcf11cfd6283ddc8f0a09e9228b253",
+   "note": "community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered; firmware settings from mcu-firmware/mcu.config resolved with Klipper's Kconfig"
+  },
+  "source_label": "the community OpenNept4une project's config (not Elegoo's own)",
+  "notes": [
+   "This config is for standard Klipper, as installed by OpenNept4une. Elegoo's stock software runs its own Klipper and does not use it.",
+   "Neptune 4 and 4 Pro printers shipped with either 0.8 A or 1.2 A motors. This uses 0.8 A; if yours are 1.2 A motors, set the X/Y current to 1.2 on the Motors step.",
+   "The Pro's bed has a second, outer heating zone; print start heats it to the same temperature as the bed."
+  ]
+ },
+ "opennept4une-n4plus": {
+  "id": "elegoo-neptune4-plus",
+  "name": "Elegoo Neptune 4 Plus",
+  "maker": "Elegoo",
+  "mcu": {
+   "chip": "stm32f401",
+   "bootloader_kib": 32,
+   "comm": "Serial (on USART1 PA10/PA9)",
+   "flash": "Use OpenNept4une's installer to flash Klipper to the board (OpenNept4une.sh, menu option 4). Elegoo's original firmware can be restored from an SD card (ElegooSD-restore.bin, see OpenNept4une's mcu-firmware/README.md)."
+  },
+  "source": {
+   "repo": "https://github.com/OpenNeptune3D/OpenNept4une",
+   "path": "printer-confs/base.cfg + printer-confs/n4plus/",
+   "commit": "33f60559fddcf11cfd6283ddc8f0a09e9228b253",
+   "note": "community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered; firmware settings from mcu-firmware/mcu.config resolved with Klipper's Kconfig"
+  },
+  "source_label": "the community OpenNept4une project's config (not Elegoo's own)",
+  "notes": [
+   "This config is for standard Klipper, as installed by OpenNept4une. Elegoo's stock software runs its own Klipper and does not use it."
+  ]
+ },
+ "opennept4une-n4max": {
+  "id": "elegoo-neptune4-max",
+  "name": "Elegoo Neptune 4 Max",
+  "maker": "Elegoo",
+  "mcu": {
+   "chip": "stm32f401",
+   "bootloader_kib": 32,
+   "comm": "Serial (on USART1 PA10/PA9)",
+   "flash": "Use OpenNept4une's installer to flash Klipper to the board (OpenNept4une.sh, menu option 4). Elegoo's original firmware can be restored from an SD card (ElegooSD-restore.bin, see OpenNept4une's mcu-firmware/README.md)."
+  },
+  "source": {
+   "repo": "https://github.com/OpenNeptune3D/OpenNept4une",
+   "path": "printer-confs/base.cfg + printer-confs/n4max/",
+   "commit": "33f60559fddcf11cfd6283ddc8f0a09e9228b253",
+   "note": "community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered; firmware settings from mcu-firmware/mcu.config resolved with Klipper's Kconfig"
+  },
+  "source_label": "the community OpenNept4une project's config (not Elegoo's own)",
+  "notes": [
+   "This config is for standard Klipper, as installed by OpenNept4une. Elegoo's stock software runs its own Klipper and does not use it."
+  ]
  }
 }

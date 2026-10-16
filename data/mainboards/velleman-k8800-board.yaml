@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-velleman-k8800-2017.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-velleman-k8800-2017.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: velleman-k8800-board
 name: Velleman K8800 (Vertex Delta) mainboard

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-cr5pro-ht-2022.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-cr5pro-ht-2022.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: creality-cr5-pro-ht-board
 name: Creality CR-5 Pro HT mainboard

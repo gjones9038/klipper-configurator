@@ -1,0 +1,114 @@
+# Imported from https://github.com/OpenNeptune3D/OpenNept4une printer-confs/base.cfg + printer-confs/n4plus/ by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: elegoo-neptune4-plus
+name: Elegoo Neptune 4 Plus
+manufacturer: Elegoo
+status: needs-review
+docs:
+- {title: 'Klipper: Elegoo Neptune 4 Plus reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-opennept4une-n4plus.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: controller_fan
+imported_from: {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/,
+  commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253, note: 'community project (not Elegoo); composed as its generate_conf.py
+    does, with the 0.8 A motor option where offered; firmware settings from mcu-firmware/mcu.config resolved with Klipper''s
+    Kconfig'}
+sizes:
+- id: stock
+  bed_mm: [330, 330]
+  position_max: {x: 330, y: 330, z: 405}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 250, max_accel: 3000, max_z_velocity: 8, max_z_accel: 120, square_corner_velocity: 5}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 1}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -10, position_min: -12, homing_speed: 50, homing_retract_dist: 0}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: -2, homing_speed: 50, homing_retract_dist: 0}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -5, homing_speed: 8, second_homing_speed: 3, homing_retract_dist: 5,
+    run_current: 0.8}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.8}
+  bed:
+    max_power: 1
+    max_temp: 120
+    pwm_cycle_time: 0.3
+    pid: {pid_kp: 75.397, pid_ki: 0.823, pid_kd: 1727.531}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+  sensorless_thresholds: {stepper_x: 90, stepper_y: 80}
+stock:
+  mainboards: [elegoo-neptune4-plus-board]
+  toolhead: null
+  extruder: elegoo-neptune4-plus-extruder
+  hotend: elegoo-neptune4-plus-hotend
+  thermistors: {hotend: ntc100k-mgb18, bed: ntc100k-mgb18}
+  probe_options: [elegoo-neptune4-plus-probe]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [controller, part_cooling]
+  probe: elegoo-neptune4-plus-probe
+stock_parts:
+  extruders:
+  - id: elegoo-neptune4-plus-extruder
+    name: Elegoo Neptune 4 Plus stock extruder
+    drive: unknown
+    rotation_distance: 28.888
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [elegoo-neptune4-plus]
+    sources:
+    - {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/, commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253,
+      note: 'community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered;
+        firmware settings from mcu-firmware/mcu.config resolved with Klipper''s Kconfig'}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '52:10'
+    dir_inverted: true
+  hotends:
+  - id: elegoo-neptune4-plus-hotend
+    name: Elegoo Neptune 4 Plus stock hotend
+    maker: Elegoo
+    flow_class: standard
+    max_temp: 330
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: ntc100k-mgb18
+    applies_to: [elegoo-neptune4-plus]
+    sources:
+    - {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/, commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253,
+      note: '[extruder] max_temp: 330'}
+    pid_seed: {pid_kp: 35.144, pid_ki: 9.762, pid_kd: 31.63}
+  probes:
+  - id: elegoo-neptune4-plus-probe
+    name: Elegoo Neptune 4 Plus built-in probe
+    kind: integrated
+    applies_to: [elegoo-neptune4-plus]
+    z_endstop_capable: true
+    defaults: {x_offset: -24.25, y_offset: 20.45, z_offset: 0, speed: 6, samples: 3, samples_result: median, sample_retract_dist: 3,
+      samples_tolerance: 0.025, samples_tolerance_retries: 3}
+    sources:
+    - {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/, commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253,
+      note: 'community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered;
+        firmware settings from mcu-firmware/mcu.config resolved with Klipper''s Kconfig'}
+  thermistors: []
+notes: ['Made from the community OpenNept4une project''s config (not Elegoo''s own) for this printer. Check the pins against
+    your printer before powering on, and run PREFLIGHT first.', 'This config is for standard Klipper, as installed by OpenNept4une.
+    Elegoo''s stock software runs its own Klipper and does not use it.']
+sources:
+- {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/, commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253,
+  note: 'community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered;
+    firmware settings from mcu-firmware/mcu.config resolved with Klipper''s Kconfig'}

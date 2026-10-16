@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-tevo-tarantula-pro-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-tevo-tarantula-pro-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: tevo-tarantula-pro-board
 name: Tevo Tarantula Pro (green board) mainboard

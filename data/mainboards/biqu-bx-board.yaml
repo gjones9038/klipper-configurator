@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-biqu-bx-2021.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-biqu-bx-2021.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: biqu-bx-board
 name: BIQU BX mainboard

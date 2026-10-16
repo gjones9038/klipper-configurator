@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-cr6se-2021.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-cr6se-2021.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: creality-cr6-se-board
 name: Creality CR-6 SE (4.5.3 board) mainboard

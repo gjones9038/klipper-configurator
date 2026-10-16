@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-twotrees-sapphire-plus-sp-5-v1.1-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-twotrees-sapphire-plus-sp-5-v1.1-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: twotrees-sapphire-plus-v1.1
 name: Two Trees Sapphire Plus V1.1 (SP-5)

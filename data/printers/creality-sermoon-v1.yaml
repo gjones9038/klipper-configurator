@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-sermoonV1-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-sermoonV1-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: creality-sermoon-v1
 name: Creality Sermoon V1

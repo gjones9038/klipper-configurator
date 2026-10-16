@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: monoprice-mini-delta-board
 name: Monoprice Mini Delta mainboard

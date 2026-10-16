@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-monoprice-select-mini-v1-2016.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-monoprice-select-mini-v1-2016.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: monoprice-select-mini-v1-board
 name: Monoprice Select Mini V1 mainboard

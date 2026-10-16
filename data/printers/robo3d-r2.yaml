@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-robo3d-r2-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-robo3d-r2-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: robo3d-r2
 name: Robo3D R2

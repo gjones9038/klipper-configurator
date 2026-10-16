@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-ender3max-2021.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-ender3max-2021.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: creality-ender3-max-board
 name: Creality Ender 3 Max mainboard

@@ -150,7 +150,7 @@ def existing_boards():
     out = {}
     for f in os.listdir(os.path.join(DATA, "mainboards")):
         text = open(os.path.join(DATA, "mainboards", f)).read()
-        if text.startswith("# Imported from Klipper"):
+        if "tools/import_klipper_printer.py" in text.split("\n", 1)[0]:
             continue  # only hand-curated boards can be reused
         b = yaml.safe_load(text)
         out[b["id"]] = b
@@ -176,8 +176,9 @@ def covers(curated, draft):
             and all(e in c[4] for e in d[4]))
 
 
-def importer(klipper, name, commit, boards):
-    path = os.path.join(klipper, "config", f"printer-{name}.cfg")
+def importer(klipper, name, commit, boards, file=None):
+    """file: a config that is not one of Klipper's (its source and MCU details come from the names table)."""
+    path = file or os.path.join(klipper, "config", f"printer-{name}.cfg")
     text = open(path, errors="replace").read()
     S, order, header = parse_cfg(text)
     al = aliases_of(S)
@@ -185,7 +186,7 @@ def importer(klipper, name, commit, boards):
     if meta.get("skip"):
         raise SystemExit(f"{name}: {meta['skip']}")
     pid = meta["id"]
-    src = {"repo": "https://github.com/Klipper3d/klipper", "path": f"config/printer-{name}.cfg", "commit": commit}
+    src = meta.get("source") or {"repo": "https://github.com/Klipper3d/klipper", "path": f"config/printer-{name}.cfg", "commit": commit}
     kin = S.get("printer", {}).get("kinematics", "cartesian")
     delta = kin == "delta"
     if kin not in ("cartesian", "corexy", "delta"):
@@ -194,6 +195,8 @@ def importer(klipper, name, commit, boards):
         raise SystemExit(f"{name}: more than one extruder not supported yet")
 
     chip, boot, comm, mhz, flash = header_info([l.lstrip("#").strip() for l in header])
+    mm = meta.get("mcu") or {}   # MCU details from another source (e.g. the firmware's .config)
+    chip, boot, comm, flash = mm.get("chip", chip), mm.get("bootloader_kib", boot), mm.get("comm", comm), mm.get("flash", flash)
     mcu_chip = chip_id(chip)
     if not mcu_chip:
         raise SystemExit(f"{name}: no MCU named in the header comment")
@@ -341,6 +344,8 @@ def importer(klipper, name, commit, boards):
         kind = sec_name.split(" ")[0]
         if kind not in ("fan", "heater_fan", "controller_fan", "fan_generic") or "pin" not in sec:
             continue
+        follows = [x.strip() for x in sec.get("heater", "").split(",") if x.strip()]
+        shared = kind == "controller_fan" and "extruder" in follows   # one fan for hotend and board (Neptune 4)
         if kind == "heater_fan" and sec.get("heater", "extruder") != "extruder":
             role = None
         else:
@@ -357,6 +362,9 @@ def importer(klipper, name, commit, boards):
                 stock_fans.append(role)
         if sec.get("tachometer_pin"):
             port["tachometer_pin"] = resolve(sec["tachometer_pin"], al)
+        if shared:
+            port["klipper"] = {k: (num(sec[k]) if num(sec[k]) is not None else sec[k]) for k in ("heater", "fan_speed", "idle_speed", "idle_timeout") if sec.get(k)}
+            hotend_fan = "controller_fan"
         fans.append(port)
         if role == "hotend":
             hotend_fan = None
@@ -394,14 +402,15 @@ def importer(klipper, name, commit, boards):
     # --- board record -------------------------------------------------------------
     board_id = f"{pid}-board"
     serial = S.get("mcu", {}).get("serial", "")
-    usb_serial = avr or "1a86" in serial or "ttyUSB" in serial or (comm or "").lower().startswith("serial")
+    host_uart = "/dev/ttyS" in serial   # wired to the printer's own computer (Neptune 4)
+    usb_serial = not host_uart and (avr or "1a86" in serial or "ttyUSB" in serial or (comm or "").lower().startswith("serial"))
     mcu = {"chip": mcu_chip}
     if avr:
         mcu.update(arch="avr", cpu_mhz=mhz or 16)
     else:
         mcu.update(crystal_mhz=8, bootloader_kib=boot if boot is not None else 0)
         # Klipper check: a dictionary built the way this firmware is (serial boards keep PA11/PA12 free).
-        if mcu_chip.startswith(("stm32", "gd32")) and usb_serial:
+        if mcu_chip.startswith(("stm32", "gd32")) and (usb_serial or host_uart):
             u = re.search(r"usart\s*(\d)", f"{comm} {flash}", re.I)
             n = u.group(1) if u else "1"  # Klipper's STM32 serial default is USART1
             chip = "stm32f103" if mcu_chip == "gd32f103" else mcu_chip
@@ -414,8 +423,10 @@ def importer(klipper, name, commit, boards):
     board = {
         "schema": "mainboard/1", "id": board_id, "name": f"{meta['name']} mainboard", "manufacturer": meta["maker"],
         "revisions": ["stock"], "status": "needs-review", "stock_only": True, "mcu_variants": [mcu],
-        "interfaces": ["usb-serial" if usb_serial else "usb"],
+        "interfaces": ["serial" if host_uart else "usb-serial" if usb_serial else "usb"],
     }
+    if host_uart:
+        board["host_serial"] = {"path": serial, **({"baud": num(S["mcu"]["baud"])} if S["mcu"].get("baud") else {})}
     if usb_serial and "/dev/serial/by-id/" in serial:
         board["usb_serial"] = {"chip": "CH340" if "1a86" in serial else "USB-serial", "serial_path": serial}
     fw = {}
@@ -435,7 +446,7 @@ def importer(klipper, name, commit, boards):
         board["bltouch"] = bltouch
     standalone = all(s["onboard_driver"].get("standalone") for s in slots)
     board["notes"] = ([] if not standalone else ["The motor drivers on this board can't be adjusted from Klipper. Motor current is set on the board, and sensorless homing (homing without switches) isn't possible."])
-    board["unverified"] = ["Only one source (Klipper's reference config for this printer). Check the pins against your board before powering on.",
+    board["unverified"] = [f"Only one source ({meta.get('source_label', 'Klipper' + chr(39) + 's reference config')}). Check the pins against your board before powering on.",
                            "Thermistor pull-ups not given in the source use Klipper's default (4.7k).",
                            *([] if avr else ["crystal_mhz 8 is Klipper's default; the source does not state it."])]
     board["sources"] = [src]
@@ -496,6 +507,8 @@ def importer(klipper, name, commit, boards):
         "safe_z_home": {"home_xy_position": "user", "speed": 100, "z_hop": 10},
         "idle_timeout": 1800,
     }
+    if num(bed.get("pwm_cycle_time")):
+        defaults["bed"]["pwm_cycle_time"] = num(bed["pwm_cycle_time"])
     if bed.get("pid_kp") and bed.get("pid_ki") and bed.get("pid_kd"):
         defaults["bed"]["pid"] = {"pid_kp": num(bed["pid_kp"]), "pid_ki": num(bed["pid_ki"]), "pid_kd": num(bed["pid_kd"])}
     thr = {sn: num(t.get("driver_sgthrs") or t.get("driver_sgt")) for sn, (_, t) in tmc_of.items() if (t.get("driver_sgthrs") or t.get("driver_sgt")) and sn in ("stepper_x", "stepper_y")}
@@ -523,6 +536,14 @@ def importer(klipper, name, commit, boards):
             stock["probe_offsets"] = {stock_probe: probe_offset}
     if display:
         stock["display"] = display
+    extra = []
+    for sec_name in order:
+        if sec_name.startswith("heater_generic "):
+            sec = S[sec_name]
+            k = {kk: (resolve(v, al) if kk.endswith("_pin") else (num(v) if num(v) is not None else v)) for kk, v in sec.items() if kk != "gcode_id"}
+            extra.append({"name": sec_name.split(" ", 1)[1], "note": "extra bed heater zone, heated to the bed temperature by PRINT_START", "klipper": k})
+    if extra:
+        stock["extra_heaters"] = extra
     zcount = sum(1 for s in steppers if s["role"].startswith("Z"))
     printer = {
         "schema": "printer/1", "id": pid, "name": meta["name"], "manufacturer": meta["maker"], "status": "needs-review",
@@ -545,7 +566,8 @@ def importer(klipper, name, commit, boards):
         "defaults": defaults, "stock": stock,
         "stock_parts": {"extruders": [ext], "hotends": [hot], "probes": [probe_rec] if probe_rec else [], "thermistors": therms},
         "notes": [n for n in [
-            "Made from Klipper's reference config for this printer. Check the pins against your printer before powering on, and run PREFLIGHT first." ,
+            f"Made from {meta.get('source_label', 'Klipper' + chr(39) + 's reference config')} for this printer. Check the pins against your printer before powering on, and run PREFLIGHT first.",
+            *meta.get("notes", []),
             "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply." if standalone else None,
             "Both Z motors run from separate drivers but nothing levels them automatically; if the X axis is tilted, level it by hand." if zcount > 1 else None,
             "This printer has no heated bed, so the bed settings are left out and print start ignores the bed temperature." if "heater_bed" not in S else None,
@@ -574,20 +596,21 @@ def main():
     klipper = sys.argv[1]
     commit = git_commit(klipper)
     boards = existing_boards()
-    for name in sys.argv[2:]:
+    for arg in sys.argv[2:]:
+        name, _, file = arg.partition("=")   # NAME, or NAME=/path/to/printer.cfg for a non-Klipper source
         try:
-            printer, board = importer(klipper, name, commit, boards)
+            printer, board = importer(klipper, name, commit, boards, file or None)
         except SystemExit as e:
             print(f"SKIP {e}")
             continue
         pfile = os.path.join(DATA, "printers", f"{printer['id']}.yaml")
         with open(pfile, "w") as f:
-            f.write(f"# Imported from Klipper's config/printer-{name}.cfg by tools/import_klipper_printer.py (only source: needs review).\n")
+            f.write(f"# Imported from {printer['sources'][0]['repo']} {printer['sources'][0]['path']} by tools/import_klipper_printer.py (only source: needs review).\n")
             yaml.dump(printer, f, Dumper=Dumper, sort_keys=False, allow_unicode=True, width=120, default_flow_style=None)
         msg = f"OK   {name} -> {printer['id']}"
         if board:
             with open(os.path.join(DATA, "mainboards", f"{board['id']}.yaml"), "w") as f:
-                f.write(f"# Imported from Klipper's config/printer-{name}.cfg by tools/import_klipper_printer.py.\n")
+                f.write(f"# Imported from {board['sources'][0]['repo']} {board['sources'][0]['path']} by tools/import_klipper_printer.py.\n")
                 yaml.dump(board, f, Dumper=Dumper, sort_keys=False, allow_unicode=True, width=120, default_flow_style=None)
             msg += f" + {board['id']}"
         else:

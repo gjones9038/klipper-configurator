@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-prusa-mini-plus-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-prusa-mini-plus-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: prusa-mini-plus-board
 name: Prusa MINI+ mainboard

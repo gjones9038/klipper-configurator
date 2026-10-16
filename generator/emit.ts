@@ -218,6 +218,12 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     mb.add(bed);
   }
 
+  // A printer's extra bed heaters (Neptune 4 Pro outer bed zone), with its stock board.
+  for (const x of extraHeaters(p)) {
+    const s = new Section(`heater_generic ${x.name}`, x.note);
+    for (const [k, v] of Object.entries(x.klipper)) s.set(k, v as any);
+    mb.add(s);
+  }
   if (p.chamberSensor && p.thermistor.chamber) {
     const c = new Section('temperature_sensor chamber')
       .set('sensor_type', p.thermistor.chamber.sensor_type).set('sensor_pin', p.chamberSensor.pin);
@@ -374,6 +380,10 @@ export function mcuSection(name: string, board: Rec, conn: string, chip: string)
     // Boards flashed with a fixed USB serial number (Orbitool O2S, SO3) have a known path.
     s.set('serial', board.usb_path ?? `/dev/serial/by-id/usb-Klipper_${chip}_REPLACE_ME-if00`, board.usb_path ? 'USB serial number set in menuconfig (see FIRMWARE.md)' : 'ls /dev/serial/by-id/*');
     s.set('restart_method', 'command');
+  } else if (conn === 'serial') {
+    s.set('serial', board.host_serial?.path ?? '/dev/ttyS0', 'the printer\'s built-in computer talks to the board on this serial port');
+    if (board.host_serial?.baud) s.set('baud', board.host_serial.baud);
+    s.set('restart_method', 'command');
   } else if (conn === 'usb-serial') {
     s.set('serial', board.usb_serial?.serial_path ?? '/dev/serial/by-id/REPLACE_ME', `${board.usb_serial?.chip ?? 'USB-serial'} chip; check with ls /dev/serial/by-id/*`);
     s.set('restart_method', 'command');
@@ -458,6 +468,11 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
     }
   }
   return sec;
+}
+
+export function extraHeaters(p: Plan): Array<{ name: string; note?: string; klipper: Rec }> {
+  const st = p.printer.stock;
+  return st?.extra_heaters && st.mainboards?.includes(p.build.mainboard.id) ? st.extra_heaters : [];
 }
 
 export function fanSection(f: FanPlan): Section {

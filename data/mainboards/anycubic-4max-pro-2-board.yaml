@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-anycubic-4maxpro-2.0-2021.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-anycubic-4maxpro-2.0-2021.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: anycubic-4max-pro-2-board
 name: Anycubic 4Max Pro 2.0 mainboard
@@ -50,7 +50,10 @@ thermistors:
 fans:
 - {id: FAN0, pin: PH6, typical_use: part_cooling}
 - {id: FAN1, pin: PL5, typical_use: hotend}
-- {id: FAN2, pin: PH4, typical_use: controller}
+- id: FAN2
+  pin: PH4
+  typical_use: controller
+  klipper: {heater: 'heater_bed,extruder', idle_speed: 0.5, idle_timeout: 300}
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']

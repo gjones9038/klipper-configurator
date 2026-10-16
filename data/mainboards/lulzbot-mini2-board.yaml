@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-lulzbot-mini2-2018.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-lulzbot-mini2-2018.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: lulzbot-mini2-board
 name: LulzBot Mini 2 mainboard

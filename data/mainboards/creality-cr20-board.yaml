@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-cr20-2018.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-cr20-2018.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: creality-cr20-board
 name: Creality CR-20 mainboard

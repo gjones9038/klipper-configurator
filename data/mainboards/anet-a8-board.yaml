@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-anet-a8-2017.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-anet-a8-2017.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: anet-a8-board
 name: Anet A8 (2016-2017) mainboard

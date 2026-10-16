@@ -13,7 +13,7 @@ export function buildTitle(b: Build, db: Db): string {
 
 export function buildSummary(b: Build, db: Db): string {
   const board = db.mainboards[b.mainboard.id];
-  const conn = { usb: 'USB', can: 'CAN', 'usb-can-bridge': 'USB-CAN bridge', 'usb-serial': 'USB (serial)' }[b.mainboard.connection];
+  const conn = { usb: 'USB', can: 'CAN', 'usb-can-bridge': 'USB-CAN bridge', 'usb-serial': 'USB (serial)', serial: 'serial (built-in computer)' }[b.mainboard.connection];
   return [
     `${board.name} ${board.revisions.join('/')}${(b.mainboard.extensions ?? []).map((id) => ` + ${board.extensions?.find((e: any) => e.id === id)?.name ?? id}`).join('')} (${conn})`,
     b.toolchanger ? `${db.toolchangers[b.toolchanger.system]?.name ?? 'toolchanger'}, ${b.toolchanger.tools.length + 1} tools` : null,

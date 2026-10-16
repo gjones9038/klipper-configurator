@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-tronxy-xy-2-Pro-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-tronxy-xy-2-Pro-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: tronxy-xy2-pro-board
 name: Tronxy XY-2 Pro mainboard

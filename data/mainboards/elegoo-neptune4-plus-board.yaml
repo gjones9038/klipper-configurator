@@ -1,0 +1,73 @@
+# Imported from https://github.com/OpenNeptune3D/OpenNept4une printer-confs/base.cfg + printer-confs/n4plus/ by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: elegoo-neptune4-plus-board
+name: Elegoo Neptune 4 Plus mainboard
+manufacturer: Elegoo
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f401, crystal_mhz: 8, bootloader_kib: 32, check_dict: stm32f401-usart1}
+interfaces: [serial]
+host_serial: {path: /dev/ttyS0, baud: 250000}
+firmware: {interface: Serial (on USART1 PA10/PA9), flash: 'Use OpenNept4une''s installer to flash Klipper to the board (OpenNept4une.sh,
+    menu option 4). Elegoo''s original firmware can be restored from an SD card (ElegooSD-restore.bin, see OpenNept4une''s
+    mcu-firmware/README.md).'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC14
+  dir_pin: PC13
+  enable_pin: '!PC15'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PB9
+  diag_pin: PC0
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+- id: Y
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PC15'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PD2
+  diag_pin: PB8
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+- id: Z
+  step_pin: PC10
+  dir_pin: PA13
+  enable_pin: '!PC11'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PC5
+- id: E
+  step_pin: PA5
+  dir_pin: PA6
+  enable_pin: '!PA4'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PC4
+endstops: []
+heaters:
+- {id: HEATER, pin: PA7, role: hotend}
+- {id: BED, pin: PB10, role: bed}
+thermistors:
+- {id: TH0, pin: PA1, typical_use: hotend}
+- {id: TB, pin: PA0, typical_use: bed}
+fans:
+- id: FAN0
+  pin: PC7
+  typical_use: controller
+  klipper: {heater: 'extruder, heater_bed', fan_speed: 1, idle_speed: 0.5, idle_timeout: 43200}
+- {id: FAN1, pin: PB7, typical_use: part_cooling}
+- {id: FAN2, pin: PC9}
+- {id: FAN3, pin: PA8}
+- {id: FAN4, pin: PA15}
+probe_ports:
+- {id: PROBE, pin: PA11, modifier: ^}
+notes: []
+unverified: [Only one source (the community OpenNept4une project's config (not Elegoo's own)). Check the pins against your
+    board before powering on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is
+    Klipper's default; the source does not state it.]
+sources:
+- {repo: 'https://github.com/OpenNeptune3D/OpenNept4une', path: printer-confs/base.cfg + printer-confs/n4plus/, commit: 33f60559fddcf11cfd6283ddc8f0a09e9228b253,
+  note: 'community project (not Elegoo); composed as its generate_conf.py does, with the 0.8 A motor option where offered;
+    firmware settings from mcu-firmware/mcu.config resolved with Klipper''s Kconfig'}

@@ -49,5 +49,12 @@ if len(sys.argv) > 1:
         lines.append(f"| printer-{n}.cfg | {why} |")
     lines.append("")
 
+vendor = json.load(open(os.path.join(ROOT, "tools", "vendor_klipper_status.json")))
+lines += ["# Printers running their maker's own Klipper", "",
+          "These ship with a modified Klipper from the maker. They are not in the configurator yet; the reason is given for each.", "",
+          "| Printers | Why not yet |", "|---|---|"]
+lines += [f"| {k} | {v} |" for k, v in vendor.items() if not k.startswith("_")]
+lines.append("")
+
 open(os.path.join(ROOT, "docs", "PRINTERS.md"), "w").write("\n".join(lines))
 print(f"wrote docs/PRINTERS.md ({len(printers)} printers)")

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-monoprice-mini-delta-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: monoprice-mini-delta
 name: Monoprice Mini Delta

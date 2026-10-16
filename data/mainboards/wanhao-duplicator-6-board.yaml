@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-wanhao-duplicator-6-2016.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-wanhao-duplicator-6-2016.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: wanhao-duplicator-6-board
 name: Wanhao Duplicator 6 / Monoprice Ultimate mainboard

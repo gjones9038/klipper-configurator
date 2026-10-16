@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-flsun-q5-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-flsun-q5-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: flsun-q5-board
 name: FLSUN Q5 mainboard

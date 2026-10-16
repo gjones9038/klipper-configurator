@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-artillery-sidewinder-x2-2022.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-artillery-sidewinder-x2-2022.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: artillery-sidewinder-x2-board
 name: Artillery Sidewinder X2 mainboard

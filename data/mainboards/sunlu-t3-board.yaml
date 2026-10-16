@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-sunlu-t3-2022.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-sunlu-t3-2022.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: sunlu-t3-board
 name: SUNLU Terminator T3 mainboard

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-makergear-m2-2016.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-makergear-m2-2016.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: makergear-m2-board
 name: MakerGear M2 (2016, V4 extruder) mainboard

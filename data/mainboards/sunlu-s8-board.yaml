@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-sunlu-s8-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-sunlu-s8-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: sunlu-s8-board
 name: SUNLU S8 mainboard

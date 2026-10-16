@@ -58,6 +58,10 @@ check them against your printer before powering on.
 | Creality Sermoon V1 | Creality | Creality Sermoon V1 mainboard | Needs review | [config/printer-creality-sermoonV1-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-sermoonV1-2022.cfg) |
 | Elegoo Neptune 2 | Elegoo | Elegoo Neptune 2 mainboard | Needs review | [config/printer-elegoo-neptune2-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-elegoo-neptune2-2021.cfg) |
 | Elegoo Neptune 3 Pro | Elegoo | Elegoo ZNP Robin Nano_DW V2.2 | Reviewed | [config/printer-elegoo-neptune3-pro-2023.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-elegoo-neptune3-pro-2023.cfg) |
+| Elegoo Neptune 4 | Elegoo | Elegoo Neptune 4 mainboard | Needs review | [printer-confs/base.cfg + printer-confs/n4/](https://github.com/OpenNeptune3D/OpenNept4une/blob/master/printer-confs/base.cfg + printer-confs/n4/) |
+| Elegoo Neptune 4 Max | Elegoo | Elegoo Neptune 4 Max mainboard | Needs review | [printer-confs/base.cfg + printer-confs/n4max/](https://github.com/OpenNeptune3D/OpenNept4une/blob/master/printer-confs/base.cfg + printer-confs/n4max/) |
+| Elegoo Neptune 4 Plus | Elegoo | Elegoo Neptune 4 Plus mainboard | Needs review | [printer-confs/base.cfg + printer-confs/n4plus/](https://github.com/OpenNeptune3D/OpenNept4une/blob/master/printer-confs/base.cfg + printer-confs/n4plus/) |
+| Elegoo Neptune 4 Pro | Elegoo | Elegoo Neptune 4 Pro mainboard | Needs review | [printer-confs/base.cfg + printer-confs/n4pro/](https://github.com/OpenNeptune3D/OpenNept4une/blob/master/printer-confs/base.cfg + printer-confs/n4pro/) |
 | Eryone ER-20 | Eryone | Eryone ER-20 mainboard | Needs review | [config/printer-eryone-er20-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-er20-2021.cfg) |
 | Eryone Thinker Series V2 | Eryone | Eryone Thinker Series V2 mainboard | Needs review | [config/printer-eryone-thinker-series-v2-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-thinker-series-v2-2020.cfg) |
 | FLSUN Q5 | FLSUN | FLSUN Q5 mainboard | Needs review | [config/printer-flsun-q5-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flsun-q5-2020.cfg) |
@@ -118,7 +122,7 @@ check them against your printer before powering on.
 | Wanhao Duplicator i3 Plus Mark II | Wanhao | Wanhao Duplicator i3 Plus Mark II mainboard | Needs review | [config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg) |
 | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select | Wanhao | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select mainboard | Needs review | [config/printer-wanhao-duplicator-i3-v2.1-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-v2.1-2017.cfg) |
 
-110 printers.
+114 printers.
 
 # Not supported yet
 
@@ -130,3 +134,16 @@ Klipper reference configs that are not in the configurator yet, and why.
 | printer-flashforge-creator-pro-2018.cfg | two extruders (not supported yet) |
 | printer-lulzbot-taz6-dual-v3-2017.cfg | two extruders (not supported yet) |
 | printer-modix-big60-2020.cfg | two extruders (not supported yet) |
+
+# Printers running their maker's own Klipper
+
+These ship with a modified Klipper from the maker. They are not in the configurator yet; the reason is given for each.
+
+| Printers | Why not yet |
+|---|---|
+| Creality K1 / K1C / K1 Max, Ender 3 V3 KE, CR-10 SE, K2, Hi | Creality's boards run Creality's own Klipper fork (firmware built for GD32F303 chips with Creality-only code, and a strain-gauge probe module, prtouch, that standard Klipper does not have). A standard-Klipper config would not run on them. Sources: CrealityOfficial/*_Klipper on GitHub. |
+| Qidi X-Plus 3, X-Max 3, Q1 Pro, Plus4 | Qidi publishes printer configs for the Q1 Pro and Plus4 (with Qidi-only modules such as qdprobe) but not the boards' firmware settings, so the firmware notes could not be sourced. Pending. |
+| Sovol SV07 / SV07 Plus | Sovol's published configs are standard Klipper, but no Sovol source names the mainboard's chip or firmware settings. Pending a source. |
+| Sovol SV08 Max | Sovol publishes everything needed (two boards, an eddy probe on the toolhead board). Needs hand-curating like the SV08. Pending. |
+| FlashForge Adventurer 5M / 5M Pro | FlashForge's repo (FlashForge/AD5M_Series_Klipper) has firmware source but no printer config. Pending a source. |
+| Anycubic Kobra 2 / 3 | Anycubic publishes firmware sources for these (ANYCUBIC-3D/Kobra2, Kobra3, Klipper-go), not standard Klipper printer configs. Pending a source. |

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-eryone-thinker-series-v2-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-eryone-thinker-series-v2-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: eryone-thinker-v2
 name: Eryone Thinker Series V2

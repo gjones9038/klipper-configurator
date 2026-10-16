@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-sovol-sv01-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-sovol-sv01-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: sovol-sv01-board
 name: Sovol SV01 mainboard

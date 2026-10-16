@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-ender6-2020.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-ender6-2020.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: creality-ender6-board
 name: Creality Ender 6 mainboard

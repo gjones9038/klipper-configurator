@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-wanhao-duplicator-i3-mini-2017.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-wanhao-duplicator-i3-mini-2017.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: wanhao-duplicator-i3-mini-board
 name: Wanhao Duplicator i3 Mini mainboard

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-anet-e16-2019.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-anet-e16-2019.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: anet-e16-board
 name: Anet E16 mainboard

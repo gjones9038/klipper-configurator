@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-creality-ender5-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-creality-ender5-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: creality-ender5-melzi
 name: Creality Ender 5 (original 8-bit board)

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-longer-lk4x-2022.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-longer-lk4x-2022.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: longer-lk4x-board
 name: Longer LK4 X mainboard

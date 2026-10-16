@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-biqu-b1-se-plus-2022.cfg by tools/import_klipper_printer.py.
+# Imported from https://github.com/Klipper3d/klipper config/printer-biqu-b1-se-plus-2022.cfg by tools/import_klipper_printer.py.
 schema: mainboard/1
 id: biqu-b1-se-plus-board
 name: BIQU B1 SE Plus mainboard

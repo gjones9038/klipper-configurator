@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: wanhao-duplicator-i3-plus-mk2
 name: Wanhao Duplicator i3 Plus Mark II

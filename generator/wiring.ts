@@ -191,7 +191,7 @@ export function slicerMarkdown(p: Plan): string {
 export function firmwareMarkdown(p: Plan): string {
   const b = p.build.mainboard;
   const boot = b.bootloaderKib ?? p.mcu.bootloader_kib;
-  const iface = b.connection === 'usb-serial' ? (p.board.firmware?.interface ?? 'Serial (see the board manual for the USART)')
+  const iface = ['usb-serial', 'serial'].includes(b.connection) ? (p.board.firmware?.interface ?? 'Serial (see the board manual for the USART)')
     : b.connection === 'usb' ? 'USB (on PA11/PA12)'
     : b.connection === 'usb-can-bridge' ? `USB to CAN bus bridge (USB on PA11/PA12), CAN bus on ${p.board.can_pins ?? 'the board CAN pins (see manual)'}`
     : `CAN bus (on ${p.board.can_pins ?? 'the board CAN pins'})`;

@@ -1,4 +1,4 @@
-# Imported from Klipper's config/printer-longer-lk4-pro-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
+# Imported from https://github.com/Klipper3d/klipper config/printer-longer-lk4-pro-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
 schema: printer/1
 id: longer-lk4-pro
 name: Longer LK4 Pro

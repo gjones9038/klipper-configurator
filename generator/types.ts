@@ -2,7 +2,9 @@
 // in data/. Optional fields fall back to printer/toolhead defaults.
 
 export type Interface = 'uart' | 'spi' | 'standalone';
-export type Connection = 'usb' | 'can' | 'usb-can-bridge' | 'usb-serial';   // usb-serial: USB through an on-board CH340-type chip
+// usb-serial: USB through an on-board CH340-type chip; serial: wired straight to the printer's own
+// computer's UART (Elegoo Neptune 4: /dev/ttyS0).
+export type Connection = 'usb' | 'can' | 'usb-can-bridge' | 'usb-serial' | 'serial';
 
 export interface DriverChoice {
   module: string;            // drivers.yaml modules[].id, e.g. "btt-tmc2209"
