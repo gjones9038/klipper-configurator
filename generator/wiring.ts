@@ -89,7 +89,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     if (sensorless.length) j.push(`DIAG jumper ON under ${sensorless.join(', ')} (sensorless homing).`);
     const diagRemove = new Set<string>();
     for (const s of p.steppers) {
-      if (s.endstop && typeof s.endstop === 'object') {
+      if (s.endstop && typeof s.endstop === 'object' && s.endstop.board === 'mainboard') {
         const port = s.endstop.port;
         const ep = (p.board.endstops ?? []).find((e: any) => e.id === port);
         if (ep?.diag_of) diagRemove.add(ep.diag_of);

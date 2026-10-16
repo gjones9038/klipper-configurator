@@ -64,7 +64,15 @@ fans:
 - {id: FAN2, pin: PA7, typical_use: controller}
 probe_ports:
 - {id: PROBE, pin: PH2, modifier: ''}
+setup_sections:
+- section: output_pin motor_power
+  why: keeps part of the printer powered or enabled (Klipper's config)
+  klipper: {pin: PI11, value: '1'}
+- section: output_pin screen
+  why: keeps part of the printer powered or enabled (Klipper's config)
+  klipper: {pin: PB5, value: '1'}
 notes: []
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin beeper], [neopixel led], [neopixel knob].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
     source does not state it.]

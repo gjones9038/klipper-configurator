@@ -17,7 +17,7 @@ sizes:
   position_max: {x: 250, y: 235, z: 250}
 steppers:
 - {klipper: stepper_x, role: X, rotation_distance: 40}
-- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true, run_current: 0.7}
 - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
 variants:
 - id: standard

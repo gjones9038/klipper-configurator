@@ -48,8 +48,19 @@ thermistors:
 - {id: TB, pin: PK2, typical_use: bed}
 fans: []
 probe_ports: []
-notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
-    homing (homing without switches) isn''t possible.']
+setup_sections:
+- section: output_pin stepper_xy_current
+  why: sets the motor current
+  klipper: {pin: PL5, pwm: 'True', scale: '2.0', cycle_time: '.000030', hardware_pwm: 'True', value: '1.3'}
+- section: output_pin stepper_z_current
+  why: sets the motor current
+  klipper: {pin: PL4, pwm: 'True', scale: '2.0', cycle_time: '.000030', hardware_pwm: 'True', value: '1.3'}
+- section: output_pin stepper_e_current
+  why: sets the motor current
+  klipper: {pin: PL3, pwm: 'True', scale: '2.0', cycle_time: '.000030', hardware_pwm: 'True', value: '1.25'}
+notes: ['Klipper sets this board''s motor current with its own current settings (copied from Klipper''s config), not the usual
+    driver settings. Sensorless homing (homing without switches) isn''t possible.']
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin case_light].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
 sources:

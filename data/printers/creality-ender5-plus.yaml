@@ -54,6 +54,8 @@ stock:
   probe: bltouch
   probe_offsets:
     bltouch: {x: -45, y: 0}
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: creality-ender5-plus-extruder

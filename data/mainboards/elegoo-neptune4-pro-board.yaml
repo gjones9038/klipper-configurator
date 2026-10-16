@@ -56,7 +56,10 @@ fans:
   klipper: {heater: 'extruder, heater_bed, heater_bed_outer', fan_speed: 1, idle_speed: 0.5, idle_timeout: 43200}
 probe_ports:
 - {id: PROBE, pin: PA11, modifier: ^}
+filament_sensor_ports:
+- {id: FIL, pin: PA12}
 notes: []
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin Frame_Light], [output_pin Part_Light].']
 unverified: [Only one source (the community OpenNept4une project's config (not Elegoo's own)). Check the pins against your
     board before powering on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is
     Klipper's default; the source does not state it.]

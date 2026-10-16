@@ -53,6 +53,8 @@ stock:
   probe: bltouch
   probe_offsets:
     bltouch: {x: -32.5, y: -40.6}
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: creality-cr10-smart-pro-extruder

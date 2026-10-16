@@ -132,8 +132,7 @@
  "creality-cr30-2021": {
   "id": "creality-cr30",
   "name": "Creality CR-30 PrintMill",
-  "maker": "Creality",
-  "skip": "belt printer (endless Z belt; not supported yet)"
+  "maker": "Creality"
  },
  "creality-cr5pro-ht-2022": {
   "id": "creality-cr5-pro-ht",
@@ -576,5 +575,23 @@
   "notes": [
    "This config is for standard Klipper, as installed by OpenNept4une. Elegoo's stock software runs its own Klipper and does not use it."
   ]
+ },
+ "flashforge-creator-pro-2018": {
+  "id": "flashforge-creator-pro",
+  "name": "FlashForge Creator Pro (2018)",
+  "maker": "FlashForge",
+  "mcu": {
+   "flash": "avrdude -c stk500v2 -p m2560 -P /dev/serial/by-id/usb-MakerBot_Industries_The_Replicator_557373136313514061A2-if00 -b 57600 -D -U out/klipper.elf.hex (Klipper's config; use your printer's own /dev/serial/by-id name)"
+  }
+ },
+ "lulzbot-taz6-dual-v3-2017": {
+  "id": "lulzbot-taz6-dual-v3",
+  "name": "LulzBot TAZ 6 (Dual Extruder v3)",
+  "maker": "LulzBot"
+ },
+ "modix-big60-2020": {
+  "id": "modix-big60",
+  "name": "Modix Big60 (Duet 2 WiFi)",
+  "maker": "Modix"
  }
 }

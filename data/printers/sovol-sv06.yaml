@@ -10,7 +10,6 @@ kinematics: cartesian
 z_leveling: null                 # two Z leadscrews on one driver; no automatic tilt correction
 bed_heater: dc
 hotend_fan: always_on
-display: not_generated           # the 12864 LCD works in Klipper ([display] st7920); not generated yet
 
 sizes:
   - id: stock
@@ -78,6 +77,7 @@ stock:
   homing_xy: sensorless
   homing_z: probe_virtual_endstop
   fans: [part_cooling]
+  display: {lcd_type: st7920, cs_pin: PB12, sclk_pin: PB13, sid_pin: PB15, encoder_pins: '^PB14, ^PB10', click_pin: ^!PB2}
 
 notes:
 - "X and Y home without switches (sensorless), and the built-in probe finds the Z zero point."

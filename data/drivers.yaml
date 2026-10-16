@@ -63,6 +63,7 @@ chips:
   tmc2660:
     klipper_section: tmc2660
     interfaces: [spi]
+    no_options: [interpolate, stealthchop_threshold]   # tmc2660.py has neither (no stealthChop)
     sense_resistor_default: null       # required by Klipper
     klipper_max_run_current_a: 2.4
     sensorless: null

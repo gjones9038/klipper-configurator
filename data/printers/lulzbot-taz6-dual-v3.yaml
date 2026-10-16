@@ -1,0 +1,110 @@
+# Imported from https://github.com/Klipper3d/klipper config/printer-lulzbot-taz6-dual-v3-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: lulzbot-taz6-dual-v3
+name: LulzBot TAZ 6 (Dual Extruder v3)
+manufacturer: LulzBot
+status: needs-review
+docs:
+- {title: 'Klipper: LulzBot TAZ 6 (Dual Extruder v3) reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-taz6-dual-v3-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-dual-v3-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [295, 306]
+  position_max: {x: 295, y: 306, z: 270}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 32}
+- {klipper: stepper_y, role: Y, rotation_distance: 32, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 2}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 2, max_z_accel: 10}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -20, position_min: -20, homing_speed: 50}
+    y: {endstop_at_max: true, homing_positive_dir: true, position_min: -17, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 5, position_min: -5.8, homing_speed: 10, second_homing_speed: 1, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 162, pid_ki: 17, pid_kd: 378}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [lulzbot-taz6-dual-v3-board]
+  toolhead: null
+  extruder: lulzbot-taz6-dual-v3-extruder
+  hotend: lulzbot-taz6-dual-v3-hotend
+  thermistors: {hotend: semitec-104gt2, bed: honeywell-135-104lag}
+  probe_options: [lulzbot-taz6-dual-v3-probe]
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling, hotend]
+  probe: lulzbot-taz6-dual-v3-probe
+  display: {lcd_type: st7920, cs_pin: PG4, sclk_pin: PJ2, sid_pin: PG3, encoder_pins: '^PJ6, ^PJ5', click_pin: ^!PE2, menu_timeout: 5}
+  extra_extruders:
+  - name: extruder1
+    klipper: {step_pin: PC3, dir_pin: PL6, enable_pin: '!PA4', microsteps: '16', rotation_distance: '4.211', nozzle_diameter: '0.500',
+      filament_diameter: '2.850', heater_pin: PH6, sensor_type: ATC Semitec 104GT-2, sensor_pin: PF0, control: pid, pid_kp: '47.45',
+      pid_ki: '4.83', pid_kd: '116.63', min_temp: '0', max_temp: '300', min_extrude_temp: '120'}
+stock_parts:
+  extruders:
+  - id: lulzbot-taz6-dual-v3-extruder
+    name: LulzBot TAZ 6 (Dual Extruder v3) stock extruder
+    drive: unknown
+    rotation_distance: 4.211
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [lulzbot-taz6-dual-v3]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-dual-v3-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+    filament_diameter: 2.85
+  hotends:
+  - id: lulzbot-taz6-dual-v3-hotend
+    name: LulzBot TAZ 6 (Dual Extruder v3) stock hotend
+    maker: LulzBot
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [lulzbot-taz6-dual-v3]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-dual-v3-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 300'}
+    nozzle_diameter: 0.5
+    pid_seed: {pid_kp: 47.45, pid_ki: 4.83, pid_kd: 116.63}
+  probes:
+  - id: lulzbot-taz6-dual-v3-probe
+    name: LulzBot TAZ 6 (Dual Extruder v3) built-in probe
+    kind: integrated
+    applies_to: [lulzbot-taz6-dual-v3]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, speed: 1, samples: 2, samples_tolerance: 0.1}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-dual-v3-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock board''s motor current comes from Klipper''s config for this printer, so the motor current
+    settings here don''t apply, and sensorless homing isn''t possible.', 'This printer has 2 nozzles. T0 and T1 switch between
+    them; print start heats the first nozzle, and your slicer heats the other when the print uses it. Klipper''s config doesn''t
+    give the distance between the nozzles: measure it and add it to the T1 macro, or set it in your slicer.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-dual-v3-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

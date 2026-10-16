@@ -89,6 +89,7 @@ stock:
   homing_xy: sensorless
   homing_z: probe_virtual_endstop
   fans: [part_cooling, hotend, exhaust]
+  filament_sensors: [{port: FIL, klipper: {event_delay: 3.0, pause_delay: 0.5}}]   # Sovol printer.cfg
 
 notes:
 - "Sovol's version of the Voron 2.4, with its own mainboard and toolhead board."

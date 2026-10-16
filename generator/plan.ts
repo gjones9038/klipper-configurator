@@ -113,7 +113,7 @@ export interface Plan {
   extruder: Rec;
   hotend: Rec;
   hotendHeater: PortUse;
-  hotendSensor: PortUse & { pullup: number };
+  hotendSensor: PortUse & { pullup: number; amp?: Rec };
   bedHeater?: PortUse;                       // undefined when the printer has no heated bed
   bedSensor?: PortUse & { pullup: number };
   chamberSensor?: PortUse & { pullup?: number };
@@ -152,9 +152,11 @@ export function bedGeometry(p: { printer: Rec; size: Rec }) {
     };
   }
   const [bx, by] = p.size.bed_mm;
+  // origin: the bed's front-left corner when it isn't 0,0 (Creator Pro: the bed is centred on 0,0).
+  const [ox, oy] = p.size.origin ?? [0, 0];
   return {
-    delta: false, radius: 0, center: [bx / 2, by / 2] as [number, number], front: [bx / 2, 20] as [number, number],
-    purge: { x0: 20, x1: 100, x2: 110, y: 5 }, park: [bx / 2, by - 10] as [number, number],
+    delta: false, radius: 0, center: [ox + bx / 2, oy + by / 2] as [number, number], front: [ox + bx / 2, oy + 20] as [number, number],
+    purge: { x0: ox + 20, x1: ox + 100, x2: ox + 110, y: oy + 5 }, park: [ox + bx / 2, oy + by - 10] as [number, number],
   };
 }
 
@@ -430,7 +432,7 @@ export function plan(build: Build, db: Db): Plan {
     }
     if (driver.standalone && driver.microsteps) microsteps = driver.microsteps;   // set by the board's MS pins
     const fullSteps = motor?.step_angle_deg === 0.9 ? 400 : 200;
-    const { current, note } = runCurrent(group, motor, driver, slot, extruder);
+    const { current, note } = runCurrent(group, motor, driver, slot, extruder, def.run_current);
     return {
       name: def.klipper, role: def.role, position: def.position, board: boardKind, slot: slot.id,
       step: qpin(boardKind, slot.step_pin, '', tool.mcu),
@@ -461,6 +463,7 @@ export function plan(build: Build, db: Db): Plan {
         const spi = slot.spi_bus ? { bus: slot.spi_bus } : slot.spi_software ? { software: slot.spi_software } : boardKind === 'toolboard' ? undefined : board.tmc_spi;
         if (!spi) err('no_tmc_spi', `The data for this ${boardKind === 'toolboard' ? 'toolhead board' : 'board'} is missing how its ${od.chip.toUpperCase()} driver connects, so it can't be used yet.`);
         Object.assign(pins, spiPins(spi, boardKind, mcuName));
+        if (slot.spi_speed) pins.spi_speed = String(slot.spi_speed);   // board config's SPI clock (Duet 2 TMC2660s: 2 MHz)
       }
       return {
         chip: od.chip, section: od.klipper_section ?? chips[od.chip].klipper_section, iface, pins,
@@ -525,7 +528,7 @@ export function plan(build: Build, db: Db): Plan {
     return qpin(boardKind, slot.diag_pin, mods);
   }
 
-  function runCurrent(group: 'xy' | 'z' | 'extruder', motor: Rec | undefined, driver: DriverPlan, slot: Rec, extruder: Rec) {
+  function runCurrent(group: 'xy' | 'z' | 'extruder', motor: Rec | undefined, driver: DriverPlan, slot: Rec, extruder: Rec, own?: number) {
     // Published reference values first (extruder maker, Z drive maker, Voron),
     // never above the policy ceiling: fraction_of_rated x motor rating and the
     // driver/slot limits. The ceiling is shown so users know their headroom.
@@ -546,6 +549,8 @@ export function plan(build: Build, db: Db): Plan {
     let ref: number, refWhy: string;
     if (group === 'extruder' && extruder.run_current) [ref, refWhy] = [extruder.run_current, `Recommended for the ${extruder.name}`];
     else if (group === 'extruder') [ref, refWhy] = [printer.defaults.extruder.run_current, `Starting value for the ${printer.name}`];
+    // A printer config that gives this motor its own current (Eryone ER20: Y 0.7 A, X 0.6 A).
+    else if (own && !(group === 'z' && zDrive?.run_current)) [ref, refWhy] = [own, `Starting value for the ${printer.name}`];
     else if (group === 'z' && zDrive?.run_current) [ref, refWhy] = [zDrive.run_current, `Recommended for the ${zDrive.id} Z drive`];
     else if (group === 'z') [ref, refWhy] = [printer.defaults.stepper_z.run_current, `Starting value for the ${printer.name}`];
     else [ref, refWhy] = [printer.defaults.stepper_xy.run_current, `Starting value for the ${printer.name}`];
@@ -559,6 +564,12 @@ export function plan(build: Build, db: Db): Plan {
   // Endstop headers that share a pin with a DIAG line in use for sensorless homing.
   const sensorlessSlots = new Set<string>();
   const pickEndstop = (stepper: StepperPlan, axis: string) => {
+    // A stock toolhead board can carry an axis switch (Sovol SV08 Max: X on the toolhead).
+    const tbEp = !build.toolchanger ? (toolboard?.endstops ?? []).find((e: Rec) => e.axis === axis && !usedEndstops.has(`toolboard:${e.id}`)) : undefined;
+    if (tbEp) {
+      usedEndstops.add(`toolboard:${tbEp.id}`);
+      return { port: tbEp.id, pin: qpin('toolboard', tbEp.pin, tbEp.modifier ?? '^'), board: 'toolboard' as BoardKind };
+    }
     const eps: Rec[] = (board.endstops ?? []).filter((e: Rec) => !(e.diag_of && sensorlessSlots.has(e.diag_of)));
     const ep = eps.find((e) => e.diag_of === stepper.slot && !usedEndstops.has(e.id))
       ?? eps.find((e) => e.id.toUpperCase().startsWith(axis) && !usedEndstops.has(e.id))
@@ -598,10 +609,15 @@ export function plan(build: Build, db: Db): Plan {
   const zs = byName('stepper_z');
   if (!zs) {
     // delta: towers handled above
+  } else if (!!printer.belt !== (build.homing.z === 'belt')) {
+    err('belt_homing', printer.belt
+      ? `The ${printer.name} is a belt printer: choose "Belt (no Z homing)" for Z on the Homing step.`
+      : 'Belt homing is only for belt printers. Choose another Z homing method (Homing step).');
   } else if (build.homing.z === 'probe_virtual_endstop') {
     zs.endstop = 'probe';
   } else {
-    zs.endstop = pickEndstop(zs, 'Z');
+    zs.endstop = pickEndstop(zs, 'Z');   // a belt printer's stepper_z still needs one (Klipper requires endstop_pin)
+    if (printer.belt && homingXY === 'sensorless') err('belt_sensorless', 'Sensorless X/Y homing is not set up for belt printers here; use the endstop switches (Homing step).');
     if (build.homing.z === 'nozzle_switch' && !build.homing.zSwitchXY) {
       err('no_z_switch_xy', 'Enter the Z switch position on the Homing step. Homing at a guessed position could drive the nozzle into the bed.');
     }
@@ -621,7 +637,9 @@ export function plan(build: Build, db: Db): Plan {
   if (!thermBed && heatedBed) throw new PlanError('unknown_thermistor', `Unknown bed thermistor "${build.thermistors.bed}"`);
   for (const t of heatedBed ? [thermHotend, thermBed] : [thermHotend]) {
     if (t.custom_definition_required && !t.definition) err('custom_thermistor', `${t.label} needs a custom [thermistor] definition, which the data does not have yet.`);
-    if (t.needs) err('thermistor_hw', `${t.label} needs extra hardware (${t.needs.join('; ')}), which the generator does not configure yet.`);
+    // An SPI chip the board already has (and the board data wires up) is fine: FlashForge Creator Pro MAX6675.
+    const amp = (board.thermistors ?? []).some((x: Rec) => x.amp?.chip === t.sensor_type);
+    if (t.needs && !amp) err('thermistor_hw', `${t.label} needs extra hardware (${t.needs.join('; ')}), which the generator does not configure yet.`);
   }
   const mbHeaters: Rec[] = board.heaters;
   const mbTherms: Rec[] = board.thermistors;
@@ -629,7 +647,7 @@ export function plan(build: Build, db: Db): Plan {
   const isBedTherm = (t: Rec) => t.typical_use === 'bed' || ['TB', 'THB'].includes(t.id);
   const bedThermRec = heatedBed ? pick(mbTherms, isBedTherm) ?? mbTherms[1] : undefined;
   const usedTherm = new Set<string>(bedThermRec ? [bedThermRec.id] : []);
-  let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number };
+  let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number; amp?: Rec };
   if (toolboard) {
     const h = toolboard.heaters[0];
     const t = pick(toolboard.thermistors, (x) => x.typical_use === 'hotend')!;
@@ -642,7 +660,8 @@ export function plan(build: Build, db: Db): Plan {
     hotendHeater = h.pins
       ? { board: 'mainboard', port: h.id, pin: 'multi_pin:hotend_heater', multi: { name: 'hotend_heater', pins: h.pins.map((x: string) => qpin('mainboard', x)) }, maxPower: h.max_power }
       : { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
-    hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700 };
+    hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700,
+      ...(t.amp?.chip === thermHotend.sensor_type ? { amp: t.amp.klipper } : {}) };
   }
   let chamberSensor: (PortUse & { pullup?: number }) | undefined;
   let thermChamber: Rec | undefined;
@@ -725,6 +744,9 @@ export function plan(build: Build, db: Db): Plan {
   if (!fans.some((f) => f.role === 'hotend') && !printer.hotend_fan) err('no_hotend_fan', 'Add a hotend fan (Fans step). Without it, heat creeps up the hotend and jams the filament.');
 
   // --- probe ---------------------------------------------------------------
+  if (size.origin && (build.probe || build.homing.z === 'probe_virtual_endstop')) {
+    err('bed_origin_probe', `The ${printer.name}'s bed is centred on 0,0, and probe and bed mesh positions are not worked out for that yet. Leave the probe out (Probe step).`);
+  }
   let probe: Plan['probe'];
   let bltouch: Plan['bltouch'];
   const extraMcus: McuInfo[] = [];
@@ -833,7 +855,7 @@ export function plan(build: Build, db: Db): Plan {
   }
   const flow = db.flowClasses[hotend.flow_class]?.pa_offset ?? 0;
   const paBaseline = r2((extruder.pa_baseline?.start ?? 0.04) + flow);
-  if ((build.nozzleDiameter ?? 0.4) !== 0.4) warn('pa_nozzle', 'The starting pressure advance value assumes a 0.4 mm nozzle; tune it for yours (TUNE_PA).');
+  if ((build.nozzleDiameter ?? hotend.nozzle_diameter ?? 0.4) !== 0.4) warn('pa_nozzle', 'The starting pressure advance value assumes a 0.4 mm nozzle; tune it for yours (TUNE_PA).');
 
   // --- toolchanger: one ToolPlan per tool ---------------------------------
   let tools: ToolPlan[] | undefined;

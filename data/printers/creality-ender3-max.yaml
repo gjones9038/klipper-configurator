@@ -52,6 +52,8 @@ stock:
   homing_z: physical_min
   fans: [part_cooling]
   display: {lcd_type: st7920, cs_pin: PB12, sclk_pin: PB13, sid_pin: PB15, encoder_pins: '^PB14, ^PB10', click_pin: ^!PB2}
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: creality-ender3-max-extruder

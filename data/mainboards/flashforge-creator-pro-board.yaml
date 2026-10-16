@@ -1,0 +1,81 @@
+# Imported from https://github.com/Klipper3d/klipper config/printer-flashforge-creator-pro-2018.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: flashforge-creator-pro-board
+name: FlashForge Creator Pro (2018) mainboard
+manufacturer: FlashForge
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega2560, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+usb_serial: {chip: USB-serial, serial_path: /dev/serial/by-id/usb-MakerBot_Industries_The_Replicator_557373136313514061A2-if00}
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)', flash: avrdude -c stk500v2 -p m2560 -P /dev/serial/by-id/usb-MakerBot_Industries_The_Replicator_557373136313514061A2-if00
+    -b 57600 -D -U out/klipper.elf.hex (Klipper's config; use your printer's own /dev/serial/by-id name)}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PF1
+  dir_pin: PF0
+  enable_pin: '!PF2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PF5
+  dir_pin: PF4
+  enable_pin: '!PF6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PK1
+  dir_pin: PK0
+  enable_pin: '!PK2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PA3
+  dir_pin: PA2
+  enable_pin: '!PA4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PL1, modifier: ^!}
+- {id: Y-STOP, pin: PL3, modifier: ^!}
+- {id: Z-STOP, pin: PL6, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PH3, role: hotend}
+- {id: BED, pin: PL4, role: bed}
+thermistors:
+- id: TH0
+  pin: PE3
+  typical_use: hotend
+  amp:
+    chip: MAX6675
+    klipper: {spi_software_miso_pin: PE5, spi_software_sclk_pin: PE2, spi_software_mosi_pin: PA1}
+- {id: TB, pin: PK7, typical_use: bed}
+fans:
+- {id: FAN0, pin: PH4, typical_use: hotend}
+- {id: FAN1, pin: PL5, typical_use: part_cooling}
+probe_ports: []
+setup_sections:
+- section: mcp4018 x_axis_pot
+  why: sets the motor current
+  klipper: {i2c_software_scl_pin: PJ5, i2c_software_sda_pin: PF3, wiper: '118', scale: '127'}
+- section: mcp4018 y_axis_pot
+  why: sets the motor current
+  klipper: {i2c_software_scl_pin: PJ5, i2c_software_sda_pin: PF7, wiper: '118', scale: '127'}
+- section: mcp4018 z_axis_pot
+  why: sets the motor current
+  klipper: {i2c_software_scl_pin: PJ5, i2c_software_sda_pin: PK3, wiper: '40', scale: '127'}
+- section: mcp4018 a_axis_pot
+  why: sets the motor current
+  klipper: {i2c_software_scl_pin: PJ5, i2c_software_sda_pin: PA5, wiper: '118', scale: '127'}
+- section: mcp4018 b_axis_pot
+  why: sets the motor current
+  klipper: {i2c_software_scl_pin: PJ5, i2c_software_sda_pin: PJ6, wiper: '118', scale: '127'}
+notes: ['Klipper sets this board''s motor current with its own current settings (copied from Klipper''s config), not the usual
+    driver settings. Sensorless homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-flashforge-creator-pro-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

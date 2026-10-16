@@ -82,7 +82,11 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
   // sensorless homing uses homing_override, which also excludes it.
   // A Z endstop switch (bed-slingers) homes anywhere: no safe_z_home needed.
-  if (!dg && !sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max'].includes(b.homing.z)) {
+  if (p.printer.belt && b.homing.z === 'belt') {
+    pc.add(new Section('homing_override', 'belt printer: the belt (Z) has no end, so homing sets Z to 0 (printer config)')
+      .set('axes', 'z').set('set_position_z', 0).set('gcode', p.printer.belt.homing_gcode));
+  }
+  if (!dg && !sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max', 'belt'].includes(b.homing.z)) {
     // Probe homing: put the probe (not the nozzle) over the bed centre, within travel.
     const off = p.probe?.offset ?? { x: 0, y: 0 };
     const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
@@ -165,13 +169,20 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // AVR chips have no internal temperature sensor (Klipper: no ADC_TEMPERATURE pin).
   // Some MCUs have no internal temperature sensor in Klipper (AVR, HC32F460: no ADC_TEMPERATURE pin).
   if (p.mcu.arch !== 'avr' && !['hc32f460'].includes(p.mcu.build_as ?? p.mcu.chip)) mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
+  // Board setup copied from the maker / Klipper config: motor-current chips, microstep pins, power enables.
+  for (const ss of p.board.setup_sections ?? []) {
+    const s = new Section(ss.section, ss.why);
+    for (const [k, v] of Object.entries(ss.klipper)) s.set(k, v as string | number);
+    mb.add(s);
+  }
   // Thermistors Klipper does not know: their table, defined once before any heater uses it.
   const custom = new Map<string, Rec>();
   for (const t of [p.thermistor.hotend, p.thermistor.bed, p.thermistor.chamber, ...(p.tools ?? []).map((x) => x.thermistor)]) {
     if (t?.definition) custom.set(t.sensor_type, t);
   }
   for (const [name, t] of custom) {
-    const s = new Section(`thermistor ${name}`, t.label);
+    // adc_temperature: a resistance table that is not an NTC thermistor curve (Sovol SV08 Max hotend).
+    const s = new Section(`${t.definition_kind ?? 'thermistor'} ${name}`, t.label);
     for (const [k, v] of Object.entries(t.definition)) s.set(k, v as number);
     mb.add(s);
   }
@@ -224,6 +235,17 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     for (const [k, v] of Object.entries(x.klipper)) s.set(k, v as any);
     mb.add(s);
   }
+  // A dual-nozzle printer's other extruders (TAZ 6 Dual), copied from its config, with its stock board.
+  for (const x of extraExtruders(p)) {
+    const s = new Section(x.name, `second nozzle (${p.printer.name} config)`);
+    for (const [k, v] of Object.entries(x.klipper)) s.set(k, v as any);
+    mb.add(s);
+    if (x.tmc) {
+      const t = new Section(x.tmc.section);
+      for (const [k, v] of Object.entries(x.tmc.klipper)) t.set(k, v as any);
+      mb.add(t);
+    }
+  }
   if (p.chamberSensor && p.thermistor.chamber) {
     const c = new Section('temperature_sensor chamber')
       .set('sensor_type', p.thermistor.chamber.sensor_type).set('sensor_pin', p.chamberSensor.pin);
@@ -233,7 +255,18 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
 
   for (const f of p.fans) {
     if (f.multi) fileFor(f.board).add(new Section(`multi_pin ${f.multi.name}`, `${f.port}: one fan output on several pins`).set('pins', f.multi.pins.join(', ')));
-    fileFor(f.board).add(fanSection(f));
+    const fs = fanSection(f);
+    // One hotend fan on a dual-nozzle printer cools both nozzles, so it follows both heaters.
+    if (f.role === 'hotend' && extraExtruders(p).length && !extraFans(p).length && p.fans.filter((x) => x.role === 'hotend').length === 1) {
+      fs.set('heater', ['extruder', ...extraExtruders(p).map((x) => x.name)].join(', '), 'runs while either nozzle is hot');
+    }
+    fileFor(f.board).add(fs);
+  }
+  // A second nozzle's own hotend fan (Creator Pro), with its stock board.
+  for (const x of extraFans(p)) {
+    const s = new Section(x.section, x.note ?? 'second nozzle hotend fan (printer config)');
+    for (const [k, v] of Object.entries(x.klipper)) s.set(k, v as any);
+    mb.add(s);
   }
 
   if (p.probe?.port) {
@@ -274,6 +307,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
         .set('spi_software_mosi_pin', `${TOOLHEAD_MCU}:${p.accel.spi_software.mosi_pin}`)
         .set('spi_software_miso_pin', `${TOOLHEAD_MCU}:${p.accel.spi_software.miso_pin}`);
     }
+    if (p.accel.axes_map) a.set('axes_map', p.accel.axes_map, 'how the chip is turned on the toolhead (maker config)');
     tb!.add(a);
   }
   if (p.leds && tb) {
@@ -306,6 +340,18 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     const s = new Section('display', `${p.printer.name} stock display`);
     for (const [k, v] of Object.entries(disp)) s.set(k, v as any);
     mb.add(s);
+  }
+  // The printer's own filament runout sensor(s), when its stock board is used: pause when filament runs out.
+  const fsens: Array<{ port: string; klipper?: Rec }> = p.printer.stock?.filament_sensors ?? [];
+  if (fsens.length && p.printer.stock.mainboards?.includes(b.mainboard.id) && b.filamentSensor !== false) {
+    fsens.forEach((fs, i) => {
+      const port = (p.board.filament_sensor_ports ?? []).find((x: Rec) => x.id === fs.port);
+      if (!port) return;
+      const s = new Section(`filament_switch_sensor filament_sensor${fsens.length > 1 ? `_${i}` : ''}`, `${p.printer.name} runout sensor (${port.id})`)
+        .set('switch_pin', `${port.modifier ?? ''}${port.pin}`).set('pause_on_runout', true, 'pauses the print when the filament runs out');
+      for (const [k, v] of Object.entries(fs.klipper ?? {})) s.set(k, v as any);
+      mb.add(s);
+    });
   }
 
   files['mainboard.cfg'] = mb.render();
@@ -348,7 +394,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
 
 export interface HotendParts {
   heater: PortUse;
-  sensor: PortUse & { pullup: number };
+  sensor: PortUse & { pullup: number; amp?: Rec };
   thermistor: Rec;
   hotend: Rec;
   extruder: Rec;
@@ -359,11 +405,13 @@ export interface HotendParts {
 // [extruder] holds both the stepper and the hotend heater keys.
 export function extruderSec(es: StepperPlan, p: Plan, db: Db, t: HotendParts, tuneHint = 'TUNE_PID_HOTEND'): Section {
   const sec = stepperSection(es, p);
-  sec.set('nozzle_diameter', p.build.nozzleDiameter ?? 0.4).set('filament_diameter', 1.75)
+  sec.set('nozzle_diameter', p.build.nozzleDiameter ?? t.hotend.nozzle_diameter ?? 0.4)
+    .set('filament_diameter', t.extruder.filament_diameter ?? 1.75, t.extruder.filament_diameter ? `${t.extruder.name}` : undefined)
     .set('heater_pin', t.heater.pin)
     .set('sensor_type', t.thermistor.sensor_type)
     .set('sensor_pin', t.sensor.pin);
-  if (t.sensor.pullup !== 4700) sec.set('pullup_resistor', t.sensor.pullup, 'board thermistor pull-up');
+  if (t.sensor.amp) for (const [k, v] of Object.entries(t.sensor.amp)) sec.set(k, v as any);   // SPI temperature chip wiring
+  else if (t.sensor.pullup !== 4700) sec.set('pullup_resistor', t.sensor.pullup, 'board thermistor pull-up');
   const hdef = db.hotendDefaults;
   sec.set('min_temp', hdef.min_temp).set('max_temp', t.maxTemp)
     .set('max_power', t.heater.maxPower ?? hdef.max_power, t.heater.maxPower ? 'board maker: keeps the heater short-circuit auto-recovery working' : undefined).set('min_extrude_temp', hdef.min_extrude_temp)
@@ -437,7 +485,8 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
     } else {
       const atMax = p.build.homing.z === 'physical_max';
       sec.set('endstop_pin', (s.endstop as any).pin, (s.endstop as any).port)
-        .set('position_endstop', atMax ? p.size.position_max.z : z.position_endstop, atMax ? 'switch at Z max: set it from a paper test after homing' : 'Z_ENDSTOP_CALIBRATE stores the real value');
+        .set('position_endstop', atMax ? p.size.position_max.z : z.position_endstop,
+          atMax ? 'switch at Z max: set it from a paper test after homing' : p.build.homing.z === 'belt' ? 'not used: homing_override sets Z to 0 on the belt' : 'Z_ENDSTOP_CALIBRATE stores the real value');
     }
     sec.set('position_max', p.toolchanger?.zMax ?? p.size.position_max.z, p.toolchanger?.zMax !== undefined ? 'reaches the tool docks' : undefined).set('position_min', z.position_min)
       .set('homing_speed', z.homing_speed).set('second_homing_speed', z.second_homing_speed)
@@ -455,8 +504,9 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
   else if (d.sense) sec.set('sense_resistor', d.sense);
   sec.set('run_current', s.runCurrent, s.currentNote);
   const auto = !!p.build.autotune;
-  sec.set('interpolate', auto ? true : p.printer.defaults.tmc.interpolate, auto ? 'klipper_tmc_autotune recommends interpolation' : undefined);
-  if (!auto) sec.set('stealthchop_threshold', p.printer.defaults.tmc.stealthchop_threshold);
+  const no = new Set<string>(db.drivers.chips[d.chip]?.no_options ?? []);
+  if (!no.has('interpolate')) sec.set('interpolate', auto ? true : p.printer.defaults.tmc.interpolate, auto ? 'klipper_tmc_autotune recommends interpolation' : undefined);
+  if (!auto && !no.has('stealthchop_threshold')) sec.set('stealthchop_threshold', p.printer.defaults.tmc.stealthchop_threshold);
   if (s.endstop === 'virtual' && d.diag) {
     sec.set(d.diag.key, d.diag.pin, d.onboard ? 'sensorless homing' : 'sensorless homing; DIAG jumper on for stepsticks');
     if (!auto) {
@@ -473,6 +523,16 @@ export function tmcSection(s: StepperPlan, p: Plan, db: Db): Section {
 export function extraHeaters(p: Plan): Array<{ name: string; note?: string; klipper: Rec }> {
   const st = p.printer.stock;
   return st?.extra_heaters && st.mainboards?.includes(p.build.mainboard.id) ? st.extra_heaters : [];
+}
+
+export function extraExtruders(p: Plan): Array<{ name: string; klipper: Rec; tmc?: { section: string; klipper: Rec } }> {
+  const st = p.printer.stock;
+  return st?.extra_extruders && st.mainboards?.includes(p.build.mainboard.id) ? st.extra_extruders : [];
+}
+
+export function extraFans(p: Plan): Array<{ section: string; note?: string; klipper: Rec }> {
+  const st = p.printer.stock;
+  return st?.extra_fans && st.mainboards?.includes(p.build.mainboard.id) ? st.extra_fans : [];
 }
 
 export function fanSection(f: FanPlan): Section {

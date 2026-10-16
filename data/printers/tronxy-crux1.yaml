@@ -55,6 +55,8 @@ stock:
   homing_xy: physical
   homing_z: physical_min
   fans: [controller, hotend, part_cooling]
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: tronxy-crux1-extruder

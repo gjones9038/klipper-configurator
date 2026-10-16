@@ -71,6 +71,8 @@ fans:
 - {id: FAN1, pin: PE11, typical_use: part_cooling, tachometer_pin: PE10}
 probe_ports:
 - {id: PROBE, pin: PA8, modifier: ''}
+filament_sensor_ports:
+- {id: FIL, pin: PB4, modifier: ^}
 notes: []
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the

@@ -68,7 +68,14 @@ fans:
 - {id: FAN2, pin: PB9, typical_use: part_cooling}
 probe_ports:
 - {id: PROBE, pin: PB6, modifier: '!'}
+filament_sensor_ports:
+- {id: FIL, pin: PC13, modifier: '!'}
+setup_sections:
+- section: output_pin probe_reset_pin
+  why: keeps part of the printer powered or enabled (Klipper's config)
+  klipper: {pin: PB7, value: '1'}
 notes: []
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin LED], [output_pin beeper].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
     source does not state it.]

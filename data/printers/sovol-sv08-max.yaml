@@ -1,0 +1,115 @@
+schema: printer/1
+id: sovol-sv08-max
+name: Sovol SV08 Max
+manufacturer: Sovol
+status: needs-review
+docs:
+  - {title: "Sovol SV08 Max source (configs, pin sheets)", url: "https://github.com/Sovol3d/SV08MAX"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+  - {title: "Klipper: eddy current probe setup and calibration", url: "https://www.klipper3d.org/Eddy_Probe.html"}
+kinematics: corexy
+z_leveling: quad_gantry_level
+bed_heater: unknown
+
+sizes:
+  - id: stock
+    bed_mm: [500, 500]
+    position_max: {x: 502, y: 505, z: 505}
+    quad_gantry_level:
+      gantry_corners: [[-70, -40], [550, 600]]
+      points: [[50, 30], [50, 470], [490, 470], [490, 30]]
+
+steppers:
+  - {klipper: stepper_x,  role: B,  rotation_distance: 40}
+  - {klipper: stepper_y,  role: A,  rotation_distance: 40}
+  - {klipper: stepper_z,  role: Z0, rotation_distance: 40, gear_ratio: "80:12"}
+  - {klipper: stepper_z1, role: Z1, rotation_distance: 40, gear_ratio: "80:12", dir_inverted: true}
+  - {klipper: stepper_z2, role: Z2, rotation_distance: 40, gear_ratio: "80:12"}
+  - {klipper: stepper_z3, role: Z3, rotation_distance: 40, gear_ratio: "80:12", dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 6, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 700
+    max_accel: 40000
+    max_z_velocity: 10
+    max_z_accel: 500
+    square_corner_velocity: 5.0
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 120
+    homing_retract_dist: 3
+    run_current: 3.0
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_min: -11, position_endstop: -11}
+    y: {endstop_at_max: true, homing_positive_dir: true, position_min: -1, position_endstop: 505}
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: -10
+    homing_speed: 10
+    second_homing_speed: 5
+    homing_retract_dist: 5
+    run_current: 1.2
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.8
+  bed:
+    max_power: 1.0
+    max_temp: 110
+    pid: {pid_kp: 73.571, pid_ki: 1.820, pid_kd: 783.849}
+  quad_gantry_level:
+    speed: 400
+    horizontal_move_z: 15
+    retries: 15
+    retry_tolerance: 0.1
+    max_adjust: 20
+  safe_z_home:
+    home_xy_position: user
+    speed: 150
+    z_hop: 5
+  idle_timeout: 1800
+
+stock:
+  mainboards: [sovol-sv08-max]
+  toolboard: sovol-sv08-max-toolhead
+  toolhead: null
+  extruder: sovol-sv08-max
+  hotend: sovol-sv08-max
+  thermistors: {hotend: sovol-sv08-max-hotend, bed: sovol-sv08-bed}
+  probe: sovol-sv08-max-eddy
+  probe_options: [sovol-sv08-max-eddy]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend, exhaust, controller]
+
+notes:
+- "Sovol's bigger Voron-style printer (500 x 500 mm bed), with its own mainboard and toolhead board linked by CAN bus."
+- "This makes a config for standard Klipper. Sovol's printer runs Sovol's own changed Klipper, and three of its features are not in standard Klipper: the automatic Z-offset tool, the fast probe scanning, and the filament buffer (the box that pushes filament to the toolhead)."
+- "Without the filament buffer's firmware, the buffer doesn't feed. Run the filament straight to the toolhead, or keep Sovol's firmware if you need the buffer."
+- "Before the first Z home, calibrate the eddy probe (Klipper's eddy probe guide). Then set the Z offset with PROBE_CALIBRATE."
+- "The extra part fan on the mainboard (K_FAN1) and the case light are not set up."
+checks:
+- "The X/Y motor current is 3.0 A, the value Sovol uses. Only change it if you change the motors."
+tech_notes:
+- "Sovol's homing_override calls M9928 (Sovol renames G28 to M9928); the standard homing here does the same moves: X to its switch at -11, Y to its switch at 505, then Z on the eddy probe."
+- "Sovol's config runs the Z drivers in stealthChop (threshold 999999); this uses spreadCycle everywhere."
+- "Sovol's fan3 (exhaust) and fan2 (auxiliary) are fan_generic driven by M106 P3 / P2. Here the exhaust is a heater_fan that follows the bed; fan2 is not generated."
+- "Sovol's bed_fan is a heater_fan on heater_bed at 35 C; here it is a controller_fan, which also runs while the bed heats."
+- "The filament buffer is a third CAN board ([mcu buffer_mcu], buffer_stepper.cfg) using Sovol's [buffer_stepper] module, which exists only in Sovol's Klipper fork."
+- "Sovol's bed_mesh is 60 x 60 points with scan_overshoot (Sovol fork); here the eddy defaults apply."
+unverified:
+  - "Bed size 500 x 500 is not stated in the repo (the manual there is scanned images); travel from Sovol's config is X -11..502, Y -1..505, Z up to 505."
+  - "Which Z motor sits in which corner is not stated by Sovol; stepper order and directions follow Sovol's config."
+  - "Whether the bed is mains (SSR) or 24 V is not stated in the sources."
+sources:
+  - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/printer.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b}
+  - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/Macro.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "G28 renamed to M9928; M106 fan mapping"}
+  - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/buffer_stepper.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "filament buffer on a third CAN MCU, Sovol's [buffer_stepper]"}

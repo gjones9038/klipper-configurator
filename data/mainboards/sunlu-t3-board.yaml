@@ -53,8 +53,13 @@ fans:
 - {id: FAN1, pin: PC6, typical_use: part_cooling}
 probe_ports: []
 bltouch: {sensor_pin: PC14, control_pin: PA1}
+setup_sections:
+- section: static_digital_output usb_pullup_enable
+  why: fixed board output from Klipper's config
+  klipper: {pins: '!PA14'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin beeper].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
     source does not state it.]

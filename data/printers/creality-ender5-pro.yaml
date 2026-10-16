@@ -10,7 +10,6 @@ kinematics: cartesian
 z_leveling: null                 # one Z leadscrew moving the bed; level it with its screws
 bed_heater: dc                   # 24 V bed driven by the board's HOTBED MOSFET
 hotend_fan: always_on            # wired to 24 V, not to a board fan output
-display: not_generated           # the 12864 LCD works in Klipper ([display] st7920); not generated yet
 
 sizes:
   - id: stock
@@ -73,6 +72,7 @@ stock:
   thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
   probe_options: [bltouch]
   fans: [part_cooling]
+  display: {lcd_type: st7920, cs_pin: PB12, sclk_pin: PB13, sid_pin: PB15, encoder_pins: '^PB14, ^PB10', click_pin: ^!PB2}
 
 notes:
 - "For the Ender 5 Pro with the 32-bit board. The 2019 Ender 5 with the older 8-bit board isn't covered."

@@ -2,7 +2,7 @@
 // what users already know from Voron/Klipper docs.
 import type { Plan } from './plan.ts';
 import { bedGeometry } from './plan.ts';
-import { extraHeaters } from './emit.ts';
+import { extraExtruders, extraHeaters } from './emit.ts';
 
 const hdr = (lines: string[]) => lines.map((l) => `# ${l}`).join('\n');
 const block = (s: string) => s.replace(/^\n/, '').replace(/\n\s*$/, '');
@@ -12,6 +12,41 @@ function levelCmd(p: Plan): string {
   return p.printer.z_leveling === 'quad_gantry_level' ? 'QUAD_GANTRY_LEVEL' : 'Z_TILT_ADJUST';
 }
 const hasProbe = (p: Plan) => !!(p.probe || p.bltouch);
+
+/** Macros the printer's own config ships that its hardware needs (CR-30 BED_EJECT), with the stock board. */
+function stockMacros(p: Plan): string {
+  const st = p.printer.stock;
+  if (!st?.macros || !st.mainboards?.includes(p.build.mainboard.id)) return '';
+  return Object.entries(st.macros as Record<string, { description: string; gcode: string }>).map(([name, m]) => `${block(`
+[gcode_macro ${name}]
+description: ${m.description}
+gcode:
+${m.gcode.split('\n').map((l) => `    ${l.trim()}`).join('\n')}
+`)}
+
+`).join('');
+}
+
+/** T0/T1.. for a dual-nozzle printer: the maker config's own macros (they carry the nozzle offsets), else plain switches. */
+function toolMacros(p: Plan): string {
+  const extra = extraExtruders(p);
+  if (!extra.length) return '';
+  const own: Record<string, string> = p.printer.stock?.tool_macros ?? {};
+  const names = ['extruder', ...extra.map((x) => x.name)];
+  return names.map((ex, n) => {
+    const body = own[`T${n}`]
+      ? own[`T${n}`].split('\n').map((l: string) => `    ${l.trim()}`).join('\n')
+      : `    ACTIVATE_EXTRUDER EXTRUDER=${ex}${n ? `\n    # The second nozzle sits a little away from the first. Measure that offset and add it here\n    # (SET_GCODE_OFFSET X=.. Y=..), or set it in your slicer.` : ''}`;
+    return `${block(`
+[gcode_macro T${n}]
+description: Switch to nozzle ${n + 1}${own[`T${n}`] ? ' (from the printer maker config)' : ''}.
+gcode:
+${body}
+`)}
+
+`;
+  }).join('');
+}
 
 export function printMacros(p: Plan, header: string[]): string {
   const g = bedGeometry(p);
@@ -64,7 +99,7 @@ gcode:
     {% set SOAK = params.SOAK|default(10 if HOT else 5)|int %}
     SET_DISPLAY_TEXT MSG="Homing"${hasProbe(p) ? '\n    BED_MESH_CLEAR' : ''}
     G28
-    G90${tc ? '\n    SET_DISPLAY_TEXT MSG="T0 levels and meshes (reference tool)"\n    T0' : ''}
+    G90${tc ? '\n    SET_DISPLAY_TEXT MSG="T0 levels and meshes (reference tool)"\n    T0' : extraExtruders(p).length ? '\n    T0   ; heat and purge the first nozzle; the slicer heats the others when it uses them' : ''}
 ${nevermoreOn}
 ${p.bedHeater ? `    SET_DISPLAY_TEXT MSG="Bed: {BED}C"
     G0 X${cx} Y${cy} Z30 F6000
@@ -84,12 +119,11 @@ ${levelCmd(p) ? `    SET_DISPLAY_TEXT MSG="Leveling"
     BED_MESH_CALIBRATE ADAPTIVE=1${scan}` : ''}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
     SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
     G0 X${g.front[0]} Y${g.front[1]} Z10 F6000
-    M109 S{EXTRUDER}
-    PURGE_LINE
+    M109 S{EXTRUDER}${p.printer.belt ? '\n    ; belt printer: no purge line here (the slicer start G-code primes the nozzle)' : '\n    PURGE_LINE'}
     SET_DISPLAY_TEXT MSG="Printing"
 `)}
 
-${block(`
+${toolMacros(p)}${stockMacros(p)}${block(`
 [gcode_macro PURGE_LINE]
 description: Prime the nozzle with a short line along the front edge of the bed.
 gcode:
@@ -218,7 +252,7 @@ gcode:
 }
 
 export function preflightMacros(p: Plan, header: string[]): string {
-  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder']), ...(p.bedHeater ? ['heater_bed'] : []), ...extraHeaters(p).map((x) => `heater_generic ${x.name}`), ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
+  const sensors = [...(p.tools ? p.tools.map((t) => t.extruderSection) : ['extruder', ...extraExtruders(p).map((x) => x.name)]), ...(p.bedHeater ? ['heater_bed'] : []), ...extraHeaters(p).map((x) => `heater_generic ${x.name}`), ...(p.chamberSensor ? ['temperature_sensor chamber'] : [])];
   const motors = p.steppers.map((s) =>
     `    RESPOND MSG="${s.name}: ${s.board === 'toolboard' ? (p.tools ? `T${p.tools.find((t) => t.stepper === s)?.n} board` : 'toolhead board') : s.slot} (${s.role}${s.position ? ' ' + s.position : ''})"\n    STEPPER_BUZZ STEPPER=${s.name}`).join('\n');
   const fans = [...p.fans, ...(p.tools ?? []).flatMap((t) => t.fans)].map((f) => {

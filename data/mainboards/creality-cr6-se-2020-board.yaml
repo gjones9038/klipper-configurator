@@ -52,8 +52,15 @@ fans:
 - {id: FAN0, pin: PA0, typical_use: part_cooling}
 probe_ports:
 - {id: PROBE, pin: PA4, modifier: ''}
+filament_sensor_ports:
+- {id: FIL, pin: PA7, modifier: ^!}
+setup_sections:
+- section: static_digital_output daughterboard_communication
+  why: fixed board output from Klipper's config
+  klipper: {pins: '!PA5'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin LED_pin].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
     source does not state it.]

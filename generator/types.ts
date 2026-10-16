@@ -39,7 +39,7 @@ export interface Build {
   leadscrew?: string;                        // printer leadscrew_options[].id (Trident)
   homing: {
     xy: 'physical' | 'sensorless';
-    z: 'nozzle_switch' | 'probe_virtual_endstop' | 'physical_min' | 'physical_max';
+    z: 'nozzle_switch' | 'probe_virtual_endstop' | 'physical_min' | 'physical_max' | 'belt';
     zSwitchXY?: [number, number];            // nozzle switch position, required for nozzle_switch
   };
   probe?: string;
@@ -61,8 +61,9 @@ export interface Build {
     postPrintMinutes?: number;               // keep filtering after the print
   };
   leds?: boolean;
-  beeps?: boolean;
-  display?: boolean;                         // printer's stock display ([display]); default on when the stock board is used                           // buzzer tunes at print end / pause; default on when a buzzer exists
+  beeps?: boolean;                           // buzzer tunes at print end / pause; default on when a buzzer exists
+  filamentSensor?: boolean;                  // printer's stock runout sensor; default on when the stock board is used
+  display?: boolean;                         // printer's stock display ([display]); default on when the stock board is used
   autotune?: boolean;
   webUi?: 'mainsail' | 'fluidd' | 'none';    // default mainsail: its cfg provides PAUSE/RESUME/CANCEL_PRINT
   nozzleDiameter?: number;

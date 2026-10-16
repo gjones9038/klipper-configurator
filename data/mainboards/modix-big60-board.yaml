@@ -1,0 +1,70 @@
+# Imported from https://github.com/Klipper3d/klipper config/printer-modix-big60-2020.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: modix-big60-board
+name: Modix Big60 (Duet 2 WiFi) mainboard
+manufacturer: Modix
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: sam4e8e, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb]
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PD6
+  dir_pin: PD11
+  enable_pin: '!PC6'
+  onboard_driver: {chip: tmc2660, klipper_section: tmc2660, sense_resistor: 0.051}
+  spi_cs_pin: PD14
+  spi_speed: 2000000
+  spi_bus: usart1
+- id: Y
+  step_pin: PD7
+  dir_pin: PD12
+  enable_pin: '!PC6'
+  onboard_driver: {chip: tmc2660, klipper_section: tmc2660, sense_resistor: 0.051}
+  spi_cs_pin: PC9
+  spi_speed: 2000000
+  spi_bus: usart1
+- id: Z
+  step_pin: PD8
+  dir_pin: PD13
+  enable_pin: '!PC6'
+  onboard_driver: {chip: tmc2660, klipper_section: tmc2660, sense_resistor: 0.051}
+  spi_cs_pin: PC10
+  spi_speed: 2000000
+  spi_bus: usart1
+- id: E
+  step_pin: PD5
+  dir_pin: PA1
+  enable_pin: '!PC6'
+  onboard_driver: {chip: tmc2660, klipper_section: tmc2660, sense_resistor: 0.051}
+  spi_cs_pin: PC17
+  spi_speed: 2000000
+  spi_bus: usart1
+endstops:
+- {id: X-STOP, pin: PC14, modifier: ^}
+- {id: Y-STOP, pin: PA2, modifier: ^}
+heaters:
+- {id: HEATER, pin: '!PA20', role: hotend}
+thermistors:
+- id: TH0
+  pin: PB2
+  typical_use: hotend
+  amp:
+    chip: MAX31865
+    klipper: {spi_bus: usart0, rtd_nominal_r: '100', rtd_reference_r: '400', rtd_num_of_wires: '2', rtd_use_50hz_filter: 'True'}
+fans:
+- {id: FAN0, pin: PC23, typical_use: part_cooling}
+probe_ports: []
+bltouch: {sensor_pin: PC1, control_pin: PC3}
+filament_sensor_ports:
+- {id: FIL, pin: PD10}
+- {id: FIL1, pin: PC16}
+notes: []
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-modix-big60-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

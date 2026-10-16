@@ -36,6 +36,7 @@ check them against your printer before powering on.
 | Creality CR-10S Pro V2 | Creality | Creality CR-10S Pro V2 mainboard | Needs review | [config/printer-creality-cr10s-pro-v2-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr10s-pro-v2-2020.cfg) |
 | Creality CR-20 | Creality | Creality CR-20 mainboard | Needs review | [config/printer-creality-cr20-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr20-2018.cfg) |
 | Creality CR-20 Pro | Creality | Creality CR-20 Pro mainboard | Needs review | [config/printer-creality-cr20-pro-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr20-pro-2019.cfg) |
+| Creality CR-30 PrintMill | Creality | Creality CR-30 PrintMill mainboard | Needs review | [config/printer-creality-cr30-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr30-2021.cfg) |
 | Creality CR-5 Pro HT | Creality | Creality CR-5 Pro HT mainboard | Needs review | [config/printer-creality-cr5pro-ht-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr5pro-ht-2022.cfg) |
 | Creality CR-6 SE (4.5.3 board) | Creality | Creality CR-6 SE (4.5.3 board) mainboard | Needs review | [config/printer-creality-cr6se-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr6se-2021.cfg) |
 | Creality CR-6 SE (early 4.5.2 board) | Creality | Creality CR-6 SE (early 4.5.2 board) mainboard | Needs review | [config/printer-creality-cr6se-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr6se-2020.cfg) |
@@ -64,6 +65,7 @@ check them against your printer before powering on.
 | Elegoo Neptune 4 Pro | Elegoo | Elegoo Neptune 4 Pro mainboard | Needs review | [printer-confs/base.cfg + printer-confs/n4pro/](https://github.com/OpenNeptune3D/OpenNept4une/blob/master/printer-confs/base.cfg + printer-confs/n4pro/) |
 | Eryone ER-20 | Eryone | Eryone ER-20 mainboard | Needs review | [config/printer-eryone-er20-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-er20-2021.cfg) |
 | Eryone Thinker Series V2 | Eryone | Eryone Thinker Series V2 mainboard | Needs review | [config/printer-eryone-thinker-series-v2-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-thinker-series-v2-2020.cfg) |
+| FlashForge Creator Pro (2018) | FlashForge | FlashForge Creator Pro (2018) mainboard | Needs review | [config/printer-flashforge-creator-pro-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flashforge-creator-pro-2018.cfg) |
 | FLSUN Q5 | FLSUN | FLSUN Q5 mainboard | Needs review | [config/printer-flsun-q5-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flsun-q5-2020.cfg) |
 | FLSUN QQ-S | FLSUN | FLSUN QQ-S mainboard | Needs review | [config/printer-flsun-qqs-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-flsun-qqs-2020.cfg) |
 | FOKOOS Odin-5 F3 | FOKOOS | FOKOOS Odin-5 F3 mainboard | Needs review | [config/printer-fokoos-odin5-f3-2021.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-fokoos-odin5-f3-2021.cfg) |
@@ -76,9 +78,11 @@ check them against your printer before powering on.
 | LulzBot Mini 1 | LulzBot | LulzBot Mini 1 mainboard | Needs review | [config/printer-lulzbot-mini1-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-mini1-2016.cfg) |
 | LulzBot Mini 2 | LulzBot | LulzBot Mini 2 mainboard | Needs review | [config/printer-lulzbot-mini2-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-mini2-2018.cfg) |
 | LulzBot TAZ 6 | LulzBot | LulzBot TAZ 6 mainboard | Needs review | [config/printer-lulzbot-taz6-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-taz6-2017.cfg) |
+| LulzBot TAZ 6 (Dual Extruder v3) | LulzBot | LulzBot TAZ 6 (Dual Extruder v3) mainboard | Needs review | [config/printer-lulzbot-taz6-dual-v3-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-taz6-dual-v3-2017.cfg) |
 | MakerGear M2 (2012, V3A extruder) | MakerGear | MakerGear M2 (2012, V3A extruder) mainboard | Needs review | [config/printer-makergear-m2-2012.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-makergear-m2-2012.cfg) |
 | MakerGear M2 (2016, V4 extruder) | MakerGear | MakerGear M2 (2016, V4 extruder) mainboard | Needs review | [config/printer-makergear-m2-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-makergear-m2-2016.cfg) |
 | Micromake D1 | Micromake | Micromake D1 mainboard | Needs review | [config/printer-micromake-d1-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-micromake-d1-2016.cfg) |
+| Modix Big60 (Duet 2 WiFi) | Modix | Modix Big60 (Duet 2 WiFi) mainboard | Needs review | [config/printer-modix-big60-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-modix-big60-2020.cfg) |
 | Monoprice Mini Delta | Monoprice | Monoprice Mini Delta mainboard | Needs review | [config/printer-monoprice-mini-delta-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-mini-delta-2017.cfg) |
 | Monoprice Select Mini V1 | Monoprice | Monoprice Select Mini V1 mainboard | Needs review | [config/printer-monoprice-select-mini-v1-2016.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-select-mini-v1-2016.cfg) |
 | Monoprice Select Mini V2 | Monoprice | Monoprice Select Mini V2 mainboard | Needs review | [config/printer-monoprice-select-mini-v2-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-monoprice-select-mini-v2-2018.cfg) |
@@ -94,6 +98,7 @@ check them against your printer before powering on.
 | Sovol SV06 | Sovol | Sovol V131 | Reviewed | [config/printer-sovol-sv06-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-2022.cfg) |
 | Sovol SV06 Plus | Sovol | Sovol SV06 Plus mainboard | Needs review | [config/printer-sovol-sv06-plus-2023.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-plus-2023.cfg) |
 | Sovol SV08 | Sovol | Sovol SV08 mainboard H616_JC_6Z V1.2 | Needs review | [home/sovol/printer_data/config/printer.cfg](https://github.com/Sovol3d/SV08/blob/master/home/sovol/printer_data/config/printer.cfg) |
+| Sovol SV08 Max | Sovol | Sovol SV08 Max mainboard | Needs review | [home/sovol/printer_data/config/printer.cfg](https://github.com/Sovol3d/SV08MAX/blob/master/home/sovol/printer_data/config/printer.cfg) |
 | SUNLU S8 | SUNLU | SUNLU S8 mainboard | Needs review | [config/printer-sunlu-s8-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sunlu-s8-2020.cfg) |
 | SUNLU Terminator T3 | SUNLU | SUNLU Terminator T3 mainboard | Needs review | [config/printer-sunlu-t3-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sunlu-t3-2022.cfg) |
 | Tevo Flash | Tevo | Tevo Flash mainboard | Needs review | [config/printer-tevo-flash-2018.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-tevo-flash-2018.cfg) |
@@ -122,7 +127,7 @@ check them against your printer before powering on.
 | Wanhao Duplicator i3 Plus Mark II | Wanhao | Wanhao Duplicator i3 Plus Mark II mainboard | Needs review | [config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg) |
 | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select | Wanhao | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select mainboard | Needs review | [config/printer-wanhao-duplicator-i3-v2.1-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-v2.1-2017.cfg) |
 
-114 printers.
+119 printers.
 
 # Not supported yet
 
@@ -130,10 +135,6 @@ Klipper reference configs that are not in the configurator yet, and why.
 
 | Klipper config | Why |
 |---|---|
-| printer-creality-cr30-2021.cfg | belt printer (endless Z belt; not supported yet) |
-| printer-flashforge-creator-pro-2018.cfg | two extruders (not supported yet) |
-| printer-lulzbot-taz6-dual-v3-2017.cfg | two extruders (not supported yet) |
-| printer-modix-big60-2020.cfg | two extruders (not supported yet) |
 
 # Printers running their maker's own Klipper
 
@@ -144,6 +145,5 @@ These ship with a modified Klipper from the maker. They are not in the configura
 | Creality K1 / K1C / K1 Max, Ender 3 V3 KE, CR-10 SE, K2, Hi | Creality's boards run Creality's own Klipper fork (firmware built for GD32F303 chips with Creality-only code, and a strain-gauge probe module, prtouch, that standard Klipper does not have). A standard-Klipper config would not run on them. Sources: CrealityOfficial/*_Klipper on GitHub. |
 | Qidi X-Plus 3, X-Max 3, Q1 Pro, Plus4 | Qidi publishes printer configs for the Q1 Pro and Plus4 (with Qidi-only modules such as qdprobe) but not the boards' firmware settings, so the firmware notes could not be sourced. Pending. |
 | Sovol SV07 / SV07 Plus | Sovol's published configs are standard Klipper, but no Sovol source names the mainboard's chip or firmware settings. Pending a source. |
-| Sovol SV08 Max | Sovol publishes everything needed (two boards, an eddy probe on the toolhead board). Needs hand-curating like the SV08. Pending. |
 | FlashForge Adventurer 5M / 5M Pro | FlashForge's repo (FlashForge/AD5M_Series_Klipper) has firmware source but no printer config. Pending a source. |
 | Anycubic Kobra 2 / 3 | Anycubic publishes firmware sources for these (ANYCUBIC-3D/Kobra2, Kobra3, Klipper-go), not standard Klipper printer configs. Pending a source. |

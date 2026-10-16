@@ -75,6 +75,10 @@ z_methods:
     name: Switch at the bottom (Z max)
     description: The bed moves down onto a switch at the bottom of the printer (Voron 0).
     emits: {endstop_pin: "<port pin>", position_endstop: "= position_max"}
+  belt:
+    name: Belt (no Z homing)
+    description: On a belt printer the belt is the Z axis and has no end, so homing just counts the current belt position as Z = 0.
+    only_for_belt: true
   physical_min:
     name: Z endstop switch
     description: A switch that clicks when the nozzle reaches the bed (stock on Ender 3-style printers).

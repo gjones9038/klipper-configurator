@@ -18,7 +18,7 @@ sizes:
   position_max: {x: 305, y: 305, z: 350}
 steppers:
 - {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
-- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, run_current: 0.9}
 - {klipper: stepper_z, role: Z0, rotation_distance: 4, dir_inverted: true}
 variants:
 - id: standard
@@ -53,6 +53,8 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [part_cooling]
   probe: sovol-sv06-plus-probe
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: sovol-sv06-plus-extruder

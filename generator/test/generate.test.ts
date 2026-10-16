@@ -10,7 +10,7 @@ const db = loadDb();
 const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24-350-leviathan-sb2209.json', import.meta.url), 'utf8'));
 
 // Errors a matrix case may legitimately end in; anything else is a bug.
-const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_thermistor', 'no_hotend_heater', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
+const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'bed_origin_probe', 'no_thermistor', 'no_hotend_heater', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
   // matrix deliberately includes combinations the generator must refuse:
   'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path', 'probe_supply']);
 
@@ -40,7 +40,7 @@ test('no physical pin is used twice in a generated config', () => {
         const m = /^(\w*pin): *([!^~]*)((?:toolhead\d*:)?P[A-K]\d+|(?:toolhead\d*:)?gpio\d+)/.exec(line);
         if (!m) continue;
         // SPI bus pins are shared by design; endstop pin may equal its slot's DIAG pin.
-        if (m[1].startsWith('spi_software')) continue;
+        if (m[1].startsWith('spi_software') || m[1].startsWith('i2c_software_scl')) continue;   // shared software I2C clock (Creator Pro digipots)
         const key = m[3];
         const prev = seen.get(key);
         // A toolchanger tool's Tap pin is both [tool_probe] pin and [tool] detection_pin (tool_probe.py allows it).

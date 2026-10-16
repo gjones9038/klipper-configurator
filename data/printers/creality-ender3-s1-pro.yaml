@@ -78,6 +78,7 @@ stock:
   probe_offsets: {bltouch: {x: -31.8, y: -40.5}}
   homing_z: probe_virtual_endstop
   fans: [part_cooling, hotend]
+  filament_sensors: [{port: FIL}]
 
 notes:
 - "Comes with a CR Touch probe, which also finds the Z zero point."

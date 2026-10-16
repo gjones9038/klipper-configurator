@@ -84,6 +84,8 @@ const printerStep: Step = {
         ? h('ul', { class: 'hint' }, db.printers[build.printer].variants.find((v: Rec) => v.id === build.variant).notes.map((n: string) => h('li', null, n))) : null,
       printer.stock?.display ? checkbox('Set up the printer\'s screen', build.display !== false, (v) => update((b) => { if (v) delete b.display; else b.display = false; }),
         'Writes the settings for the stock LCD and its knob, so you can use the printer\'s own screen with Klipper. Only applies with the stock mainboard.') : null,
+      printer.stock?.filament_sensors?.length ? checkbox('Use the printer\'s filament sensor', build.filamentSensor !== false, (v) => update((b) => { if (v) delete b.filamentSensor; else b.filamentSensor = false; }),
+        'Pauses the print when the filament runs out, so you can load more and carry on. Only applies with the stock mainboard.') : null,
       printer.notes?.length ? h('ul', { class: 'hint' }, printer.notes.map((n: string) => h('li', null, n))) : null,
       sources(printer),
     ];
@@ -352,7 +354,7 @@ const homingStep: Step = {
           { step: 0.1, placeholder: String(known?.y_offset ?? 0) })) : null,
       probe?.docs?.length ? h('ul', { class: 'links' }, probe.docs.map((d: Rec) => h('li', null, extLink(d.url, d.title)))) : null,
       delta ? null : h('div', { class: 'grid' },
-        segmented('Z homing', build.homing.z, Object.entries(zm).map(([id, m]: [string, any]) => ({
+        segmented('Z homing', build.homing.z, Object.entries(zm).filter(([, m]: [string, any]) => !!m.only_for_belt === !!db.printers[build.printer].belt).map(([id, m]: [string, any]) => ({
           value: id as Build['homing']['z'], label: m.name, disabled: id === 'probe_virtual_endstop' && !probe?.z_endstop_capable,
         })), (v) => update((b) => { b.homing.z = v; }), zm[build.homing.z]?.description)),
       build.homing.z === 'nozzle_switch' ? h('div', { class: 'grid' },
@@ -459,7 +461,7 @@ const hotendStep: Step = {
       h('div', { class: 'grid' },
         bedless ? null : numberField('Bed max power (0-1)', build.bed?.maxPower, (v) => update((b) => { b.bed = { ...b.bed, maxPower: v }; }), { min: 0.1, max: 1, step: 0.05, placeholder: '1.0', hint: '1 means full power. Lower it if a large mains-powered bed trips your fuse.' }),
         bedless ? null : numberField('Bed max temp (°C)', build.bed?.maxTemp, (v) => update((b) => { b.bed = { ...b.bed, maxTemp: v }; }), { min: 60, max: 150, step: 1, placeholder: '120', hint: 'Klipper shuts the printer down if the bed goes above this.' }),
-        numberField('Nozzle diameter (mm)', build.nozzleDiameter, (v) => update((b) => { b.nozzleDiameter = v; }), { min: 0.1, max: 1.2, step: 0.05, placeholder: '0.4' })),
+        numberField('Nozzle diameter (mm)', build.nozzleDiameter, (v) => update((b) => { b.nozzleDiameter = v; }), { min: 0.1, max: 1.2, step: 0.05, placeholder: String(hotend?.nozzle_diameter ?? 0.4) })),
       sources(db.extruders[build.extruder]),
     ];
   },

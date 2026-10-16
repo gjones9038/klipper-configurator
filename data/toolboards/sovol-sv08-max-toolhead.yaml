@@ -1,0 +1,79 @@
+schema: toolboard/1
+id: sovol-sv08-max-toolhead
+name: Sovol SV08 Max toolhead board
+manufacturer: Sovol
+revisions:
+- stock
+status: needs-review
+mcu:
+  chip: stm32f103
+  crystal_mhz: 8
+  bootloader_kib: 0
+  check_dict: stm32f103-can-PB8PB9
+interfaces:
+- can
+can_pins: PB8/PB9
+form_factor: sovol-sv08-max
+extruder_driver:
+  chip: tmc2209
+  interface: uart
+  step_pin: PA8
+  dir_pin: PA9
+  enable_pin: '!PA11'
+  uart_pin: PA12
+  uart_address: 3
+  sense_resistor: 0.15
+heaters:
+- id: MC_HEATER
+  pin: PB7
+  role: hotend
+thermistors:
+- id: TH
+  pin: PA5
+  pullup_ohms: 11500
+  typical_use: hotend
+fans:
+- id: PART-FANS
+  pins: [PB0, PA7]
+  typical_use: part_cooling
+  wires: 2
+  note: front (fan0, PB0) and back (fan1, PA7) part fans; Sovol drives them as two fan_generic
+- id: HOTEND-FAN
+  pin: PA6
+  tachometer_pin: PA1
+  tachometer_ppr: 1
+  typical_use: hotend
+  wires: 3
+endstops:
+- id: X-STOP
+  pin: PA10
+  axis: X
+  note: "PA10, GND, 5V header; Sovol's X endstop"
+probe_ports: []
+i2c_ports:
+- id: EDDY
+  scl_pin: PB10
+  sda_pin: PB11
+  bus: i2c2
+  supply_v: [3.3]
+  note: "3V3, GND, PB10, PB11 header; the built-in eddy probe (Sovol: i2c_bus i2c2)"
+accelerometer:
+  chip: lis2dw
+  cs_pin: PB12
+  spi_software: {sclk_pin: PB13, mosi_pin: PB15, miso_pin: PB14}
+  axes_map: x,z,y
+notes:
+- "The two part fans run together as one fan."
+- "The X endstop switch plugs into this board, not the mainboard."
+tech_notes:
+- "MCU STM32F103 from Sovol's klipper/.config (also .config103): 8 MHz crystal, no bootloader, CAN on PB8/PB9 at 1000000."
+- "The part fans are driven together through [multi_pin] (Sovol's config drives fan0 and fan1 separately; its M106 always sets both)."
+- "PA7's pin-sheet tachometer (FG PA2) and PB0's (FG PA3) are not used by Sovol's config."
+unverified:
+- Only Sovol's sources (config, firmware build settings and pin sheet); Klipper has no SV08 Max config.
+- The headers "GND 24V PB1 GND PA4" and "5V GND PC15 PC14" on the pin sheet are not used by Sovol's config and are not recorded.
+sources:
+- {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/printer.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b}
+- {repo: https://github.com/Sovol3d/SV08MAX, path: Motherboard/Extra_Pin_definition.pdf, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b}
+- {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/klipper/.config, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "STM32F103, 8 MHz, no bootloader, CAN PB8/PB9"}
+- {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/Macro.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "M106 sets fan0 and fan1 together"}

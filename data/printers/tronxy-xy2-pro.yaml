@@ -51,6 +51,8 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [hotend, part_cooling, controller]
   probe: tronxy-xy2-pro-probe
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: tronxy-xy2-pro-extruder

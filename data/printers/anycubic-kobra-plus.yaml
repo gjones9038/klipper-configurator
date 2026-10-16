@@ -52,6 +52,8 @@ stock:
   homing_z: physical_min
   fans: [controller, hotend, part_cooling]
   probe: anycubic-kobra-plus-probe
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: anycubic-kobra-plus-extruder

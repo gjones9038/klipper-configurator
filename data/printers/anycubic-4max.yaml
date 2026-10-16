@@ -51,6 +51,8 @@ stock:
   homing_z: physical_min
   fans: [part_cooling, hotend]
   display: {lcd_type: st7920, cs_pin: PH1, sclk_pin: PA1, sid_pin: PH0, encoder_pins: '^PC6, ^PC4', click_pin: ^!PC2, kill_pin: ^!PG0}
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: anycubic-4max-extruder

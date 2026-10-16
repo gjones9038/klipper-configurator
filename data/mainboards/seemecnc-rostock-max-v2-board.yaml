@@ -50,8 +50,18 @@ fans:
 - {id: FAN0, pin: PH5, typical_use: part_cooling}
 - {id: FAN1, pin: PH4, typical_use: hotend}
 probe_ports: []
-notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
-    homing (homing without switches) isn''t possible.']
+setup_sections:
+- section: ad5206 stepper_digipot
+  why: sets the motor current
+  klipper: {enable_pin: PD7, scale: '2.08', channel_1: '1.34', channel_2: '1.0', channel_4: '1.1', channel_5: '1.1', channel_6: '1.1'}
+- section: static_digital_output stepper_config
+  why: sets the motor drivers' microstep pins
+  klipper: {pins: 'PG1, PG0, PK7, PG2, PK6, PK5, PK3, PK4, PK1, PK2'}
+- section: static_digital_output yellow_led
+  why: fixed board output from Klipper's config
+  klipper: {pins: '!PB7'}
+notes: ['Klipper sets this board''s motor current with its own current settings (copied from Klipper''s config), not the usual
+    driver settings. Sensorless homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
 sources:

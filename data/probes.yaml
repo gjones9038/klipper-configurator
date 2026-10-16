@@ -226,6 +226,26 @@ probes:
     sources:
       - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491}
 
+  - id: sovol-sv08-max-eddy
+    name: Sovol SV08 Max built-in eddy probe
+    kind: eddy_native
+    interface: toolboard_i2c
+    applies_to: [sovol-sv08-max]
+    z_endstop_capable: true          # Sovol: stepper_z endstop_pin: probe: z_virtual_endstop
+    offsets: {x_offset: -19.8, y_offset: -0.75}
+    eddy: {section_name: eddy}
+    mesh: {horizontal_move_z: 2, probe_count: [9, 9], speed: 200}
+    docs:
+      - {title: "Klipper: eddy current probe setup and calibration", url: "https://www.klipper3d.org/Eddy_Probe.html"}
+    notes:
+      - "Before the first Z home, calibrate the probe: follow Klipper's eddy probe guide (LDC_CALIBRATE_DRIVE_CURRENT, then PROBE_EDDY_CURRENT_CALIBRATE). Sovol's automatic Z-offset tool is not in standard Klipper."
+    tech_notes:
+      - "An LDC1612 on the toolhead board's i2c2 (Sovol: [probe_eddy_current eddy] sensor_type ldc1612, i2c_mcu extra_mcu, i2c_bus i2c2)."
+      - "Sovol's vir_contact_speed and [z_offset_calibration] exist only in Sovol's Klipper fork; they are not generated."
+    unverified: ["mesh settings are this tool's eddy defaults, not Sovol's (Sovol scans 60 x 60 at 400 mm/s with its fork)"]
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/printer.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b}
+
   - id: elegoo-neptune3pro-probe
     name: Elegoo Neptune 3 Pro built-in probe
     kind: integrated

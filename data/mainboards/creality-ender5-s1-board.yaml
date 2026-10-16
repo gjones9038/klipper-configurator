@@ -53,6 +53,8 @@ fans:
 - {id: FAN1, pin: PC0, typical_use: hotend}
 probe_ports: []
 bltouch: {sensor_pin: PC14, control_pin: PC13}
+filament_sensor_ports:
+- {id: FIL, pin: PC15, modifier: ^!}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering

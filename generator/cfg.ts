@@ -14,7 +14,11 @@ export class Section {
   }
 
   set(key: string, value: Value, comment?: string): this {
-    if (value !== undefined && value !== null) this.entries.push([key, value, comment]);
+    if (value === undefined || value === null) return this;
+    // Klipper rejects a repeated option, so setting a key again replaces it in place.
+    const i = this.entries.findIndex(([k]) => k === key);
+    if (i >= 0) this.entries[i] = [key, value, comment];
+    else this.entries.push([key, value, comment]);
     return this;
   }
 

@@ -71,6 +71,7 @@ stock_parts:
     - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
     unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
         at 0: tune it (TUNE_PA).']
+    filament_diameter: 2.85
   hotends:
   - id: lulzbot-mini2-hotend
     name: LulzBot Mini 2 stock hotend
@@ -84,6 +85,7 @@ stock_parts:
     sources:
     - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
       note: '[extruder] max_temp: 280'}
+    nozzle_diameter: 0.5
     pid_seed: {pid_kp: 24.121, pid_ki: 1.079, pid_kd: 134.779}
   probes:
   - id: lulzbot-mini2-probe

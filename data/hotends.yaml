@@ -142,6 +142,19 @@ hotends:
          quote: "Each component is rated for operation at 500°C block temperature and 300°C ambient temperature. Heater - Air: 6mm OD, 20-22mm Length. Temperature Sensor: 3mm OD, 15mm Length"}
     unverified: ["flow_class high_flow is not from a source"]
 
+  - id: sovol-sv08-max
+    name: Sovol SV08 Max stock hotend
+    maker: Sovol
+    flow_class: high_flow
+    max_temp: 310
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: sovol-sv08-max-hotend
+    pid_seed: {pid_kp: 34.838, pid_ki: 4.976, pid_kd: 62.823}
+    sources:
+      - {repo: "https://github.com/Sovol3d/SV08MAX", path: "home/sovol/printer_data/config/printer.cfg", commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "[extruder] max_temp: 310, PID values"}
+    unverified: ["flow_class high_flow is not from a source"]
+
   - id: generic-v6
     name: E3D V6 (and V6-style clones)
     maker: E3D

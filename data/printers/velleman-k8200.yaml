@@ -69,6 +69,7 @@ stock_parts:
     unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
         at 0: tune it (TUNE_PA).']
     dir_inverted: true
+    filament_diameter: 2.85
   hotends:
   - id: velleman-k8200-hotend
     name: Velleman K8200 / 3Drag stock hotend

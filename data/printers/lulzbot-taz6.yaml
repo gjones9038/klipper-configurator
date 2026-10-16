@@ -71,6 +71,7 @@ stock_parts:
         at 0: tune it (TUNE_PA).']
     gear_ratio: '48:9'
     dir_inverted: true
+    filament_diameter: 2.92
   hotends:
   - id: lulzbot-taz6-hotend
     name: LulzBot TAZ 6 stock hotend
@@ -97,7 +98,7 @@ stock_parts:
     - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
   thermistors: []
 notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
-    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
-    homing don''t apply.']
+    run PREFLIGHT first.', 'The stock board''s motor current comes from Klipper''s config for this printer, so the motor current
+    settings here don''t apply, and sensorless homing isn''t possible.']
 sources:
 - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-taz6-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

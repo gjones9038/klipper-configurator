@@ -62,6 +62,10 @@ fans:
 - {id: FAN1, pin: PH3, typical_use: hotend}
 probe_ports:
 - {id: PROBE, pin: PB4, modifier: ^!}
+setup_sections:
+- section: static_digital_output sd_card
+  why: fixed board output from Klipper's config
+  klipper: {pins: PB0}
 notes: []
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]

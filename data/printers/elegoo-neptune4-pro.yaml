@@ -56,6 +56,9 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [part_cooling, controller]
   probe: elegoo-neptune4-pro-probe
+  filament_sensors:
+  - port: FIL
+    klipper: {event_delay: 3, pause_delay: 1}
   extra_heaters:
   - name: heater_bed_outer
     note: extra bed heater zone, heated to the bed temperature by PRINT_START

@@ -52,6 +52,8 @@ stock:
   homing_z: physical_min
   fans: [hotend, part_cooling, controller]
   probe: anycubic-vyper-probe
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: anycubic-vyper-extruder

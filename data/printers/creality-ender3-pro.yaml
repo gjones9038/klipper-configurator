@@ -10,7 +10,6 @@ kinematics: cartesian
 z_leveling: null                 # one Z leadscrew; level the bed with its screws
 bed_heater: dc                   # 24 V bed driven by the board's HOTBED MOSFET
 hotend_fan: always_on            # wired to 24 V, not to a board fan output
-display: not_generated           # the 12864 LCD works in Klipper ([display] st7920); not generated yet
 
 sizes:
   - id: stock
@@ -74,6 +73,7 @@ stock:
   thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
   probe_options: [bltouch]
   fans: [part_cooling]
+  display: {lcd_type: st7920, cs_pin: PB12, sclk_pin: PB13, sid_pin: PB15, encoder_pins: '^PB14, ^PB10', click_pin: ^!PB2}
 
 notes:
 - "For Ender 3 and Ender 3 Pro printers with the 32-bit board (\"v4.2.2\" or \"v4.2.7\" is printed on it). The original Ender 3 with the older 8-bit board isn't covered."
@@ -89,3 +89,4 @@ sources:
   - repo: https://github.com/Klipper3d/klipper
     path: config/printer-creality-ender3pro-2020.cfg
     commit: 9cb99754c035b90206ef0a02660f674fc9517e9b
+  - {repo: https://github.com/MarlinFirmware/Marlin, path: Marlin/src/pins/stm32f1/pins_CREALITY_V4.h, commit: f5fa1edb9461c402dda88da01cc421d1e485675c, note: "12864 LCD header: LCD_PINS_RS PB12, EN PB15, D4 PB13, BTN_ENC PB2, EN1 PB10, EN2 PB14; v4.2.7 includes this file"}

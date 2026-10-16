@@ -67,7 +67,8 @@ export function matrix(db: Db): Case[] {
           const filter = FILTERS[n % FILTERS.length];
           const build: Build = {
             printer: printerId, size, variant,
-            mainboard: { id: boardId, connection: tconn === 'can' && bridge ? 'usb-can-bridge' : 'usb' },
+            // A board without plain USB (SV08 Max: USB-CAN bridge only) keeps its own connection.
+            mainboard: { id: boardId, connection: !board.interfaces.includes('usb') ? board.interfaces[0] : tconn === 'can' && bridge ? 'usb-can-bridge' : 'usb' },
             ...(toolboard ? { toolboard: { id: tb!, connection: tconn as 'can' | 'usb' } } : {}),
             ...(tconn === 'can' && !bridge ? { canAdapter: 'u2c' as const } : {}),
             toolhead: 'stealthburner',

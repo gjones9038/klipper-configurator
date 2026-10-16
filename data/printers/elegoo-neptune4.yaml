@@ -55,6 +55,9 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [part_cooling, controller]
   probe: elegoo-neptune4-probe
+  filament_sensors:
+  - port: FIL
+    klipper: {event_delay: 3, pause_delay: 1}
 stock_parts:
   extruders:
   - id: elegoo-neptune4-extruder

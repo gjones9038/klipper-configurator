@@ -77,6 +77,7 @@ stock:
   probe_options: [elegoo-neptune3pro-probe]
   homing_z: probe_virtual_endstop
   fans: [part_cooling, hotend]
+  filament_sensors: [{port: FIL}]
 
 notes:
 - "The stock motor drivers can't be adjusted from Klipper, so the motor current settings and sensorless homing don't apply unless you fit a different board."

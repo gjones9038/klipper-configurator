@@ -59,6 +59,7 @@ fans:
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
+tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin beep], [output_pin lcd_beep].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
     on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
     source does not state it.]

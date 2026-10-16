@@ -85,6 +85,14 @@ user_choices:
       - {url: "https://e3d-online.com/products/pt100-temperature-sensor", accessed: 2026-10-15,
          quote: "High temperature ready up to 500°C; an amplifier board will be required"}
     note: "500°C is E3D's cartridge rating; other makers' PT100 cartridges may be rated lower."
+  - id: max6675
+    max_temp_c: null
+    label: "Thermocouple via MAX6675 (chip on the board)"
+    sensor_type: "MAX6675"
+    needs: ["a MAX6675 thermocouple chip wired to the MCU's SPI pins"]
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: docs/Config_Reference.md, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b, note: "MAX6675 thermocouple sensor_type (SPI; sensor_pin is the chip select)"}
+    note: "The limit comes from the thermocouple and hotend, not the chip; no rated maximum recorded."
   - id: sovol-sv08-hotend
     max_temp_c: null
     label: "Sovol SV08 hotend thermistor (Sovol table)"
@@ -102,7 +110,18 @@ user_choices:
     definition: {temperature1: 25, resistance1: 100000, temperature2: 50, resistance2: 18085.4, temperature3: 100, resistance3: 5362.6}
     sources:
       - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "[thermistor my_thermistor]"}
+      - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/printer.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "SV08 Max [thermistor bed_thermistor]: the same table"}
     note: "Sovol calls it my_thermistor; renamed here."
+  - id: sovol-sv08-max-hotend
+    max_temp_c: null
+    label: "Sovol SV08 Max hotend sensor (Sovol table)"
+    sensor_type: "sovol_sv08_max_hotend"
+    custom_definition_required: true
+    definition_kind: adc_temperature
+    definition: {temperature1: 25, resistance1: 1268.60, temperature2: 180, resistance2: 1920.98, temperature3: 300, resistance3: 2398.52}
+    sources:
+      - {repo: https://github.com/Sovol3d/SV08MAX, path: home/sovol/printer_data/config/printer.cfg, commit: 68c28ea4ef5a81279d69c0e7d3b6433f0945192b, note: "[adc_temperature extruder_thermistor]; used with pullup_resistor 11500"}
+    note: "Sovol calls it extruder_thermistor; renamed here. Its resistance rises with temperature, so it is not an NTC thermistor; Sovol does not name the sensor. No rated maximum is published."
   - id: honeywell-135-104lag
     max_temp_c: null
     label: "Honeywell 100K 135-104LAG-J01"

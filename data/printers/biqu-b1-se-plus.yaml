@@ -51,6 +51,8 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [part_cooling, hotend]
   probe: biqu-b1-se-plus-probe
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: biqu-b1-se-plus-extruder

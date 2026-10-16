@@ -82,6 +82,13 @@ def prepare_klipper(klipper, autotune, toolchanger, workdir):
     dst = os.path.join(workdir, "klipper")
     shutil.copytree(klipper, dst, ignore=shutil.ignore_patterns(".git", "out", "lib", "src", "docs"))
     extras = os.path.join(dst, "klippy", "extras")
+    # Test-only: batch mode can't answer canbus_stats' status poll (a CAN MCU dict, e.g. the SV08 Max
+    # toolhead), so the poll stops instead of raising once the run is under way.
+    cs = os.path.join(extras, "canbus_stats.py")
+    text = open(cs).read()
+    hook = "    def query_event(self, eventtime):\n"
+    assert hook in text, "canbus_stats.query_event moved; update the batch-mode shim"
+    open(cs, "w").write(text.replace(hook, hook + "        if self.mcu.is_fileoutput():\n            return self.reactor.NEVER\n", 1))
     if autotune:
         for f in ("autotune_tmc.py", "motor_constants.py", "motor_database.cfg"):
             shutil.copy(os.path.join(autotune, f), extras)
@@ -149,6 +156,20 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
             # A delta's bed is centred on 0,0: move to the centre instead of 100,100.
             if "kinematics: delta" in open(os.path.join(cfg, "printer.cfg")).read():
                 text = text.replace("G1 X100 Y100 Z30", "G1 X0 Y0 Z30")
+            else:
+                # A bed centred on 0,0 (Creator Pro: Y -80..80) can't reach 100,100: use the middle of travel.
+                mb = open(os.path.join(cfg, "mainboard.cfg")).read()
+                mid = []
+                for ax in ("x", "y"):
+                    m = re.search(rf"^\[stepper_{ax}\][^\[]*?^position_min: *(-?[\d.]+)[^\[]*?^position_max: *([\d.]+)", mb, re.M | re.S)
+                    mid.append((float(m.group(1)) + float(m.group(2))) / 2 if m else None)
+                small = re.findall(r"^\[stepper_[xy]\][^\[]*?^position_max: *([\d.]+)", mb, re.M | re.S)
+                if all(v is not None for v in mid) and any(float(v) < 100 for v in small):
+                    text = text.replace("G1 X100 Y100 Z30", f"G1 X{mid[0]:g} Y{mid[1]:g} Z30")
+            # Dual-nozzle printers: switch to the second nozzle, heat and extrude, and back.
+            pm = os.path.join(cfg, "macros", "print.cfg")
+            if os.path.exists(pm) and "[gcode_macro T1]" in open(pm).read():
+                text += "T1\nM109 S200\nG1 E5 F300\nT0\nM104 S0 T1\n"
             f.write(text)
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),

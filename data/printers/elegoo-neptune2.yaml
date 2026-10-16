@@ -55,6 +55,8 @@ stock:
   homing_xy: physical
   homing_z: physical_min
   fans: [hotend, part_cooling]
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: elegoo-neptune2-extruder

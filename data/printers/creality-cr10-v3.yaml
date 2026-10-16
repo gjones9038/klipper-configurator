@@ -57,6 +57,8 @@ stock:
   homing_z: physical_min
   fans: [part_cooling]
   display: {lcd_type: st7920, cs_pin: PH1, sclk_pin: PA1, sid_pin: PH0, encoder_pins: '^PC4, ^PC6', click_pin: ^!PC2}
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: creality-cr10-v3-extruder

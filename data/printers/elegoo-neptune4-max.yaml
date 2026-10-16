@@ -21,7 +21,7 @@ sizes:
   position_max: {x: 430, y: 430, z: 505}
 steppers:
 - {klipper: stepper_x, role: X, rotation_distance: 40}
-- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, run_current: 1.3}
 - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
 variants:
 - id: standard
@@ -57,6 +57,9 @@ stock:
   homing_z: probe_virtual_endstop
   fans: [controller, part_cooling]
   probe: elegoo-neptune4-max-probe
+  filament_sensors:
+  - port: FIL
+    klipper: {event_delay: 3, pause_delay: 1}
 stock_parts:
   extruders:
   - id: elegoo-neptune4-max-extruder

@@ -55,6 +55,10 @@ fans:
 - {id: FAN2, pin: PB5, typical_use: part_cooling}
 probe_ports:
 - {id: PROBE, pin: PA1, modifier: ''}
+setup_sections:
+- section: output_pin enable_pin
+  why: keeps part of the printer powered or enabled (Klipper's config)
+  klipper: {pin: PB6, value: '1'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering

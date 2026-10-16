@@ -57,6 +57,12 @@ fans:
 - {id: FAN0, pin: PB0, typical_use: hotend}
 - {id: FAN1, pin: PB1, typical_use: part_cooling}
 probe_ports: []
+filament_sensor_ports:
+- {id: FIL, pin: PA4}
+setup_sections:
+- section: static_digital_output display_reset
+  why: fixed board output from Klipper's config
+  klipper: {pins: '!PC6, !PD13'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering

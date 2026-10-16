@@ -56,6 +56,8 @@ stock:
   homing_xy: physical
   homing_z: physical_min
   fans: [part_cooling]
+  filament_sensors:
+  - {port: FIL}
 stock_parts:
   extruders:
   - id: fokoos-odin5-f3-extruder

@@ -1,0 +1,5 @@
+# STM32F103 talking CAN on PB8/PB9 (Sovol SV08 Max toolhead board), so the check reserves
+# those pins instead of USB's PA11/PA12.
+CONFIG_LOW_LEVEL_OPTIONS=y
+CONFIG_STM32_FLASH_START_0000=y
+CONFIG_STM32_MMENU_CANBUS_PB8_PB9=y

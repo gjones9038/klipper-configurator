@@ -51,6 +51,8 @@ thermistors:
 fans:
 - {id: FAN0, pin: PA0, typical_use: part_cooling}
 probe_ports: []
+filament_sensor_ports:
+- {id: FIL, pin: PA4}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
