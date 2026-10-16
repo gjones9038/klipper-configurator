@@ -10,7 +10,7 @@ const db = loadDb();
 const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24-350-leviathan-sb2209.json', import.meta.url), 'utf8'));
 
 // Errors a matrix case may legitimately end in; anything else is a bug.
-const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_thermistor', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
+const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_thermistor', 'no_hotend_heater', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
   // matrix deliberately includes combinations the generator must refuse:
   'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path', 'probe_supply']);
 
@@ -516,4 +516,19 @@ test('Sovol SV08: custom thermistor tables, both part fans on one [multi_pin], Q
   assert.match(th, /\[fan\][^\n]*\npin: multi_pin:part_cooling_toolboard/);
   assert.match(th, /\[extruder\][^[]*sensor_type: sovol_sv08_hotend\nsensor_pin: toolhead:PA5\npullup_resistor: 11500/);
   assert.match(r.files['printer.cfg'], /\[quad_gantry_level\][^[]*gantry_corners:\n\s+-60, -10\n\s+410, 420/);
+});
+
+test('Prusa MK3S+: Einsy TMC2130 on AVR SPI, sensorless X at max / Y at -4, fans per Prusa firmware', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/prusa-mk3s.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  assert.match(mb, /\[tmc2130 stepper_x\][^[]*cs_pin: PG0\nspi_bus: spi[^[]*diag1_pin: !PK2[^\n]*\ndriver_SGT: 5/);
+  assert.match(mb, /\[stepper_y\][^[]*position_min: -4\nposition_endstop: -4\nposition_max: 212\.5[^[]*homing_positive_dir: False/);
+  assert.match(mb, /\[stepper_x\][^[]*rotation_distance: 32[^[]*position_endstop: 255/);
+  assert.match(mb, /\[fan\][^\n]*\npin: PH3/);                 // Prusa FAN_PIN 6
+  assert.match(mb, /\[heater_fan hotend_fan\][^\n]*\npin: PH5/); // Prusa EXTRUDER_0_AUTO_FAN_PIN 8
+  assert.match(mb, /\[extruder\][^[]*sensor_type: ATC Semitec 104GT-2/);   // Prusa TEMP_SENSOR_0 5
+  assert.match(mb, /\[probe\][^\n]*\npin: \^PB4\nx_offset: 23\ny_offset: 5/);
+  assert.match(r.files['FIRMWARE.md'], /Atmega AVR[\s\S]*atmega2560[\s\S]*16 MHz/);
 });

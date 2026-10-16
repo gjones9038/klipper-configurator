@@ -1,0 +1,122 @@
+schema: mainboard/1
+id: prusa-einsy-rambo
+name: Prusa Einsy RAMBo
+manufacturer: Ultimachine / Prusa Research
+revisions:
+- '1.0'
+status: reviewed
+mcu_variants:
+- chip: atmega2560
+  arch: avr
+  cpu_mhz: 16
+interfaces:
+- usb-serial
+firmware:
+  interface: Serial (UART0), 250000 baud (Klipper's AVR default)
+  flash: make flash FLASH_DEVICE=<the board's /dev/serial/by-id path> (avrdude, Klipper docs)
+power:
+  vin_v: [24, 24]
+driver_mount: onboard
+tmc_spi:
+  bus: spi
+driver_slots:
+- id: X
+  step_pin: PC0
+  dir_pin: PL0
+  enable_pin: '!PA7'
+  onboard_driver: &drv
+    chip: tmc2130
+    klipper_section: tmc2130
+    sense_resistor: 0.22
+  spi_cs_pin: PG0
+  diag_pin: PK2
+  diag_pin_key: diag1_pin
+  diag_modifier: '!'
+- id: Y
+  step_pin: PC1
+  dir_pin: PL1
+  enable_pin: '!PA6'
+  onboard_driver: *drv
+  spi_cs_pin: PG2
+  diag_pin: PK7
+  diag_pin_key: diag1_pin
+  diag_modifier: '!'
+- id: Z
+  step_pin: PC2
+  dir_pin: PL2
+  enable_pin: '!PA5'
+  onboard_driver: *drv
+  spi_cs_pin: PK5
+  diag_pin: PK6
+  diag_pin_key: diag1_pin
+  diag_modifier: '!'
+- id: E
+  step_pin: PC3
+  dir_pin: PL6
+  enable_pin: '!PA4'
+  onboard_driver: *drv
+  spi_cs_pin: PK4
+  diag_pin: PK3
+  diag_pin_key: diag1_pin
+  diag_modifier: '!'
+endstops:
+- id: X-MIN
+  pin: PB6
+- id: Y-MIN
+  pin: PB5
+heaters:
+- id: HEATER
+  pin: PE5
+  role: hotend
+- id: BED
+  pin: PG5
+  role: bed
+  drive: dc
+thermistors:
+- id: TH0
+  pin: PF0
+  typical_use: hotend
+- id: TB
+  pin: PF2
+  typical_use: bed
+- id: PINDA-TEMP
+  pin: PF3
+  typical_use: probe
+- id: AMBIENT
+  pin: PF6
+  typical_use: board
+fans:
+- id: PART-FAN
+  pin: PH3
+  tachometer_pin: PE7
+  typical_use: part_cooling
+  wires: 4
+  klipper: {cycle_time: 0.01}        # RatOS 4pin-fans/part-cooling-fan-100hz.cfg
+- id: HOTEND-FAN
+  pin: PH5
+  tachometer_pin: PE6
+  typical_use: hotend
+  wires: 4
+  klipper: {cycle_time: 0.01}        # RatOS 4pin-fans/toolhead-fan-100hz.cfg
+probe_ports:
+- id: PINDA
+  pin: PB4
+  supply_v: [5]
+  protected: true
+  note: The PINDA connector (Prusa Z_MIN_PIN 10 = PB4); the probe runs from the board's 5 V.
+filament_sensor_ports:
+- id: IR-SENSOR
+  pin: PK0
+  modifier: '!'
+notes:
+- Four TMC2130 on the AVR's hardware SPI bus; X/Y DIAG1 lines are wired for sensorless homing (Prusa homes X/Y sensorless).
+- An 8-bit AVR: Klipper's AVR build runs fine, but leave headroom (no input-shaper accelerometer on this MCU).
+unverified:
+- Prusa's firmware gives pins as Arduino numbers; they were mapped to AVR ports by the ATmega2560 Arduino pinout.
+discrepancies:
+- 'Fans: Prusa firmware (FAN_PIN 6 = PH3 part fan, EXTRUDER_0_AUTO_FAN_PIN 8 = PH5) and RatOS (part PH3, toolhead PH5) agree; Klipper''s generic-einsy-rambo.cfg puts [fan] on PH5 and the heatbreak fan on PH3. Using Prusa and RatOS.'
+- 'Sense resistors: Klipper''s generic config uses 0.220 for all four drivers; RatOS uses 0.30 for Z. Using 0.220 (if Z is really 0.30, Klipper then drives less current than set, not more).'
+sources:
+- {repo: https://github.com/Klipper3d/klipper, path: config/generic-einsy-rambo.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+- {repo: https://github.com/prusa3d/Prusa-Firmware, path: Firmware/pins_Einsy_1_0.h, commit: f3e0dfd481a78b222d2a82752f261adbc5a2c4d7}
+- {repo: https://github.com/Rat-OS/RatOS-configuration, path: boards/prusa-einsy/config.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}

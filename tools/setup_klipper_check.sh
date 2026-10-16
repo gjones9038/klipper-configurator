@@ -15,7 +15,7 @@ TOOLCHANGER_REF=pull/174/head
 TOOLCHANGER_COMMIT=0bded502b27dae5b9261789e03b0c8a0b84f48fb
 # A name with a suffix (stm32f042-orbitool) is a variant: the base chip's config plus
 # tools/klipper-check/<name>.overrides.
-CHIPS="stm32f042 stm32f042-orbitool stm32f072 stm32f103 stm32f401 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040"
+CHIPS="stm32f042 stm32f042-orbitool stm32f072 stm32f103 stm32f401 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040 atmega2560"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C="$ROOT/.cache/klipper-check"
@@ -38,6 +38,19 @@ if [ -z "$GCC_BIN" ]; then
   GCC_BIN="$(ls -d "$HOME"/.local/xPacks/@xpack-dev-tools/arm-none-eabi-gcc/*/.content/bin | tail -1)"
 fi
 export PATH="$GCC_BIN:$PATH"
+
+# AVR toolchain for 8-bit boards (Prusa Einsy: ATmega2560): ZakKemble/avr-gcc-build,
+# pinned and checked against the release's SHA256SUMS.
+AVR_VER=15.2.0
+AVR_SHA=d90765e6d975950afa235aa998122f97aae8b00504399068b6c9d0bf4994b0fe
+if [ ! -x "$C/avr-gcc/bin/avr-gcc" ]; then
+  mkdir -p "$C/avr-gcc-dl" "$C/avr-gcc"
+  curl -fsSL -o "$C/avr-gcc-dl/avr-gcc.tar.bz2" \
+    "https://github.com/ZakKemble/avr-gcc-build/releases/download/v$AVR_VER-1/avr-gcc-$AVR_VER-x64-linux.tar.bz2"
+  echo "$AVR_SHA  $C/avr-gcc-dl/avr-gcc.tar.bz2" | sha256sum -c - >/dev/null
+  tar -xjf "$C/avr-gcc-dl/avr-gcc.tar.bz2" -C "$C/avr-gcc" --strip-components=1
+fi
+export PATH="$PATH:$C/avr-gcc/bin"
 
 cd "$C/klipper"
 for chip in $CHIPS; do

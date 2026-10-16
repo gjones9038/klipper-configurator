@@ -104,6 +104,19 @@ extruders:
     sources:
       - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "rotation_distance 6.5, run_current 0.8, pressure_advance 0.025"}
 
+  - id: prusa-mk3s
+    name: Prusa MK3S extruder (Bondtech gears, direct drive)
+    drive: direct
+    rotation_distance: 22.857
+    microsteps: 16
+    full_steps_per_rotation: 200
+    run_current: 0.52
+    pa_baseline: {start: 0.04, range: [0.02, 0.08]}
+    confidence: high
+    sources:
+      - {repo: https://github.com/Rat-OS/RatOS-configuration, path: extruders/mk3s.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4, note: "rotation_distance 22.857; pressure_advance 0.04 reference in the MK3S template"}
+      - {repo: https://github.com/prusa3d/Prusa-Firmware, path: Firmware/variants/MK3S.h, commit: f3e0dfd481a78b222d2a82752f261adbc5a2c4d7, note: "E 280 steps/mm (at 32 microsteps: 200 * 32 / 280 = 22.857)"}
+
   - id: clockwork1
     name: Voron Clockwork (Afterburner)
     drive: direct

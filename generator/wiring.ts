@@ -198,9 +198,15 @@ export function firmwareMarkdown(p: Plan): string {
     `## ${p.board.name} ${p.board.revisions.join('/')}`,
     '',
     '- Enable extra low-level configuration options',
-    `- Micro-controller: ${(p.mcu.build_as ?? p.mcu.chip).toUpperCase()}${p.mcu.build_as ? ` (the ${p.mcu.chip.toUpperCase()} is built as ${p.mcu.build_as.toUpperCase()})` : ''}`,
-    `- Bootloader offset: ${boot ? `${boot}KiB bootloader` : 'No bootloader'}`,
-    `- Clock reference: ${p.mcu.crystal_mhz} MHz crystal`,
+    ...(p.mcu.arch === 'avr' ? [
+      '- Micro-controller Architecture: Atmega AVR',
+      `- Processor model: ${p.mcu.chip}`,
+      `- Processor speed: ${p.mcu.cpu_mhz} MHz`,
+    ] : [
+      `- Micro-controller: ${(p.mcu.build_as ?? p.mcu.chip).toUpperCase()}${p.mcu.build_as ? ` (the ${p.mcu.chip.toUpperCase()} is built as ${p.mcu.build_as.toUpperCase()})` : ''}`,
+      `- Bootloader offset: ${boot ? `${boot}KiB bootloader` : 'No bootloader'}${p.mcu.bootloader_note ? ` (${p.mcu.bootloader_note})` : ''}`,
+      `- Clock reference: ${p.mcu.crystal_mhz} MHz crystal`,
+    ]),
     `- Communication interface: ${iface}`,
     ...(['can', 'usb-can-bridge'].includes(b.connection) ? ['- CAN bus speed: 1000000'] : []),
     ...(p.mcu.menuconfig_extra ?? []).map((x: string) => `- ${x}`),

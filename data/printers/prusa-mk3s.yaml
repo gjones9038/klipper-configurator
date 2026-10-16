@@ -1,0 +1,97 @@
+schema: printer/1
+id: prusa-mk3s
+name: Prusa i3 MK3S / MK3S+
+manufacturer: Prusa Research
+status: reviewed
+docs:
+  - {title: "RatOS: Prusa MK3S", url: "https://os.ratrig.com/docs/printers/"}
+  - {title: "Klipper: configuration checks (first power-on)", url: "https://www.klipper3d.org/Config_checks.html"}
+kinematics: cartesian
+z_leveling: null                 # two Z leadscrews on one driver
+bed_heater: dc
+display: not_generated           # the LCD works in Klipper (hd44780); not generated yet
+
+sizes:
+  - id: stock
+    bed_mm: [250, 210]
+    position_max: {x: 255, y: 212.5, z: 210}
+
+steppers:
+  - {klipper: stepper_x, role: X, rotation_distance: 32, dir_inverted: true}   # 16-tooth pulleys: 200 * 16 / 100
+  - {klipper: stepper_y, role: Y, rotation_distance: 32}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:                        # RatOS speed-limits-basic.cfg
+    max_velocity: 240
+    max_accel: 4000
+    max_z_velocity: 15
+    max_z_accel: 200
+    square_corner_velocity: 5
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 25
+    homing_retract_dist: 0
+    position_min: 0
+    run_current: 0.4              # RatOS ldo/42sth40-1684ac/2130/24v-0.4a
+  axes:
+    x: {endstop_at_max: true, homing_positive_dir: true}
+    y: {endstop_at_max: false, position_endstop: -4, position_min: -4, homing_positive_dir: false}   # Prusa Y_MIN_POS -4
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: -5
+    homing_speed: 5
+    second_homing_speed: 2.5
+    homing_retract_dist: 5
+    run_current: 0.4
+  tmc:
+    interpolate: true             # RatOS tmc2130.cfg
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.52
+  sensorless_thresholds: {stepper_x: 5, stepper_y: 5}   # RatOS driver_SGT 5 (Prusa firmware TMC2130_SG_THRS 3)
+  bed:
+    max_power: 1.0
+    max_temp: 120                 # RatOS (Prusa BED_MAXTEMP 125)
+    pid: {pid_kp: 126.13, pid_ki: 4.3, pid_kd: 924.76}
+  safe_z_home:
+    home_xy_position: user
+    speed: 100
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [prusa-einsy-rambo]
+  toolhead: null
+  extruder: prusa-mk3s
+  hotend: generic-v6
+  thermistors: {hotend: semitec-104gt2, bed: epcos-b57560}
+  probe: super-pinda
+  probe_options: [super-pinda]
+  probe_offsets: {super-pinda: {x: 23, y: 5}}
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend]
+
+notes:
+  - "Prusa's firmware homes X at its maximum (X_MAX_POS 255) and Y at -4, sensorless; Z homes with the SuperPINDA."
+  - "Both Z leadscrews run from one driver; Prusa's own Z calibration (crash into the top) is not part of Klipper."
+unverified:
+  - "Z homing speeds are Klipper defaults (RatOS sets none)."
+discrepancies:
+  - "Probe offset: Prusa firmware 23, 5; RatOS template 24, 5. Using Prusa's."
+  - "Z max: Prusa Z_MAX_POS 210; RatOS 214. Using 210."
+sources:
+  - {repo: https://github.com/prusa3d/Prusa-Firmware, path: Firmware/variants/MK3S.h, commit: f3e0dfd481a78b222d2a82752f261adbc5a2c4d7}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/prusa-mk3s/steppers.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/prusa-mk3s/sensorless-homing-tmc2130.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: printers/prusa-mk3s/speed-limits-basic.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: templates/prusa-mk3s-printer.template.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}
+  - {repo: https://github.com/Rat-OS/RatOS-configuration, path: steppers/ldo/42sth40-1684ac/2130/24v-0.4a-x.cfg, commit: 3a6a8b018fd46ef4343a246a66b8c0fc357f05a4}

@@ -140,7 +140,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   // ------------------------------------------------------------ mainboard.cfg
   const mb = new CfgFile(header('mainboard.cfg'));
   mb.add(mcuSection('mcu', p.board, b.mainboard.connection, p.mcu.chip));
-  mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
+  // AVR chips have no internal temperature sensor (Klipper: no ADC_TEMPERATURE pin).
+  if (p.mcu.arch !== 'avr') mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
   // Thermistors Klipper does not know: their table, defined once before any heater uses it.
   const custom = new Map<string, Rec>();
   for (const t of [p.thermistor.hotend, p.thermistor.bed, p.thermistor.chamber, ...(p.tools ?? []).map((x) => x.thermistor)]) {
