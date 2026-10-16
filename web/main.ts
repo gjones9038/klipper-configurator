@@ -115,8 +115,8 @@ function statusBox(): HTMLElement {
   const errors = result.issues.filter((i) => i.level === 'error');
   const warnings = result.issues.filter((i) => i.level === 'warning');
   return errors.length
-    ? h('div', { class: 'status bad', role: 'status' }, h('span', null, h('b', null, `${errors.length} error${errors.length > 1 ? 's' : ''}: no config yet`), h('small', null, 'Fix these to generate the config.')))
-    : h('div', { class: 'status ok', role: 'status' }, h('span', null, h('b', null, 'Config generated'), h('small', null, `${Object.keys(result.files).length} files · ${warnings.length} warning${warnings.length === 1 ? '' : 's'} to check`)));
+    ? h('div', { class: 'status bad', role: 'status' }, h('span', null, h('b', null, `${errors.length} thing${errors.length > 1 ? 's' : ''} to fix first`), h('small', null, 'The config is written once these are sorted out. "Go to" opens the step that needs it.')))
+    : h('div', { class: 'status ok', role: 'status' }, h('span', null, h('b', null, 'Config generated'), h('small', null, `${Object.keys(result.files).length} files ready${warnings.length ? ` · ${warnings.length} note${warnings.length === 1 ? '' : 's'} to read below` : ''}`)));
 }
 
 function aside(): HTMLElement {
@@ -129,11 +129,11 @@ function aside(): HTMLElement {
     statusBox(),
     issueList(errors),
     warnings.length ? h('details', { open: warnings.length <= 3 ? true : null },
-      h('summary', { class: 'label', style: 'cursor:pointer;padding:6px 0' }, `Warnings · ${warnings.length}`), issueList(warnings)) : null,
+      h('summary', { class: 'label', style: 'cursor:pointer;padding:6px 0' }, `Notes to read · ${warnings.length}`), issueList(warnings)) : null,
     result.ok ? h('div', { class: 'section' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px' },
-        h('h2', null, 'Live preview'),
-        h('select', { 'aria-label': 'Preview file', style: 'width:auto;min-height:36px;padding:4px 8px;font-family:var(--mono);font-size:12px',
+        h('h2', null, 'File preview'),
+        h('select', { 'aria-label': 'Preview file', style: 'width:auto;min-height:36px;padding:4px 8px;font-family:var(--mono);font-size:14px',
           onChange: (e: Event) => { previewFile[step] = (e.target as HTMLSelectElement).value; render(); } },
         names.map((n) => h('option', { value: n, selected: n === file }, n)))),
       fileView(file, result.files[file])) : null,
@@ -142,7 +142,7 @@ function aside(): HTMLElement {
 
 function slotGrid(p: Plan): HTMLElement {
   const used = new Map(p.steppers.filter((s) => s.board === 'mainboard').map((s) => [s.slot, s]));
-  return h('div', { class: 'section' }, h('h2', null, 'Driver slots'),
+  return h('div', { class: 'section' }, h('h2', null, 'Motor sockets on the board'),
     h('div', { class: 'slots' }, p.board.driver_slots.map((slot: any) => {
       const s = used.get(slot.id);
       return h('div', { class: `slot${s ? '' : ' free'}` }, h('span', null, slot.id), h('b', null, s ? s.name.replace('stepper_', '') : 'free'));

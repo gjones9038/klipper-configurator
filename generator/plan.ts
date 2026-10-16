@@ -213,14 +213,14 @@ export function plan(build: Build, db: Db): Plan {
     const tl: number | undefined = th.max_temp_c;
     if (he.max_temp == null) {
       if (tl == null) throw new PlanError('no_max_temp', `${label}Neither the ${he.name} nor the ${th.label} thermistor has a known maximum temperature.`);
-      warn('hotend_max_temp_unknown', `${label}No published maximum temperature for the ${he.name}; max_temp follows the ${th.label} thermistor (${tl}°C). Check the hotend's limit.`);
+      warn('hotend_max_temp_unknown', `${label}The ${he.name} has no published maximum temperature, so the ${th.label} thermistor's limit (${tl}°C) is used. Check your hotend's own limit.`);
       return tl;
     }
     const t = Math.min(he.max_temp, tl ?? he.max_temp);
     if (he.max_temp_basis === 'metalwork') {
-      warn('max_temp_capped', `${label}The ${he.name} ships without a heater or thermistor; its ${he.max_temp}°C rating covers the metal parts only. max_temp is ${t}°C from the ${th.label} thermistor${th.basis === 'seller' ? ` (a seller's rating; generic parts vary, so check yours)` : ''}; your heater cartridge's rating also applies.`);
+      warn('max_temp_capped', `${label}The ${he.name} comes without a heater or thermistor; its ${he.max_temp}°C rating covers only the metal parts. The top temperature is set to ${t}°C by the ${th.label} thermistor${th.basis === 'seller' ? ` (a seller's rating; generic parts vary, so check yours)` : ''}. Your heater cartridge's own rating applies too.`);
     } else if (t < he.max_temp) {
-      warn('max_temp_capped', `${label}Hotend max_temp capped at ${t}°C by the ${th.label} thermistor (hotend rated ${he.max_temp}°C).`);
+      warn('max_temp_capped', `${label}The hotend's top temperature is limited to ${t}°C by the ${th.label} thermistor (the hotend itself is rated ${he.max_temp}°C).`);
     }
     return t;
   }
@@ -278,13 +278,13 @@ export function plan(build: Build, db: Db): Plan {
     addLinks(tcRec.docs, 'toolchanger');
   }
   if (board.status !== 'reviewed') {
-    warn('board_needs_review', `${board.name} pin data is marked "${board.status}". Verify pins against the board before powering on.`);
+    warn('board_needs_review', `${board.name}: its pin list comes from a single source ("needs review"). Check the pins against the board's own pin diagram before powering on.`);
   }
   for (const d of board.discrepancies ?? []) warn('board_discrepancy', `${board.name}: ${d}`);
 
   // --- connectivity ------------------------------------------------------
   if (!board.interfaces.includes(build.mainboard.connection)) {
-    err('connection_unsupported', `${board.name} does not support "${build.mainboard.connection}" (supports: ${board.interfaces.join(', ')}).`);
+    err('connection_unsupported', `${board.name} cannot connect by "${build.mainboard.connection}"; it supports ${board.interfaces.join(', ')} (Mainboard step).`);
   }
   if (toolboard) {
     const tconn = build.toolboard!.connection ?? (toolboard.interfaces.includes('can') ? 'can' : 'usb');
@@ -292,7 +292,7 @@ export function plan(build: Build, db: Db): Plan {
       err('toolboard_connection', `${toolboard.name} has no ${tconn} interface.`);
     }
     if (tconn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
-      err('no_can_path', `${toolboard.name} on CAN needs the mainboard in USB-CAN bridge mode or a USB-CAN adapter (canAdapter: "u2c").`);
+      err('no_can_path', `${toolboard.name} connects over CAN, which needs a path to your Pi: set the mainboard to "USB-CAN bridge", or use a separate USB-CAN adapter (Toolhead board step).`);
     }
   }
 
@@ -323,8 +323,8 @@ export function plan(build: Build, db: Db): Plan {
   for (const [stepper, slotId] of Object.entries(build.slotOverrides ?? {})) {
     const role = orderedRoles.find((r) => defByRole[r].klipper === stepper);
     const slot = slots.find((s) => s.id === slotId);
-    if (!role || !slot) { err('bad_override', `Slot override ${stepper} -> ${slotId} does not match this build.`); continue; }
-    if (!free.includes(slot)) { err('slot_taken', `Slot ${slotId} assigned twice.`); continue; }
+    if (!role || !slot) { err('bad_override', `The socket chosen for ${stepper} (${slotId}) does not exist on this board. Pick another on the Motors step.`); continue; }
+    if (!free.includes(slot)) { err('slot_taken', `Socket ${slotId} is chosen for two motors.`); continue; }
     assign[role] = slot; take(slot);
   }
   // HV slots go to A/B first, then to the AWD pair (Leviathan extension: B1 on
@@ -356,7 +356,7 @@ export function plan(build: Build, db: Db): Plan {
     const id = group === 'extruder' ? (build.motors.extruder ?? extruder.recommended_motor) : build.motors[group];
     if (!id) return undefined;
     const m = db.motors[id.toLowerCase()];
-    if (!m) warn('unknown_motor', `Motor "${id}" is not in the motor database: run_current falls back to the printer default and autotune is skipped for it.`);
+    if (!m) warn('unknown_motor', `Motor "${id}" is not in the motor list, so its current uses the printer's default and autotune skips it.`);
     return m;
   };
   const motors = { xy: motorFor('xy'), z: motorFor('z'), extruder: motorFor('extruder') };
@@ -504,28 +504,28 @@ export function plan(build: Build, db: Db): Plan {
     // Published reference values first (extruder maker, Z drive maker, Voron),
     // never above the policy ceiling: fraction_of_rated x motor rating and the
     // driver/slot limits. The ceiling is shown so users know their headroom.
-    if (driver.standalone) return { current: 0, note: 'standalone driver: current is set on the board' };
+    if (driver.standalone) return { current: 0, note: 'Standalone driver: the current is set on the board' };
     const chip = db.drivers.chips[driver.chip];
     const policy = db.drivers.run_current_policy.fraction_of_rated;
     const caps: Array<[number, string]> = [];
-    if (motor) caps.push([motor.rated_current_a * policy, `${Math.round(policy * 100)}% of ${motor.autotune_name} rated ${motor.rated_current_a} A`]);
-    if (chip.practical_max_rms_a) caps.push([chip.practical_max_rms_a, `${driver.chip} practical limit`]);
-    if (slot.onboard_driver?.max_current_a) caps.push([slot.onboard_driver.max_current_a, `${slot.id} rating`]);
+    if (motor) caps.push([motor.rated_current_a * policy, `${Math.round(policy * 100)}% of the motor's ${motor.rated_current_a} A rating`]);
+    if (chip.practical_max_rms_a) caps.push([chip.practical_max_rms_a, `the ${driver.chip.toUpperCase()} driver's practical limit`]);
+    if (slot.onboard_driver?.max_current_a) caps.push([slot.onboard_driver.max_current_a, `the ${slot.id} socket's rating`]);
     const [ceiling, ceilingWhy] = caps.reduce((a, b) => (b[0] < a[0] ? b : a), [Infinity, ''] as [number, string]);
 
     const override = build.runCurrent?.[group];
     if (override) {
-      if (override > ceiling) warn('run_current_high', `${group} run_current ${override} A is above ${r2(ceiling)} A (${ceilingWhy}).`);
-      return { current: override, note: 'user setting' };
+      if (override > ceiling) warn('run_current_high', `The ${group === 'xy' ? 'X/Y' : group === 'z' ? 'Z' : 'extruder'} motor current you entered (${override} A) is above ${r2(ceiling)} A (${ceilingWhy}).`);
+      return { current: override, note: 'your setting' };
     }
     let ref: number, refWhy: string;
-    if (group === 'extruder' && extruder.run_current) [ref, refWhy] = [extruder.run_current, `${extruder.name} recommendation`];
-    else if (group === 'extruder') [ref, refWhy] = [printer.defaults.extruder.run_current, `${printer.name} reference`];
-    else if (group === 'z' && zDrive?.run_current) [ref, refWhy] = [zDrive.run_current, `${zDrive.id} recommendation`];
-    else if (group === 'z') [ref, refWhy] = [printer.defaults.stepper_z.run_current, `${printer.name} reference`];
-    else [ref, refWhy] = [printer.defaults.stepper_xy.run_current, `${printer.name} reference`];
-    if (ref > ceiling) return { current: r2(ceiling), note: `${refWhy} ${ref} A capped at ${ceilingWhy}` };
-    return { current: ref, note: ceiling < Infinity ? `${refWhy}; can go up to ${r2(ceiling)} A (${ceilingWhy})` : refWhy };
+    if (group === 'extruder' && extruder.run_current) [ref, refWhy] = [extruder.run_current, `Recommended for the ${extruder.name}`];
+    else if (group === 'extruder') [ref, refWhy] = [printer.defaults.extruder.run_current, `Starting value for the ${printer.name}`];
+    else if (group === 'z' && zDrive?.run_current) [ref, refWhy] = [zDrive.run_current, `Recommended for the ${zDrive.id} Z drive`];
+    else if (group === 'z') [ref, refWhy] = [printer.defaults.stepper_z.run_current, `Starting value for the ${printer.name}`];
+    else [ref, refWhy] = [printer.defaults.stepper_xy.run_current, `Starting value for the ${printer.name}`];
+    if (ref > ceiling) return { current: r2(ceiling), note: `${refWhy} is ${ref} A, lowered to ${r2(ceiling)} A (${ceilingWhy})` };
+    return { current: ref, note: ceiling < Infinity ? `${refWhy}. Safe up to ${r2(ceiling)} A (${ceilingWhy}).` : refWhy };
   }
 
   // --- homing ------------------------------------------------------------
@@ -538,7 +538,7 @@ export function plan(build: Build, db: Db): Plan {
     const ep = eps.find((e) => e.diag_of === stepper.slot && !usedEndstops.has(e.id))
       ?? eps.find((e) => e.id.toUpperCase().startsWith(axis) && !usedEndstops.has(e.id))
       ?? eps.find((e) => !usedEndstops.has(e.id));
-    if (!ep) { err('no_endstop_port', `No free endstop input on ${board.name} for ${axis}.`); return undefined; }
+    if (!ep) { err('no_endstop_port', `${board.name} has no free endstop input left for ${axis}.`); return undefined; }
     usedEndstops.add(ep.id);
     // Board data gives the polarity when a source states it (Ender 3 S1: !PA5); else a pull-up.
     return { port: ep.id, pin: qpin('mainboard', ep.pin, ep.modifier ?? '^'), board: 'mainboard' as BoardKind };
@@ -550,9 +550,9 @@ export function plan(build: Build, db: Db): Plan {
       s.endstop = pickEndstop(s, axis);
     } else {
       const chip = db.drivers.chips[s.driver.chip];
-      if (s.driver.standalone) err('sensorless_unsupported', `${board.name} ${s.slot} has a standalone driver (no UART/SPI), so sensorless homing is not possible for ${name}. Use the endstop switches.`);
-      else if (!chip.sensorless) err('sensorless_unsupported', `${s.driver.chip} on ${s.slot} has no StallGuard; sensorless homing is not possible for ${name}.`);
-      else if (!s.driver.diag) err('sensorless_no_diag', `${board.name} ${s.slot} has no DIAG pin in the data; sensorless homing is not possible for ${name}.`);
+      if (s.driver.standalone) err('sensorless_unsupported', `${board.name}: the ${s.slot} driver is standalone (Klipper cannot talk to it), so sensorless homing is not possible for ${name}. Use endstop switches (Homing step).`);
+      else if (!chip.sensorless) err('sensorless_unsupported', `The ${s.driver.chip} driver on ${s.slot} cannot sense the motor stalling (no StallGuard), so sensorless homing is not possible for ${name}.`);
+      else if (!s.driver.diag) err('sensorless_no_diag', `${board.name}: no stall-detect (DIAG) line is known for socket ${s.slot}, so sensorless homing is not possible for ${name}. Use endstop switches.`);
       s.endstop = 'virtual';
       sensorlessSlots.add(s.slot);
       homingCurrent[name] = r2(s.runCurrent * 0.7);
@@ -567,7 +567,7 @@ export function plan(build: Build, db: Db): Plan {
   } else {
     zs.endstop = pickEndstop(zs, 'Z');
     if (build.homing.z === 'nozzle_switch' && !build.homing.zSwitchXY) {
-      err('no_z_switch_xy', 'Nozzle-switch Z homing needs homing.zSwitchXY (the switch position). Homing at a guessed position would drive the nozzle into the bed.');
+      err('no_z_switch_xy', 'Enter the Z switch position on the Homing step. Homing at a guessed position could drive the nozzle into the bed.');
     }
     const sw = build.homing.zSwitchXY;
     const min = printer.defaults.stepper_xy.position_min;
@@ -635,16 +635,16 @@ export function plan(build: Build, db: Db): Plan {
     const port = f.port ? ports.find((p) => p.id === f.port)
       : ports.find((p) => p.typical_use === f.role && !usedFans[kind].has(p.id)) ?? ports.find((p) => !p.typical_use && !usedFans[kind].has(p.id)) ?? ports.find((p) => !usedFans[kind].has(p.id));
     if (!port) { err('no_fan_port', `No ${f.port ? `port ${f.port}` : 'free fan port'} on the ${kind} for "${f.role}".`); continue; }
-    if (usedFans[kind].has(port.id)) { err('fan_port_taken', `${port.id} on the ${kind} is used twice.`); continue; }
+    if (usedFans[kind].has(port.id)) { err('fan_port_taken', `${port.id} on the ${kind} is used for two fans.`); continue; }
     usedFans[kind].add(port.id);
     roleCount[f.role] = (roleCount[f.role] ?? 0) + 1;
     let section: string = role.klipper_section;
     if (f.name) section = `${section.split(' ')[0]} ${f.name}`;
     else if (roleCount[f.role] > 1) {
-      if (section === 'fan') { err('two_part_fans', 'Klipper allows one [fan]; put both part-cooling fans on one port or use fan_generic.'); continue; }
+      if (section === 'fan') { err('two_part_fans', 'Klipper has one part-cooling fan output; wire both fans to one port.'); continue; }
       section = `${section}_${roleCount[f.role]}`;
     }
-    if (f.tachometer && !port.tachometer_pin) warn('no_tach', `${port.id} on the ${kind} has no tachometer input; tach ignored.`);
+    if (f.tachometer && !port.tachometer_pin) warn('no_tach', `${port.id} on the ${kind} has no fan-speed (tachometer) input, so that setting is ignored.`);
     const tach = f.tachometer && port.tachometer_pin ? qpin(kind, port.tachometer_pin) : undefined;
     const multiName = `${f.role}_${kind}`.replace(/[^a-z0-9_]/gi, '_');
     fans.push({
@@ -661,7 +661,7 @@ export function plan(build: Build, db: Db): Plan {
     const nm = build.nevermore;
     const model = db.filters[nm.model];
     if (!model) err('unknown_filter', `Unknown filter "${nm.model}"`);
-    else if (fans.some((f) => f.section === 'fan_generic nevermore')) err('nevermore_twice', 'Nevermore is configured both as a fan entry and as build.nevermore; keep one.');
+    else if (fans.some((f) => f.section === 'fan_generic nevermore')) err('nevermore_twice', 'The Nevermore is set up twice (as a fan and as the air filter); keep one.');
     else {
       addLinks(model.docs, 'filter');
       const port = nm.port ? board.fans.find((p: Rec) => p.id === nm.port) : board.fans.find((p: Rec) => !usedFans.mainboard.has(p.id));
@@ -681,7 +681,7 @@ export function plan(build: Build, db: Db): Plan {
       }
     }
   }
-  if (!fans.some((f) => f.role === 'hotend') && printer.hotend_fan !== 'always_on') err('no_hotend_fan', 'No hotend fan configured. A heater_fan for the hotend is required to avoid heat creep.');
+  if (!fans.some((f) => f.role === 'hotend') && printer.hotend_fan !== 'always_on') err('no_hotend_fan', 'Add a hotend fan (Fans step). Without it, heat creeps up the hotend and jams the filament.');
 
   // --- probe ---------------------------------------------------------------
   let probe: Plan['probe'];
@@ -692,7 +692,7 @@ export function plan(build: Build, db: Db): Plan {
     addLinks(p.docs, 'probe');
     const known = p.defaults ?? p.offsets;
     const offset = build.probeOffset ?? { x: known?.x_offset ?? 0, y: known?.y_offset ?? 0 };
-    if (!build.probeOffset && !known) warn('probe_offset_default', `No offset is known for ${p.name} (it depends on the mount); using 0, 0. Measure it (Klipper Probe_Calibrate.md) and set probeOffset, then recalibrate.`);
+    if (!build.probeOffset && !known) warn('probe_offset_default', `The ${p.name}'s offset from the nozzle depends on how it is mounted, so 0, 0 is used for now. Measure it (Klipper's probe calibration guide), enter it on the Homing step, then calibrate again.`);
     if (p.kind === 'eddy_native') {
       if (p.interface === 'toolboard_i2c') {
         // Eddy Coil: an LDC1612 on the toolhead board's I2C header, driven by that board's MCU.
@@ -712,7 +712,7 @@ export function plan(build: Build, db: Db): Plan {
         const ifaces = Array.isArray(p.interface) ? p.interface : [p.interface];
         if (!ifaces.includes(conn)) err('probe_connection', `${p.name} supports ${ifaces.join(', ')}, not ${conn}.`);
         if (conn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
-          err('no_can_path', `${p.name} on CAN needs the mainboard in USB-CAN bridge mode or a USB-CAN adapter.`);
+          err('no_can_path', `${p.name} on CAN needs a path to your Pi: set the mainboard to "USB-CAN bridge", or use a separate USB-CAN adapter.`);
         }
         extraMcus.push({ name: p.mcu.name, chip: p.mcu.chip, what: p.name, klipperCheck: true });
         probe = { ...p, offset, connection: conn };
@@ -743,7 +743,7 @@ export function plan(build: Build, db: Db): Plan {
       let output: string | undefined;
       if (p.kind === 'inductive') {
         output = p.output ?? build.probeOutput;
-        if (!output) err('probe_output_needed', `Choose the output type of your inductive probe (probeOutput: npn-nc, npn-no, pnp-nc or pnp-no). It is printed on the probe or its listing.`);
+        if (!output) err('probe_output_needed', `Choose your inductive probe's output type on the Homing step (NPN or PNP, NO or NC). It is printed on the probe or its listing.`);
         if (output?.startsWith('pnp') && use && !use.port.pnp_capable) {
           err('pnp_unsupported_port', `${p.name} is a PNP probe; its output sits at supply voltage (12-24 V) when active. ${use.port.id} on the ${use.b} is not marked PNP-capable. Use an NPN probe or a board with a PNP-selectable probe port.`);
         }
@@ -751,9 +751,9 @@ export function plan(build: Build, db: Db): Plan {
         // wins; otherwise the port modifier, which is for the NC reference probe. NO flips the inversion.
         const base = p.pin_modifier ?? use?.port.modifier ?? '^';
         mods = output?.endsWith('-no') ? (base.includes('!') ? base.replace('!', '') : base + '!') : base;
-        if (output?.endsWith('-no')) warn('probe_no', `${p.name} is normally open: if its wire breaks Klipper sees "not triggered" and the nozzle can crash. Voron recommends NC probes.`);
-        if (use && !use.port.modifier && !p.pin_modifier) warn('probe_modifier_default', `No source gives the pin polarity for ${use.port.id} on the ${use.b}; using ${mods}. Confirm with QUERY_PROBE (open when away from the bed, TRIGGERED near metal) before homing.`);
-        if (use && !use.port.protected) warn('probe_voltage', `${use.port.id} is not marked as 12-24 V tolerant. Inductive probes output their supply voltage: add a BAT85 diode (black band toward the probe) as in Voron's wiring guide, or use a protected probe port.`);
+        if (output?.endsWith('-no')) warn('probe_no', `${p.name} is normally open (NO): if its wire breaks, Klipper thinks the bed is still far away and the nozzle can crash. Voron recommends normally closed (NC) probes.`);
+        if (use && !use.port.modifier && !p.pin_modifier) warn('probe_modifier_default', `No source says how ${use.port.id} on the ${use.b} reads the probe, so "${mods}" is used. Before homing, run QUERY_PROBE: it must say "open" away from the bed and "TRIGGERED" near metal.`);
+        if (use && !use.port.protected) warn('probe_voltage', `${use.port.id} is not known to handle 12-24 V, and inductive probes send out their supply voltage. Add a BAT85 diode in the signal wire (black band toward the probe), as in Voron's wiring guide, or use a protected probe port.`);
         if (use?.port.pnp_capable) warn('probe_port_jumper', `Set the ${use.port.id} jumper to ${output?.startsWith('pnp') ? 'PNP' : 'NPN'} to match the probe.`);
       } else {
         mods = use?.port.modifier ?? p.pin_modifier ?? '^';
@@ -762,22 +762,22 @@ export function plan(build: Build, db: Db): Plan {
       if (p.needs_macros) warn('probe_macros', `${p.name} needs its attach/dock macros installed separately.`);
     }
     if (build.homing.z === 'probe_virtual_endstop' && !p.z_endstop_capable) {
-      err('probe_not_z_endstop', `${p.name} is not suitable as the Z endstop. Use a nozzle switch for Z.`);
+      err('probe_not_z_endstop', `The ${p.name} cannot set Z zero. Choose a nozzle switch or Z endstop switch for Z homing.`);
     }
   } else if (tcRec && !shuttle) {
     // Each tool's Tap sensor is the probe; Klipper sees one probe object (tool_probe_endstop).
     probe = { id: 'tool_probe', name: 'Tap sensor on each tool ([tool_probe])', kind: 'tool_probe', z_endstop_capable: true, offset: { x: 0, y: 0 } };
   } else if (build.homing.z === 'probe_virtual_endstop') {
-    err('no_probe', 'Z homing with the probe needs a probe.');
+    err('no_probe', 'Z homing with a probe needs a probe: choose one on the Homing step.');
   }
-  if (printer.z_leveling && !build.probe && !tcRec) err('no_probe_for_leveling', `${printer.name} needs a probe for ${printer.z_leveling}.`);
+  if (printer.z_leveling && !build.probe && !tcRec) err('no_probe_for_leveling', `${printer.name} needs a probe to level its ${printer.z_leveling === 'quad_gantry_level' ? 'gantry' : 'bed'}: choose one on the Homing step.`);
 
   // --- accelerometer, LEDs -------------------------------------------------
   const accel = toolboard?.accelerometer ? { ...toolboard.accelerometer, board: 'toolboard' as BoardKind } : undefined;
   let leds: Plan['leds'];
   if (build.leds && toolhead?.leds) {
     const port = toolboard?.neopixel_ports?.[0];
-    if (!port) warn('no_led_port', 'Toolhead LEDs need an RGB port on the toolhead board; skipped.');
+    if (!port) warn('no_led_port', 'The toolhead LEDs need an RGB port on the toolhead board, and this one has none, so they are left out.');
     else leds = { board: 'toolboard', port: port.id, pin: qpin('toolboard', port.pin), chain: toolhead.leds.chain_count, order: toolhead.leds.color_order };
   }
 
@@ -787,12 +787,12 @@ export function plan(build: Build, db: Db): Plan {
     for (const s of steppers) {
       if (s.driver.standalone) continue;
       const at = db.drivers.chips[s.driver.chip].autotune;
-      if (at !== 'supported') warn('autotune_untested', `klipper_tmc_autotune support for ${s.driver.chip} (${s.name}) is "${at}".`);
+      if (at !== 'supported') warn('autotune_untested', `The klipper_tmc_autotune plugin lists its support for the ${s.driver.chip} (${s.name}) as "${at}".`);
     }
   }
   const flow = db.flowClasses[hotend.flow_class]?.pa_offset ?? 0;
   const paBaseline = r2((extruder.pa_baseline?.start ?? 0.04) + flow);
-  if ((build.nozzleDiameter ?? 0.4) !== 0.4) warn('pa_nozzle', 'Pressure advance baseline assumes a 0.4 mm nozzle.');
+  if ((build.nozzleDiameter ?? 0.4) !== 0.4) warn('pa_nozzle', 'The starting pressure advance value assumes a 0.4 mm nozzle; tune it for yours (TUNE_PA).');
 
   // --- toolchanger: one ToolPlan per tool ---------------------------------
   let tools: ToolPlan[] | undefined;
@@ -840,9 +840,9 @@ export function plan(build: Build, db: Db): Plan {
       const conn = spec.toolboard.connection ?? (tb.interfaces.includes('can') ? 'can' : 'usb');
       if (!tb.interfaces.includes(conn)) err('toolboard_connection', `T${n}: ${tb.name} has no ${conn} interface.`);
       if (conn === 'can' && build.mainboard.connection !== 'usb-can-bridge' && !build.canAdapter) {
-        err('no_can_path', `T${n}: ${tb.name} on CAN needs the mainboard in USB-CAN bridge mode or a USB-CAN adapter (canAdapter: "u2c").`);
+        err('no_can_path', `T${n}: ${tb.name} connects over CAN, which needs a path to your Pi: set the mainboard to "USB-CAN bridge", or use a separate USB-CAN adapter.`);
       }
-      if (tb.status !== 'reviewed') warn('board_needs_review', `T${n}: ${tb.name} pin data is marked "${tb.status}". Verify pins against the board before powering on.`);
+      if (tb.status !== 'reviewed') warn('board_needs_review', `T${n}: ${tb.name}'s pin list comes from a single source ("needs review"). Check the pins against the board's own pin diagram before powering on.`);
       addLinks(repoLink(tb, 'manufacturer docs and pinout'), 'toolhead board');
       const ext = need(db.extruders[spec.extruder ?? build.extruder], 'unknown_extruder', `T${n}: unknown extruder "${spec.extruder}"`);
       const he = need(db.hotends[spec.hotend ?? build.hotend], 'unknown_hotend', `T${n}: unknown hotend "${spec.hotend}"`);
@@ -855,7 +855,7 @@ export function plan(build: Build, db: Db): Plan {
       addLinks(ext.docs, 'extruder');
       const motorId: string | undefined = spec.extruderMotor ?? (spec.extruder ? ext.recommended_motor : build.motors.extruder ?? ext.recommended_motor);
       const motor = motorId ? db.motors[motorId.toLowerCase()] : undefined;
-      if (motorId && !motor) warn('unknown_motor', `T${n}: motor "${motorId}" is not in the motor database: run_current falls back to the printer default and autotune is skipped for it.`);
+      if (motorId && !motor) warn('unknown_motor', `T${n}: motor "${motorId}" is not in the motor list, so its current uses the printer's default and autotune skips it.`);
       const d = tb.extruder_driver;
       const stepper = buildStepper({ klipper: extruderName(n), role: 'E' }, {
         id: 'extruder', step_pin: d.step_pin, dir_pin: d.dir_pin, enable_pin: d.enable_pin,
@@ -879,7 +879,7 @@ export function plan(build: Build, db: Db): Plan {
       let toolLeds: ToolPlan['leds'];
       if (build.leds && toolhead?.leds) {
         const port = tb.neopixel_ports?.[0];
-        if (!port) warn('no_led_port', `T${n}: LEDs need an RGB port on ${tb.name}; skipped.`);
+        if (!port) warn('no_led_port', `T${n}: the LEDs need an RGB port on ${tb.name}, and it has none, so they are left out.`);
         else toolLeds = { board: 'toolboard', port: port.id, pin: qpin('toolboard', port.pin, '', mcuName), chain: toolhead.leds.chain_count, order: toolhead.leds.color_order };
       }
       tools!.push({

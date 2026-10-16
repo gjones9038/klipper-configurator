@@ -5,8 +5,8 @@ schema: homing/1
 
 xy_methods:
   physical:
-    name: Physical endstop switch
-    description: Microswitch or Hall sensor at the end of the axis (Voron, Ender and most stock printers).
+    name: Endstop switches
+    description: A small switch at the end of each axis tells the printer where zero is. Most printers use these.
     needs:
       - "a free endstop input for each axis, on the mainboard (`endstops`) or the toolhead
         board (Stealthburner X endstop is often wired to the toolhead board)"
@@ -21,8 +21,8 @@ xy_methods:
         remove the DIAG jumper under that driver."
 
   sensorless:
-    name: Sensorless (StallGuard)
-    description: The TMC driver detects the motor stall when the carriage hits the end.
+    name: Sensorless (no switches)
+    description: No switch is needed. The motor driver feels the carriage stop at the end of the axis (TMC StallGuard). Needs a little tuning to be reliable.
     needs:
       - "driver chip with sensorless support (drivers.yaml chips.*.sensorless not null)"
       - "a diag_pin on the board slot driving stepper_x and stepper_y"
@@ -60,24 +60,24 @@ xy_methods:
 
 z_methods:
   nozzle_switch:
-    name: Voron nozzle-pin Z endstop
-    description: Nozzle presses a microswitch pin at the rear; probe only used for leveling.
+    name: Nozzle switch (Voron)
+    description: The nozzle presses a small switch pin at the back of the bed. The probe is then only used to level and map the bed.
     emits: {endstop_pin: "<port pin>", safe_z_home: "home_xy_position = switch location (user)"}
   probe_virtual_endstop:
-    name: Probe as Z endstop
-    description: Tap, Klicky, Beacon, Cartographer, Eddy or inductive probe homes Z.
+    name: Probe
+    description: The probe finds the bed and sets Z zero (Tap, Klicky, BLTouch, Beacon, Cartographer, Eddy and similar).
     emits: {endstop_pin: "probe:z_virtual_endstop", position_endstop: omit}
     notes:
       - "Inductive probes as Z endstop drift with bed temperature; Voron recommends them for
         QGL/Z-tilt only."
       - "Beacon/Cartographer use their own homing integration; see probes.yaml."
   physical_max:
-    name: Physical switch at Z max
-    description: The bed drops onto a switch at the bottom of the printer (Voron 0); Z homes to its maximum.
+    name: Switch at the bottom (Z max)
+    description: The bed moves down onto a switch at the bottom of the printer (Voron 0).
     emits: {endstop_pin: "<port pin>", position_endstop: "= position_max"}
   physical_min:
-    name: Physical switch at Z min
-    description: Switch at the bottom of Z travel (stock on most bed-slingers, e.g. Ender 3); uncommon on Voron.
+    name: Z endstop switch
+    description: A switch that clicks when the nozzle reaches the bed (stock on Ender 3-style printers).
     emits: {endstop_pin: "<port pin>"}
 
 sources:
