@@ -43,7 +43,8 @@ export interface Case { name: string; build: Build }
 export function matrix(db: Db): Case[] {
   const cases: Case[] = [];
   let n = 0;
-  for (const boardId of Object.keys(db.mainboards).sort()) {
+  // Printer-specific stock boards (stock_only) are covered by stockPrinterCases instead.
+  for (const boardId of Object.keys(db.mainboards).filter((id) => !db.mainboards[id].stock_only).sort()) {
     const board = db.mainboards[boardId];
     for (const printerId of ['voron-2.4', 'voron-trident']) {
       for (const variant of ['standard', 'awd']) {
@@ -244,7 +245,7 @@ function stockPrinterCases(db: Db, start: number): Case[] {
             ...(st.toolboard ? { toolboard: { id: st.toolboard, connection: db.toolboards[st.toolboard].interfaces[0] } } : {}),
             drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } },
             motors: { xy: '', z: '' },
-            homing: probe ? { xy: st.homing_xy ?? 'physical', z: 'probe_virtual_endstop' }
+            homing: probe && db.probes[probe]?.z_endstop_capable ? { xy: st.homing_xy ?? 'physical', z: 'probe_virtual_endstop' }
               : { xy: st.homing_xy ?? 'physical', z: st.homing_z && st.homing_z !== 'probe_virtual_endstop' ? st.homing_z : 'physical_min' },
             ...(probe ? { probe, ...(st.probe_offsets?.[probe] ? { probeOffset: st.probe_offsets[probe] } : {}) } : {}),
             extruder: st.extruder, hotend: st.hotend,

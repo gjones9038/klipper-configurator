@@ -1,0 +1,62 @@
+# Imported from Klipper's config/printer-artillery-sidewinder-x2-2022.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: artillery-sidewinder-x2-board
+name: Artillery Sidewinder X2 mainboard
+manufacturer: Artillery
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f401, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb]
+firmware: {interface: USB (on PA11/PA12), flash: 'To flash this firmware, set the physical bridge between +3.3V and Boot0
+    PIN on Artillery_Ruby mainboard. Then run the command: make flash FLASH_DEVICE=/dev/serial/by-id/usb-Klipper_stm32f401xc_*-if00
+    See docs/Config_Reference.md for a description of parameters.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: '!PB14'
+  dir_pin: PB13
+  enable_pin: '!PB15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PB10
+  dir_pin: PB2
+  enable_pin: '!PB12'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PB0
+  dir_pin: PC5
+  enable_pin: '!PB1'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PA7
+  dir_pin: PA6
+  enable_pin: '!PC4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PA2, modifier: '!'}
+- {id: Y-STOP, pin: PA1, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PC9, role: hotend}
+- {id: BED, pin: PA8, role: bed}
+thermistors:
+- {id: TH0, pin: PC0, typical_use: hotend}
+- {id: TB, pin: PC1, typical_use: bed}
+fans:
+- {id: FAN0, pin: PC8, typical_use: part_cooling}
+- {id: FAN1, pin: PC7, typical_use: hotend}
+- {id: FAN2, pin: PC6, typical_use: controller}
+probe_ports: []
+bltouch: {sensor_pin: PC2, control_pin: PC3}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x2-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

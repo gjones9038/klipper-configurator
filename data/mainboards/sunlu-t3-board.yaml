@@ -1,0 +1,62 @@
+# Imported from Klipper's config/printer-sunlu-t3-2022.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: sunlu-t3-board
+name: SUNLU Terminator T3 mainboard
+manufacturer: SUNLU
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 28}
+interfaces: [usb]
+firmware: {interface: USB communication, flash: 'This file contains common pin mappings for the SUNLU Terminator T3 board
+    To use this config, the firmware should be compiled for the STM32F103 with a "28KiB bootloader" and USB communication.
+    The "make flash" command does not work on the SUNLU Terminator T3 board. Instead, after running "make", copy the generated
+    "out/klipper.bin" file to a file named "firmware.bin" on an SD card and then restart the board with that SD card.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PB13
+  dir_pin: PB12
+  enable_pin: '!PB14'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PB10
+  dir_pin: PB2
+  enable_pin: '!PB11'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PB0
+  dir_pin: PC5
+  enable_pin: '!PB1'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB3
+  dir_pin: PB4
+  enable_pin: '!PD2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PC0, modifier: '!'}
+- {id: Y-STOP, pin: PC1, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PC8, role: hotend}
+- {id: BED, pin: PC9, role: bed}
+thermistors:
+- {id: TH0, pin: PA0, typical_use: hotend}
+- {id: TB, pin: PC3, typical_use: bed}
+fans:
+- {id: FAN0, pin: PC7, typical_use: hotend}
+- {id: FAN1, pin: PC6, typical_use: part_cooling}
+probe_ports: []
+bltouch: {sensor_pin: PC14, control_pin: PA1}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-sunlu-t3-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

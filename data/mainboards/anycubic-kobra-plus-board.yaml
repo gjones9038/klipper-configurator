@@ -1,0 +1,76 @@
+# Imported from Klipper's config/printer-anycubic-kobra-plus-2022.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: anycubic-kobra-plus-board
+name: Anycubic Kobra Plus mainboard
+manufacturer: Anycubic
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: hc32f460, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {interface: Serial (PA3 & PA2), flash: 'Rename the klipper bin to `firmware.bin` and copy it to an SD Card. Power
+    off the Printer, insert the SD Card and power it on.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PA5
+  dir_pin: PA4
+  enable_pin: '!PC3'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.1}
+  uart_pin: PA15
+  tx_pin: PA9
+  uart_address: 3
+- id: Y
+  step_pin: PC4
+  dir_pin: PA7
+  enable_pin: '!PC3'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.1}
+  uart_pin: PA15
+  tx_pin: PA9
+  uart_address: 1
+- id: Z
+  step_pin: PC7
+  dir_pin: PC6
+  enable_pin: '!PC3'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.1}
+  uart_pin: PA15
+  tx_pin: PA9
+  uart_address: 2
+- id: Z1
+  step_pin: PB1
+  dir_pin: PB0
+  enable_pin: '!PC3'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PC14
+  dir_pin: PC15
+  enable_pin: '!PC3'
+  onboard_driver: {chip: tmc2208, klipper_section: tmc2208, sense_resistor: 0.1}
+  uart_pin: PA15
+  tx_pin: PA9
+  uart_address: 0
+endstops:
+- {id: X-STOP, pin: PA6, modifier: '!'}
+- {id: Y-STOP, pin: PC5, modifier: '!'}
+- {id: Z-STOP, pin: PA8, modifier: ''}
+heaters:
+- {id: HEATER, pin: PA1, role: hotend}
+- {id: BED, pin: PA0, role: bed}
+thermistors:
+- {id: TH0, pin: PC1, typical_use: hotend}
+- {id: TB, pin: PC0, typical_use: bed}
+fans:
+- {id: FAN0, pin: PA14, typical_use: controller}
+- {id: FAN1, pin: PA13, typical_use: hotend}
+- {id: FAN2, pin: PB9, typical_use: part_cooling}
+probe_ports:
+- {id: PROBE, pin: PB6, modifier: '!'}
+notes: []
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

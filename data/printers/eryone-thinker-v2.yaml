@@ -1,0 +1,92 @@
+# Imported from Klipper's config/printer-eryone-thinker-series-v2-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: eryone-thinker-v2
+name: Eryone Thinker Series V2
+manufacturer: Eryone
+status: needs-review
+docs:
+- {title: 'Klipper: Eryone Thinker Series V2 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-thinker-series-v2-2020.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-thinker-series-v2-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [300, 300]
+  position_max: {x: 300, y: 300, z: 400}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 1500, max_z_velocity: 5, max_z_accel: 150}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -5, position_min: -5, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -5, position_min: -5, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: 0, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 100
+    pid: {pid_kp: 100, pid_ki: 5.023, pid_kd: 305.4}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [eryone-thinker-v2-board]
+  toolhead: null
+  extruder: eryone-thinker-v2-extruder
+  hotend: eryone-thinker-v2-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling, hotend]
+  display: {lcd_type: st7920, cs_pin: PG4, sclk_pin: PJ2, sid_pin: PG3, encoder_pins: '^PK2, ^PK1', click_pin: ^!PE2}
+stock_parts:
+  extruders:
+  - id: eryone-thinker-v2-extruder
+    name: Eryone Thinker Series V2 stock extruder
+    drive: unknown
+    rotation_distance: 34.4
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [eryone-thinker-v2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-thinker-series-v2-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: eryone-thinker-v2-hotend
+    name: Eryone Thinker Series V2 stock hotend
+    maker: Eryone
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [eryone-thinker-v2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-thinker-series-v2-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 22.2, pid_ki: 1.08, pid_kd: 144}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-thinker-series-v2-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

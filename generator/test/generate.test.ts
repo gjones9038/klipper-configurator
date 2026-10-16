@@ -47,9 +47,11 @@ test('no physical pin is used twice in a generated config', () => {
         const tapShare = (m[1] === 'detection_pin' && prev?.includes('[tool_probe')) ?? false;
         // Klipper allows one enable line shared by several steppers (Creality boards).
         const sharedEnable = m[1] === 'enable_pin' && !!prev?.endsWith('enable_pin');
+        // Display buttons on one analog pin (Anet A8's hd44780 keypad) are a Klipper feature.
+        const analogKeys = section === 'display' && !!prev?.startsWith('[display]');
         // Addressed TMC drivers on one UART bus (SKR Mini E3 V3: uart_pin PC11 / tx_pin PC10, addresses 0-3).
         const sharedUart = ['uart_pin', 'tx_pin'].includes(m[1]) && !!prev?.endsWith(` ${m[1]}`) && /uart_address/.test(text);
-        assert.ok(!prev || tapShare || sharedEnable || sharedUart || (m[1].startsWith('diag') && prev.includes('endstop')),
+        assert.ok(!prev || tapShare || sharedEnable || sharedUart || analogKeys || (m[1].startsWith('diag') && prev.includes('endstop')),
           `${c.name} ${name}: ${key} in [${section}] ${m[1]} and ${prev}`);
         seen.set(key, `[${section}] ${m[1]}`);
       }

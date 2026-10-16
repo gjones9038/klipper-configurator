@@ -1,0 +1,60 @@
+# Imported from Klipper's config/printer-ratrig-v-minion-2021.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: ratrig-v-minion-board
+name: Rat Rig V-Minion mainboard
+manufacturer: Rat Rig
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f446, crystal_mhz: 8, bootloader_kib: 32}
+interfaces: [usb]
+firmware: {interface: USB (on PA11/PA12), flash: The firmware filename must be named "firmware.bin"  See docs/Config_Reference.md
+    for a description of parameters.}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PF13
+  dir_pin: PF12
+  enable_pin: '!PF14'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PC4
+- id: Y
+  step_pin: PG0
+  dir_pin: PG1
+  enable_pin: '!PF15'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PD11
+- id: Z
+  step_pin: PC13
+  dir_pin: PF0
+  enable_pin: '!PF1'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PE4
+- id: E
+  step_pin: PF11
+  dir_pin: PG3
+  enable_pin: '!PG5'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209}
+  uart_pin: PC6
+endstops:
+- {id: X-STOP, pin: PG6, modifier: ^}
+- {id: Y-STOP, pin: PG9, modifier: ^}
+heaters:
+- {id: HEATER, pin: PA2, role: hotend}
+- {id: BED, pin: PA1, role: bed}
+thermistors:
+- {id: TH0, pin: PF4, typical_use: hotend}
+- {id: TB, pin: PF3, typical_use: bed}
+fans:
+- {id: FAN0, pin: PA8, typical_use: part_cooling}
+- {id: FAN1, pin: PE5, typical_use: hotend}
+- {id: FAN2, pin: PD12, typical_use: controller}
+probe_ports:
+- {id: PROBE, pin: PB7, modifier: ^}
+notes: []
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-ratrig-v-minion-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

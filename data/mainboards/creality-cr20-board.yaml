@@ -1,0 +1,57 @@
+# Imported from Klipper's config/printer-creality-cr20-2018.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: creality-cr20-board
+name: Creality CR-20 mainboard
+manufacturer: Creality
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega2560, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PF0
+  dir_pin: PF1
+  enable_pin: '!PD7'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PF6
+  dir_pin: PF7
+  enable_pin: '!PF2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PL3
+  dir_pin: PL1
+  enable_pin: '!PK0'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PA4
+  dir_pin: PA6
+  enable_pin: '!PA2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PE5, modifier: ^}
+- {id: Y-STOP, pin: PJ1, modifier: ^}
+- {id: Z-STOP, pin: PD3, modifier: ^}
+heaters:
+- {id: HEATER, pin: PB4, role: hotend}
+- {id: BED, pin: PH5, role: bed}
+thermistors:
+- {id: TH0, pin: PK5, typical_use: hotend}
+- {id: TB, pin: PK6, typical_use: bed}
+fans:
+- {id: FAN0, pin: PH6, typical_use: part_cooling}
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr20-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

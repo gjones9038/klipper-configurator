@@ -59,7 +59,8 @@ export interface Build {
     postPrintMinutes?: number;               // keep filtering after the print
   };
   leds?: boolean;
-  beeps?: boolean;                           // buzzer tunes at print end / pause; default on when a buzzer exists
+  beeps?: boolean;
+  display?: boolean;                         // printer's stock display ([display]); default on when the stock board is used                           // buzzer tunes at print end / pause; default on when a buzzer exists
   autotune?: boolean;
   webUi?: 'mainsail' | 'fluidd' | 'none';    // default mainsail: its cfg provides PAUSE/RESUME/CANCEL_PRINT
   nozzleDiameter?: number;

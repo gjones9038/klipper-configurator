@@ -89,6 +89,14 @@ def main():
     therm = load(DATA / "thermistors.yaml")["user_choices"]
     drivers = load(DATA / "drivers.yaml")
 
+    # Printers' own stock parts (imported printers) join the shared lists.
+    for p in printers:
+        sp = p.get("stock_parts") or {}
+        extruders += sp.get("extruders", [])
+        hotends += sp.get("hotends", [])
+        probes += sp.get("probes", [])
+        therm += sp.get("thermistors", [])
+
     for kind, items in (("printer", printers), ("mainboard", boards), ("toolboard", toolboards),
                         ("motor", motors), ("extruder", extruders), ("hotend", hotends),
                         ("toolhead", toolheads), ("probe", probes), ("thermistor", therm)):

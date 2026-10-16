@@ -30,6 +30,9 @@ export function assembleDb(raw: RawData): Db {
     motorIndex[m.id] = m;
     for (const a of m.aliases ?? []) motorIndex[a.toLowerCase()] = m;
   }
+  // Parts that only exist as a printer's stock parts (imported printers) are registered with the
+  // rest, marked applies_to that printer so pickers show them only there.
+  const stock = (key: string) => raw.printers.flatMap((p: Rec) => p.stock_parts?.[key] ?? []);
   return {
     printers: byId(raw.printers),
     mainboards: byId(raw.mainboards),
@@ -37,14 +40,14 @@ export function assembleDb(raw: RawData): Db {
     motors: motorIndex,
     drivers: raw.drivers,
     modules: byId(raw.drivers.modules),
-    extruders: byId(raw.extruders.extruders),
+    extruders: byId([...raw.extruders.extruders, ...stock('extruders')]),
     zDrives: byId(raw.extruders.z_drives),
-    hotends: byId(raw.hotends.hotends),
+    hotends: byId([...raw.hotends.hotends, ...stock('hotends')]),
     hotendDefaults: raw.hotends.defaults,
     flowClasses: raw.hotends.flow_classes,
     toolheads: byId(raw.toolheads.toolheads),
-    probes: byId(raw.probes.probes),
-    thermistors: byId(raw.thermistors.user_choices),
+    probes: byId([...raw.probes.probes, ...stock('probes')]),
+    thermistors: byId([...raw.thermistors.user_choices, ...stock('thermistors')]),
     fanRoles: raw.fans.roles,
     homing: raw.homing,
     filters: byId(raw.filters.filters),

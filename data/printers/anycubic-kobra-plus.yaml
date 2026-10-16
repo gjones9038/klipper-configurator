@@ -1,0 +1,102 @@
+# Imported from Klipper's config/printer-anycubic-kobra-plus-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: anycubic-kobra-plus
+name: Anycubic Kobra Plus
+manufacturer: Anycubic
+status: needs-review
+docs:
+- {title: 'Klipper: Anycubic Kobra Plus reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kobra-plus-2022.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [304, 300]
+  position_max: {x: 304, y: 300, z: 350}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 32}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+- {klipper: stepper_z1, role: Z1, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 4, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 1800, max_z_velocity: 40, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 100, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.9}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -4, position_min: -4, homing_speed: 100}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -6, position_min: -6, homing_speed: 100}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -15, homing_speed: 10, second_homing_speed: 5.0, homing_retract_dist: 5,
+    run_current: 0.9}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.8}
+  bed:
+    max_power: 1.0
+    max_temp: 120
+    pid: {pid_kp: 97.1, pid_ki: 1.41, pid_kd: 1675.16}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [anycubic-kobra-plus-board]
+  toolhead: null
+  extruder: anycubic-kobra-plus-extruder
+  hotend: anycubic-kobra-plus-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [anycubic-kobra-plus-probe]
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [controller, hotend, part_cooling]
+  probe: anycubic-kobra-plus-probe
+stock_parts:
+  extruders:
+  - id: anycubic-kobra-plus-extruder
+    name: Anycubic Kobra Plus stock extruder
+    drive: unknown
+    rotation_distance: 7.71
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [anycubic-kobra-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: anycubic-kobra-plus-hotend
+    name: Anycubic Kobra Plus stock hotend
+    maker: Anycubic
+    flow_class: standard
+    max_temp: 275
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [anycubic-kobra-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 275'}
+    pid_seed: {pid_kp: 22.2, pid_ki: 1.08, pid_kd: 119}
+  probes:
+  - id: anycubic-kobra-plus-probe
+    name: Anycubic Kobra Plus built-in probe
+    kind: integrated
+    applies_to: [anycubic-kobra-plus]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, speed: 2, samples: 2, sample_retract_dist: 5, samples_tolerance_retries: 3,
+      lift_speed: 4}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'Both Z motors run from separate drivers but nothing levels them automatically; if the X axis is
+    tilted, level it by hand.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-plus-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

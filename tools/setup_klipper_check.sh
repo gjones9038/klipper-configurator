@@ -15,7 +15,7 @@ TOOLCHANGER_REF=pull/174/head
 TOOLCHANGER_COMMIT=0bded502b27dae5b9261789e03b0c8a0b84f48fb
 # A name with a suffix (stm32f042-orbitool) is a variant: the base chip's config plus
 # tools/klipper-check/<name>.overrides.
-CHIPS="stm32f042 stm32f042-orbitool stm32f072 stm32f103 stm32f401 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040 atmega2560"
+CHIPS="stm32f042 stm32f042-orbitool stm32f072 stm32f103 stm32f401 stm32f446 stm32f429 stm32f407 stm32h723 stm32h743 stm32g0b1 rp2040 atmega2560 atmega1284p stm32f070 hc32f460 stm32f103-serial hc32f460-serial-PA7PA8 stm32f103-usart3 stm32f401-usart1 stm32f446-usart1"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 C="$ROOT/.cache/klipper-check"
@@ -58,7 +58,11 @@ for chip in $CHIPS; do
   make clean >/dev/null 2>&1 || true
   # Klipper's test config, or a repo-local base config for chips it has none for (F072).
   base_chip="${chip%%-*}"
-  BASE="test/configs/$base_chip.config"
+  # A variant Klipper ships a test config for (stm32f103-serial) uses it as-is.
+  BASE="test/configs/$chip.config"
+  [ -f "$BASE" ] || BASE="test/configs/$base_chip.config"
+  # Some chips only have suffixed test configs (hc32f460-serial-PA3PA2.config): take the first.
+  [ -f "$BASE" ] || BASE="$(ls test/configs/$base_chip-*.config 2>/dev/null | head -1)"
   [ -f "$BASE" ] || BASE="$ROOT/tools/klipper-check/$base_chip.config"
   cp "$BASE" .config
   # Per-chip overrides (e.g. Cartographer's F042 needs the LDC1612 driver). Override keys

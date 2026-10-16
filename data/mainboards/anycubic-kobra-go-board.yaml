@@ -1,0 +1,64 @@
+# Imported from Klipper's config/printer-anycubic-kobra-go-2022.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: anycubic-kobra-go-board
+name: Anycubic Kobra Go mainboard
+manufacturer: Anycubic
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: hc32f460, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {interface: Serial (PA3 & PA2), flash: 'Rename the klipper bin to `firmware.bin` and copy it to an SD Card. Power
+    off the Printer, insert the SD Card and power it on. Just Wait for 3-5 minutes to ensure the firmware is flashed. After
+    waiting, shutdown the printer and remove the SD Card.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PA12
+  dir_pin: PA11
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PA9
+  dir_pin: PA8
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PC7
+  dir_pin: PC6
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB15
+  dir_pin: PB14
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PH2, modifier: '!'}
+- {id: Y-STOP, pin: PC13, modifier: ^!}
+- {id: Z-STOP, pin: PC14, modifier: ^}
+heaters:
+- {id: HEATER, pin: PB8, role: hotend}
+- {id: BED, pin: PB9, role: bed}
+thermistors:
+- {id: TH0, pin: PC3, typical_use: hotend}
+- {id: TB, pin: PC1, typical_use: bed}
+fans:
+- {id: FAN0, pin: PB12, typical_use: controller}
+- {id: FAN1, pin: PB13, typical_use: hotend}
+- {id: FAN2, pin: PB5, typical_use: part_cooling}
+probe_ports:
+- {id: PROBE, pin: PA1, modifier: ''}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

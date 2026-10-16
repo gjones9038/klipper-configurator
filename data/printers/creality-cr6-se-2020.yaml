@@ -1,0 +1,101 @@
+# Imported from Klipper's config/printer-creality-cr6se-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: creality-cr6-se-2020
+name: Creality CR-6 SE (early 4.5.2 board)
+manufacturer: Creality
+status: needs-review
+docs:
+- {title: 'Klipper: Creality CR-6 SE (early 4.5.2 board) reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-cr6se-2020.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr6se-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [235, 235]
+  position_max: {x: 235, y: 235, z: 250}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 500, max_accel: 500, max_z_velocity: 5, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -5, position_min: -5, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -2, position_min: -2, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -1.5, homing_speed: 4, second_homing_speed: 1, homing_retract_dist: 2,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 120
+    pid: {pid_kp: 79.49, pid_ki: 1.17, pid_kd: 1349.52}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [creality-cr6-se-2020-board]
+  toolhead: null
+  extruder: creality-cr6-se-2020-extruder
+  hotend: creality-cr6-se-2020-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [creality-cr6-se-2020-probe]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling]
+  probe: creality-cr6-se-2020-probe
+stock_parts:
+  extruders:
+  - id: creality-cr6-se-2020-extruder
+    name: Creality CR-6 SE (early 4.5.2 board) stock extruder
+    drive: unknown
+    rotation_distance: 30.4768
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [creality-cr6-se-2020]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr6se-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: creality-cr6-se-2020-hotend
+    name: Creality CR-6 SE (early 4.5.2 board) stock hotend
+    maker: Creality
+    flow_class: standard
+    max_temp: 275
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [creality-cr6-se-2020]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr6se-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 275'}
+    pid_seed: {pid_kp: 14.32, pid_ki: 0.81, pid_kd: 63.12}
+  probes:
+  - id: creality-cr6-se-2020-probe
+    name: Creality CR-6 SE (early 4.5.2 board) built-in probe
+    kind: integrated
+    applies_to: [creality-cr6-se-2020]
+    z_endstop_capable: true
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, speed: 2, samples: 5}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr6se-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-creality-cr6se-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

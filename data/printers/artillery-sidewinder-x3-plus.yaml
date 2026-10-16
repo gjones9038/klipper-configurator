@@ -1,0 +1,101 @@
+# Imported from Klipper's config/printer-artillery-sidewinder-x3-plus-2024.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: artillery-sidewinder-x3-plus
+name: Artillery Sidewinder X3 Plus / X3 Pro
+manufacturer: Artillery
+status: needs-review
+docs:
+- {title: 'Klipper: Artillery Sidewinder X3 Plus / X3 Pro reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-artillery-sidewinder-x3-plus-2024.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x3-plus-2024.cfg,
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [315, 315]
+  position_max: {x: 315, y: 315, z: 400}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 15, max_z_accel: 100, square_corner_velocity: 5}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -1, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 100
+    pid: {pid_kp: 64.23, pid_ki: 0.723, pid_kd: 1425.905}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [artillery-sidewinder-x3-plus-board]
+  toolhead: null
+  extruder: artillery-sidewinder-x3-plus-extruder
+  hotend: artillery-sidewinder-x3-plus-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [artillery-sidewinder-x3-plus-probe]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [hotend, part_cooling]
+  probe: artillery-sidewinder-x3-plus-probe
+stock_parts:
+  extruders:
+  - id: artillery-sidewinder-x3-plus-extruder
+    name: Artillery Sidewinder X3 Plus / X3 Pro stock extruder
+    drive: unknown
+    rotation_distance: 17.75
+    microsteps: 64
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [artillery-sidewinder-x3-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x3-plus-2024.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: artillery-sidewinder-x3-plus-hotend
+    name: Artillery Sidewinder X3 Plus / X3 Pro stock hotend
+    maker: Artillery
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [artillery-sidewinder-x3-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x3-plus-2024.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 300'}
+    pid_seed: {pid_kp: 30.356, pid_ki: 1.857, pid_kd: 124.081}
+  probes:
+  - id: artillery-sidewinder-x3-plus-probe
+    name: Artillery Sidewinder X3 Plus / X3 Pro built-in probe
+    kind: integrated
+    applies_to: [artillery-sidewinder-x3-plus]
+    z_endstop_capable: true
+    defaults: {x_offset: 45.2, y_offset: 11.6, z_offset: 0, speed: 5, lift_speed: 15}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x3-plus-2024.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x3-plus-2024.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

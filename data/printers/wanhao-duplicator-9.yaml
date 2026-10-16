@@ -1,0 +1,105 @@
+# Imported from Klipper's config/printer-wanhao-duplicator-9-2018.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: wanhao-duplicator-9
+name: Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1
+manufacturer: Wanhao
+status: needs-review
+docs:
+- {title: 'Klipper: Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-9-2018.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-9-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [295, 290]
+  position_max: {x: 295, y: 290, z: 370}
+  bed_screws:
+  - [5, 5]
+  - [295, 0]
+  - [295, 290]
+  - [0, 290]
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 3000, max_accel: 450, max_z_velocity: 225, max_z_accel: 30, square_corner_velocity: 15}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 30, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 30}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 30}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -0.99, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 120
+    pid: {pid_kp: 64.095903, pid_ki: 1.64983, pid_kd: 622.531455}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [wanhao-duplicator-9-board]
+  toolhead: null
+  extruder: wanhao-duplicator-9-extruder
+  hotend: wanhao-duplicator-9-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [wanhao-duplicator-9-probe]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling]
+  probe: wanhao-duplicator-9-probe
+stock_parts:
+  extruders:
+  - id: wanhao-duplicator-9-extruder
+    name: Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 stock extruder
+    drive: unknown
+    rotation_distance: 31.936
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [wanhao-duplicator-9]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-9-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: wanhao-duplicator-9-hotend
+    name: Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 stock hotend
+    maker: Wanhao
+    flow_class: standard
+    max_temp: 315
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [wanhao-duplicator-9]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-9-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 315'}
+    pid_seed: {pid_kp: 33.41, pid_ki: 1.47, pid_kd: 189.27}
+  probes:
+  - id: wanhao-duplicator-9-probe
+    name: Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1 built-in probe
+    kind: integrated
+    applies_to: [wanhao-duplicator-9]
+    z_endstop_capable: true
+    defaults: {x_offset: 27, y_offset: 3, z_offset: 0, speed: 5, samples: 2, samples_result: average, sample_retract_dist: 2}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-9-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-9-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

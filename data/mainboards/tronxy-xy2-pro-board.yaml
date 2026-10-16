@@ -1,0 +1,63 @@
+# Imported from Klipper's config/printer-tronxy-xy-2-Pro-2020.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: tronxy-xy2-pro-board
+name: Tronxy XY-2 Pro mainboard
+manufacturer: Tronxy
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 0, check_dict: stm32f103-serial}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {flash: '=== FLASHING WITH STOCK BOOTLOADER === You should make firmware for STM32F103 with bootloader offset at
+    0x8008800 (Chitu v6 Bootloader). Use "./scripts/update_chitu.py ./out/klipper.bin ./out/update.cbd" after make to generate
+    update.cbd. Put `update.cbd` onto SD card, and reboot the printer.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PE5
+  dir_pin: PE6
+  enable_pin: '!PC13'
+  onboard_driver: {chip: null, standalone: true, microsteps: 32, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PE2
+  dir_pin: PE3
+  enable_pin: '!PE4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 32, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PB9
+  dir_pin: PE0
+  enable_pin: '!PE1'
+  onboard_driver: {chip: null, standalone: true, microsteps: 32, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB4
+  dir_pin: PB5
+  enable_pin: '!PB8'
+  onboard_driver: {chip: null, standalone: true, microsteps: 32, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PG10, modifier: '!'}
+- {id: Y-STOP, pin: PA12, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PG12, role: hotend}
+- {id: BED, pin: PG11, role: bed}
+thermistors:
+- {id: TH0, pin: PA1, typical_use: hotend}
+- {id: TB, pin: PA0, typical_use: bed}
+fans:
+- {id: FAN0, pin: PG14, typical_use: hotend}
+- {id: FAN1, pin: PG13, typical_use: part_cooling}
+- {id: FAN2, pin: PD6, typical_use: controller}
+probe_ports:
+- {id: PROBE, pin: PG9, modifier: '!'}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-tronxy-xy-2-Pro-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

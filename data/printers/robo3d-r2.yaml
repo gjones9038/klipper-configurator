@@ -1,0 +1,110 @@
+# Imported from Klipper's config/printer-robo3d-r2-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: robo3d-r2
+name: Robo3D R2
+manufacturer: Robo3D
+status: needs-review
+docs:
+- {title: 'Klipper: Robo3D R2 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-robo3d-r2-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [195, 195]
+  position_max: {x: 195, y: 195, z: 250}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 4}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 20, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 120, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 120}
+    y: {endstop_at_max: true, homing_positive_dir: true, position_min: 0, homing_speed: 120}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -10, homing_speed: 10, second_homing_speed: 5.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 125
+    pid: {pid_kp: 72.263, pid_ki: 1.606, pid_kd: 812.963}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [robo3d-r2-board]
+  toolhead: null
+  extruder: robo3d-r2-extruder
+  hotend: robo3d-r2-hotend
+  thermistors: {hotend: epcos-b57560, bed: robo3d-r2-ntcs0603e3104fxt}
+  probe_options: [robo3d-r2-probe]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, controller]
+  probe: robo3d-r2-probe
+stock_parts:
+  extruders:
+  - id: robo3d-r2-extruder
+    name: Robo3D R2 stock extruder
+    drive: unknown
+    rotation_distance: 21
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [robo3d-r2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: robo3d-r2-hotend
+    name: Robo3D R2 stock hotend
+    maker: Robo3D
+    flow_class: standard
+    max_temp: 290
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [robo3d-r2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 290'}
+    pid_seed: {pid_kp: 27.74, pid_ki: 1.581, pid_kd: 121.707}
+  probes:
+  - id: robo3d-r2-probe
+    name: Robo3D R2 built-in probe
+    kind: integrated
+    applies_to: [robo3d-r2]
+    z_endstop_capable: true
+    defaults: {x_offset: 2, y_offset: 30, z_offset: 0, samples: 3, sample_retract_dist: 1, samples_tolerance: 0.2, samples_tolerance_retries: 5}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors:
+  - id: robo3d-r2-ntcs0603e3104fxt
+    max_temp_c: null
+    label: Robo3D R2 stock thermistor (NTCS0603E3104FXT)
+    sensor_type: robo3d_r2_ntcs0603e3104fxt
+    custom_definition_required: true
+    definition: {temperature1: 25, resistance1: 100000, temperature2: 50, resistance2: 29536, temperature3: 125, resistance3: 1908}
+    applies_to: [robo3d-r2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    note: Defined in Klipper's Robo3D R2 config as [thermistor NTCS0603E3104FXT].
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-robo3d-r2-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

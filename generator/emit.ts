@@ -141,7 +141,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const mb = new CfgFile(header('mainboard.cfg'));
   mb.add(mcuSection('mcu', p.board, b.mainboard.connection, p.mcu.chip));
   // AVR chips have no internal temperature sensor (Klipper: no ADC_TEMPERATURE pin).
-  if (p.mcu.arch !== 'avr') mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
+  // Some MCUs have no internal temperature sensor in Klipper (AVR, HC32F460: no ADC_TEMPERATURE pin).
+  if (p.mcu.arch !== 'avr' && !['hc32f460'].includes(p.mcu.build_as ?? p.mcu.chip)) mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
   // Thermistors Klipper does not know: their table, defined once before any heater uses it.
   const custom = new Map<string, Rec>();
   for (const t of [p.thermistor.hotend, p.thermistor.bed, p.thermistor.chamber, ...(p.tools ?? []).map((x) => x.thermistor)]) {
@@ -261,6 +262,14 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       'SET_PIN PIN=_beeper VALUE=0',
     ]));
     break;   // one M300
+  }
+
+  // The printer's own display, when its stock board is used (the LCD plugs into that board).
+  const disp = p.printer.stock?.display;
+  if (disp && p.printer.stock.mainboards?.includes(b.mainboard.id) && b.display !== false) {
+    const s = new Section('display', `${p.printer.name} stock display`);
+    for (const [k, v] of Object.entries(disp)) s.set(k, v as any);
+    mb.add(s);
   }
 
   files['mainboard.cfg'] = mb.render();

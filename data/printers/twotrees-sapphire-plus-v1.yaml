@@ -1,0 +1,100 @@
+# Imported from Klipper's config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: twotrees-sapphire-plus-v1
+name: Two Trees Sapphire Plus V1 (SP-5)
+manufacturer: Two Trees
+status: needs-review
+docs:
+- {title: 'Klipper: Two Trees Sapphire Plus V1 (SP-5) reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: corexy
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg,
+  commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [300, 300]
+  position_max: {x: 300, y: 300, z: 340}
+  bed_screws:
+  - [35, 35]
+  - [275, 35]
+  - [275, 275]
+  - [35, 275]
+steppers:
+- {klipper: stepper_x, role: B, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: A, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+- {klipper: stepper_z1, role: Z1, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 4, extruder: 1}
+defaults:
+  printer: {max_velocity: 250, max_accel: 4500, max_z_velocity: 15, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+    y: {endstop_at_max: true, homing_positive_dir: true, position_min: 0, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: 0, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 325.1, pid_ki: 63.35, pid_kd: 417.1}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [twotrees-sapphire-plus-v1-board]
+  toolhead: null
+  extruder: twotrees-sapphire-plus-v1-extruder
+  hotend: twotrees-sapphire-plus-v1-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [hotend, part_cooling]
+stock_parts:
+  extruders:
+  - id: twotrees-sapphire-plus-v1-extruder
+    name: Two Trees Sapphire Plus V1 (SP-5) stock extruder
+    drive: unknown
+    rotation_distance: 23.52
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [twotrees-sapphire-plus-v1]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '50:17'
+    dir_inverted: true
+  hotends:
+  - id: twotrees-sapphire-plus-v1-hotend
+    name: Two Trees Sapphire Plus V1 (SP-5) stock hotend
+    maker: Two Trees
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [twotrees-sapphire-plus-v1]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 17.48, pid_ki: 1.32, pid_kd: 57.81}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'Both Z motors run from separate drivers but nothing levels them automatically; if the X axis is
+    tilted, level it by hand.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-twotrees-sapphire-plus-sp-5-v1-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

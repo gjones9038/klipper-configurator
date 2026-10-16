@@ -156,12 +156,21 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     if os.path.exists(log_path):
         os.remove(log_path)  # klippy appends; a stale log would leak errors into this case
     env = dict(os.environ, PYTHONPATH=site or "")
-    proc = subprocess.run(args, env=env, capture_output=True, text=True, timeout=300)
+    try:
+        proc = subprocess.run(args, env=env, capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        # A config that never finishes (e.g. a 20 km homing move) fails this case, not the run.
+        return False, -1, "", ["klippy did not finish within 300 s"]
     log = open(os.path.join(work, "klippy.log")).read() if os.path.exists(os.path.join(work, "klippy.log")) else ""
     text = proc.stdout + proc.stderr + log
     bad = [ln for ln in text.splitlines() if any(m in ln for m in ERROR_MARKERS) or ln.startswith("!! ")]
     # PREFLIGHT legitimately reports 0C temperatures in batch mode.
     bad = [ln for ln in bad if "is not room temperature" not in ln]
+    # Batch mode has no bed: a probe never triggers and reads stepper_z position_min. On printers
+    # whose position_min is far below 0 (Anycubic Kobra: -10) that "mesh" exceeds the fade range and
+    # Klipper stops. A simulation artifact, not a config error, as long as nothing else went wrong.
+    if proc.returncode != 0 and not bad and "Mesh extends outside of the fade range" in text:
+        return True, proc.returncode, text, []
     return proc.returncode == 0 and not bad, proc.returncode, text, bad
 
 

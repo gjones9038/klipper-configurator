@@ -1,0 +1,101 @@
+# Imported from Klipper's config/printer-lulzbot-mini2-2018.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: lulzbot-mini2
+name: LulzBot Mini 2
+manufacturer: LulzBot
+status: needs-review
+docs:
+- {title: 'Klipper: LulzBot Mini 2 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-lulzbot-mini2-2018.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [168, 192]
+  position_max: {x: 168, y: 192, z: 185}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 32, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 32, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 32, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 2000, max_z_velocity: 40, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 30, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.975}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -7, position_min: -7, homing_speed: 30, homing_retract_dist: 0}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -5, position_min: -5, homing_speed: 30, homing_retract_dist: 0}
+  stepper_z: {microsteps: 16, position_endstop: 183, position_min: -2, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.96}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.96}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 71.304, pid_ki: 1.662, pid_kd: 764.734}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+  sensorless_thresholds: {stepper_x: 4, stepper_y: 4}
+stock:
+  mainboards: [lulzbot-mini2-board]
+  toolhead: null
+  extruder: lulzbot-mini2-extruder
+  hotend: lulzbot-mini2-hotend
+  thermistors: {hotend: semitec-104gt2, bed: honeywell-135-104lag}
+  probe_options: [lulzbot-mini2-probe]
+  homing_xy: sensorless
+  homing_z: physical_min
+  fans: [part_cooling, hotend]
+  probe: lulzbot-mini2-probe
+  display: {lcd_type: st7920, cs_pin: PD5, sclk_pin: PD2, sid_pin: PD3, menu_timeout: 5, encoder_pins: '^PJ1, ^PJ2', encoder_steps_per_detent: 2,
+    click_pin: ^!PH6}
+stock_parts:
+  extruders:
+  - id: lulzbot-mini2-extruder
+    name: LulzBot Mini 2 stock extruder
+    drive: unknown
+    rotation_distance: 7.465
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [lulzbot-mini2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: lulzbot-mini2-hotend
+    name: LulzBot Mini 2 stock hotend
+    maker: LulzBot
+    flow_class: standard
+    max_temp: 280
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [lulzbot-mini2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 280'}
+    pid_seed: {pid_kp: 24.121, pid_ki: 1.079, pid_kd: 134.779}
+  probes:
+  - id: lulzbot-mini2-probe
+    name: LulzBot Mini 2 built-in probe
+    kind: integrated
+    applies_to: [lulzbot-mini2]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0, samples: 3, sample_retract_dist: 1, samples_tolerance: 0.2}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,58 @@
+# Imported from Klipper's config/printer-geeetech-A10T-A20T-2021.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: geeetech-a10t-a20t-board
+name: Geeetech A10T / A20T mainboard
+manufacturer: Geeetech
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega2560, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC0
+  dir_pin: PG2
+  enable_pin: '!PC2'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PC6
+  dir_pin: PC4
+  enable_pin: '!PA7'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PA3
+  dir_pin: PA1
+  enable_pin: '!PA5'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PL3
+  dir_pin: PL5
+  enable_pin: '!PB6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PA2, modifier: '!'}
+- {id: Y-STOP, pin: PA6, modifier: '!'}
+- {id: Z-STOP, pin: PC7, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PB4, role: hotend}
+- {id: BED, pin: PG5, role: bed}
+thermistors:
+- {id: TH0, pin: PK3, typical_use: hotend}
+- {id: TB, pin: PK2, typical_use: bed}
+fans:
+- {id: FAN0, pin: PH6, typical_use: part_cooling}
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-geeetech-A10T-A20T-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

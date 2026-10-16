@@ -1,0 +1,101 @@
+# Imported from Klipper's config/printer-prusa-mini-plus-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: prusa-mini-plus
+name: Prusa MINI+
+manufacturer: Prusa Research
+status: needs-review
+docs:
+- {title: 'Klipper: Prusa MINI+ reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-prusa-mini-plus-2020.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [180.4, 180]
+  position_max: {x: 180.4, y: 180, z: 185}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 32}
+- {klipper: stepper_y, role: Y, rotation_distance: 32}
+- {klipper: stepper_z, role: Z0, rotation_distance: 4, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 180, max_accel: 1250, max_z_velocity: 12, max_z_accel: 400}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.35}
+  axes:
+    x: {endstop_at_max: true, homing_positive_dir: true, position_min: -2, homing_speed: 50, homing_retract_dist: 0}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -3, position_min: -3, homing_speed: 50, homing_retract_dist: 0}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: 0, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.35}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.4}
+  bed:
+    max_power: 1.0
+    max_temp: 110
+    pid: {pid_kp: 120, pid_ki: 1.5, pid_kd: 600}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+  sensorless_thresholds: {stepper_x: 130, stepper_y: 130}
+stock:
+  mainboards: [prusa-mini-plus-board]
+  toolhead: null
+  extruder: prusa-mini-plus-extruder
+  hotend: prusa-mini-plus-hotend
+  thermistors: {hotend: semitec-104gt2, bed: epcos-b57560}
+  probe_options: [prusa-mini-plus-probe]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [hotend, part_cooling]
+  probe: prusa-mini-plus-probe
+stock_parts:
+  extruders:
+  - id: prusa-mini-plus-extruder
+    name: Prusa MINI+ stock extruder
+    drive: unknown
+    rotation_distance: 26.2564
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [prusa-mini-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '48:18'
+    dir_inverted: true
+  hotends:
+  - id: prusa-mini-plus-hotend
+    name: Prusa MINI+ stock hotend
+    maker: Prusa Research
+    flow_class: standard
+    max_temp: 305
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [prusa-mini-plus]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 305'}
+    pid_seed: {pid_kp: 7, pid_ki: 0.5, pid_kd: 45}
+  probes:
+  - id: prusa-mini-plus-probe
+    name: Prusa MINI+ built-in probe
+    kind: integrated
+    applies_to: [prusa-mini-plus]
+    z_endstop_capable: true
+    defaults: {x_offset: -29, y_offset: -3, z_offset: 0, speed: 6}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,67 @@
+# Imported from Klipper's config/printer-tronxy-crux1-2022.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: tronxy-crux1-board
+name: Tronxy Crux1 mainboard
+manufacturer: Tronxy
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f446, crystal_mhz: 8, bootloader_kib: 0, check_dict: stm32f446-usart1}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0}
+firmware: {flash: 'Klipper configuration for the TronXY Crux1 printer CXY-V10.1-220921 mainboard, GD32F4XX or STM32F446 MCU  =======================
+    BUILD AND FLASH OPTIONS =======================  MCU-architecture:  STMicroelectronics Processor model:   STM32F446 Bootloader
+    offset: 64KiB Comms interface:   Serial on USART1 PA10/PA9  Build the firmware with these options Rename the resulting
+    klipper.bin into fmw_tronxy.bin Put the file into a directory called "update" on a FAT32 formatted SD card. Turn off the
+    printer, plug in the SD card and turn the printer back on Flashing will start automatically and progress will be indicated
+    on the LCD Once the flashing is completed the display will get stuck on the white Tronxy logo bootscreen The LCD display
+    will NOT work anymore after flashing Klipper onto this printer'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PE5
+  dir_pin: PF1
+  enable_pin: '!PF0'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PF9
+  dir_pin: PF3
+  enable_pin: '!PF5'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PA6
+  dir_pin: PF15
+  enable_pin: '!PA5'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB1
+  dir_pin: PF13
+  enable_pin: '!PF14'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PC15, modifier: ^!}
+- {id: Y-STOP, pin: PC14, modifier: ^!}
+- {id: Z-STOP, pin: PC13, modifier: ^!}
+heaters:
+- {id: HEATER, pin: PG7, role: hotend}
+- {id: BED, pin: PE2, role: bed}
+thermistors:
+- {id: TH0, pin: PC3, typical_use: hotend}
+- {id: TB, pin: PC2, typical_use: bed}
+fans:
+- {id: FAN0, pin: PD7, typical_use: controller}
+- {id: FAN1, pin: PG9, typical_use: hotend}
+- {id: FAN2, pin: PG0, typical_use: part_cooling}
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-tronxy-crux1-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,445 @@
+{
+ "adimlab-2018": {
+  "id": "adimlab-2018",
+  "name": "ADIMLab 3D printer (2018)",
+  "maker": "ADIMLab"
+ },
+ "alfawise-u30-2018": {
+  "id": "alfawise-u30",
+  "name": "Alfawise U30",
+  "maker": "Alfawise"
+ },
+ "anet-a8-2017": {
+  "id": "anet-a8",
+  "name": "Anet A8 (2016-2017)",
+  "maker": "Anet"
+ },
+ "anet-a8-2019": {
+  "id": "anet-a8-plus",
+  "name": "Anet A8 Plus",
+  "maker": "Anet"
+ },
+ "anet-e10-2018": {
+  "id": "anet-e10",
+  "name": "Anet E10",
+  "maker": "Anet"
+ },
+ "anet-e16-2019": {
+  "id": "anet-e16",
+  "name": "Anet E16",
+  "maker": "Anet"
+ },
+ "anycubic-4max-2018": {
+  "id": "anycubic-4max",
+  "name": "Anycubic 4Max",
+  "maker": "Anycubic"
+ },
+ "anycubic-4maxpro-2.0-2021": {
+  "id": "anycubic-4max-pro-2",
+  "name": "Anycubic 4Max Pro 2.0",
+  "maker": "Anycubic"
+ },
+ "anycubic-i3-mega-2017": {
+  "id": "anycubic-i3-mega",
+  "name": "Anycubic i3 Mega (Ultrabase)",
+  "maker": "Anycubic"
+ },
+ "anycubic-kobra-go-2022": {
+  "id": "anycubic-kobra-go",
+  "name": "Anycubic Kobra Go",
+  "maker": "Anycubic"
+ },
+ "anycubic-kobra-plus-2022": {
+  "id": "anycubic-kobra-plus",
+  "name": "Anycubic Kobra Plus",
+  "maker": "Anycubic"
+ },
+ "anycubic-vyper-2021": {
+  "id": "anycubic-vyper",
+  "name": "Anycubic Vyper",
+  "maker": "Anycubic"
+ },
+ "artillery-genius-pro-2022": {
+  "id": "artillery-genius-pro",
+  "name": "Artillery Genius Pro",
+  "maker": "Artillery"
+ },
+ "artillery-sidewinder-x2-2022": {
+  "id": "artillery-sidewinder-x2",
+  "name": "Artillery Sidewinder X2",
+  "maker": "Artillery"
+ },
+ "artillery-sidewinder-x3-plus-2024": {
+  "id": "artillery-sidewinder-x3-plus",
+  "name": "Artillery Sidewinder X3 Plus / X3 Pro",
+  "maker": "Artillery"
+ },
+ "biqu-b1-se-plus-2022": {
+  "id": "biqu-b1-se-plus",
+  "name": "BIQU B1 SE Plus",
+  "maker": "BIQU"
+ },
+ "biqu-bx-2021": {
+  "id": "biqu-bx",
+  "name": "BIQU BX",
+  "maker": "BIQU"
+ },
+ "bq-hephestos-2014": {
+  "id": "bq-hephestos",
+  "name": "BQ Prusa i3 Hephestos",
+  "maker": "BQ",
+  "skip": "no heated bed (not supported yet)"
+ },
+ "creality-cr10-2017": {
+  "id": "creality-cr10",
+  "name": "Creality CR-10 (2017)",
+  "maker": "Creality"
+ },
+ "creality-cr10mini-2017": {
+  "id": "creality-cr10-mini",
+  "name": "Creality CR-10 Mini",
+  "maker": "Creality"
+ },
+ "creality-cr10s-2017": {
+  "id": "creality-cr10s",
+  "name": "Creality CR-10S",
+  "maker": "Creality"
+ },
+ "creality-cr10-smart-pro-2022": {
+  "id": "creality-cr10-smart-pro",
+  "name": "Creality CR-10 Smart Pro",
+  "maker": "Creality"
+ },
+ "creality-cr10s-pro-v2-2020": {
+  "id": "creality-cr10s-pro-v2",
+  "name": "Creality CR-10S Pro V2",
+  "maker": "Creality"
+ },
+ "creality-cr10-v3-2020": {
+  "id": "creality-cr10-v3",
+  "name": "Creality CR-10 V3",
+  "maker": "Creality"
+ },
+ "creality-cr20-2018": {
+  "id": "creality-cr20",
+  "name": "Creality CR-20",
+  "maker": "Creality"
+ },
+ "creality-cr20-pro-2019": {
+  "id": "creality-cr20-pro",
+  "name": "Creality CR-20 Pro",
+  "maker": "Creality"
+ },
+ "creality-cr30-2021": {
+  "id": "creality-cr30",
+  "name": "Creality CR-30 PrintMill",
+  "maker": "Creality",
+  "skip": "belt printer (endless Z belt; not supported yet)"
+ },
+ "creality-cr5pro-ht-2022": {
+  "id": "creality-cr5-pro-ht",
+  "name": "Creality CR-5 Pro HT",
+  "maker": "Creality"
+ },
+ "creality-cr6se-2020": {
+  "id": "creality-cr6-se-2020",
+  "name": "Creality CR-6 SE (early 4.5.2 board)",
+  "maker": "Creality"
+ },
+ "creality-cr6se-2021": {
+  "id": "creality-cr6-se",
+  "name": "Creality CR-6 SE (4.5.3 board)",
+  "maker": "Creality"
+ },
+ "creality-ender2-2017": {
+  "id": "creality-ender2",
+  "name": "Creality Ender 2",
+  "maker": "Creality"
+ },
+ "creality-ender2pro-2021": {
+  "id": "creality-ender2-pro",
+  "name": "Creality Ender 2 Pro (STM32 board)",
+  "maker": "Creality"
+ },
+ "creality-ender2pro-hc32-2022": {
+  "id": "creality-ender2-pro-hc32",
+  "name": "Creality Ender 2 Pro (HC32 board)",
+  "maker": "Creality"
+ },
+ "creality-ender3-2018": {
+  "id": "creality-ender3-melzi",
+  "name": "Creality Ender 3 (original 8-bit board)",
+  "maker": "Creality"
+ },
+ "creality-ender3max-2021": {
+  "id": "creality-ender3-max",
+  "name": "Creality Ender 3 Max",
+  "maker": "Creality"
+ },
+ "creality-ender3-s1plus-2022": {
+  "id": "creality-ender3-s1-plus",
+  "name": "Creality Ender 3 S1 Plus",
+  "maker": "Creality"
+ },
+ "creality-ender5-2019": {
+  "id": "creality-ender5-melzi",
+  "name": "Creality Ender 5 (original 8-bit board)",
+  "maker": "Creality"
+ },
+ "creality-ender5plus-2019": {
+  "id": "creality-ender5-plus",
+  "name": "Creality Ender 5 Plus",
+  "maker": "Creality"
+ },
+ "creality-ender5-s1-2023": {
+  "id": "creality-ender5-s1",
+  "name": "Creality Ender 5 S1",
+  "maker": "Creality"
+ },
+ "creality-ender6-2020": {
+  "id": "creality-ender6",
+  "name": "Creality Ender 6",
+  "maker": "Creality"
+ },
+ "creality-sermoonD1-2021": {
+  "id": "creality-sermoon-d1",
+  "name": "Creality Sermoon D1",
+  "maker": "Creality"
+ },
+ "creality-sermoonV1-2022": {
+  "id": "creality-sermoon-v1",
+  "name": "Creality Sermoon V1",
+  "maker": "Creality"
+ },
+ "elegoo-neptune2-2021": {
+  "id": "elegoo-neptune2",
+  "name": "Elegoo Neptune 2",
+  "maker": "Elegoo"
+ },
+ "eryone-er20-2021": {
+  "id": "eryone-er20",
+  "name": "Eryone ER-20",
+  "maker": "Eryone"
+ },
+ "eryone-thinker-series-v2-2020": {
+  "id": "eryone-thinker-v2",
+  "name": "Eryone Thinker Series V2",
+  "maker": "Eryone"
+ },
+ "fokoos-odin5-f3-2021": {
+  "id": "fokoos-odin5-f3",
+  "name": "FOKOOS Odin-5 F3",
+  "maker": "FOKOOS"
+ },
+ "geeetech-A10T-A20T-2021": {
+  "id": "geeetech-a10t-a20t",
+  "name": "Geeetech A10T / A20T",
+  "maker": "Geeetech"
+ },
+ "hiprecy-leo-2019": {
+  "id": "hiprecy-leo",
+  "name": "Hiprecy Leo",
+  "maker": "Hiprecy"
+ },
+ "kingroon-kp3s-2020": {
+  "id": "kingroon-kp3s",
+  "name": "Kingroon KP3S",
+  "maker": "Kingroon"
+ },
+ "longer-lk4-pro-2019": {
+  "id": "longer-lk4-pro",
+  "name": "Longer LK4 Pro",
+  "maker": "Longer"
+ },
+ "longer-lk4x-2022": {
+  "id": "longer-lk4x",
+  "name": "Longer LK4 X",
+  "maker": "Longer"
+ },
+ "lulzbot-mini1-2016": {
+  "id": "lulzbot-mini1",
+  "name": "LulzBot Mini 1",
+  "maker": "LulzBot"
+ },
+ "lulzbot-mini2-2018": {
+  "id": "lulzbot-mini2",
+  "name": "LulzBot Mini 2",
+  "maker": "LulzBot"
+ },
+ "lulzbot-taz6-2017": {
+  "id": "lulzbot-taz6",
+  "name": "LulzBot TAZ 6",
+  "maker": "LulzBot"
+ },
+ "makergear-m2-2012": {
+  "id": "makergear-m2-2012",
+  "name": "MakerGear M2 (2012, V3A extruder)",
+  "maker": "MakerGear"
+ },
+ "makergear-m2-2016": {
+  "id": "makergear-m2",
+  "name": "MakerGear M2 (2016, V4 extruder)",
+  "maker": "MakerGear"
+ },
+ "monoprice-select-mini-v1-2016": {
+  "id": "monoprice-select-mini-v1",
+  "name": "Monoprice Select Mini V1",
+  "maker": "Monoprice"
+ },
+ "monoprice-select-mini-v2-2018": {
+  "id": "monoprice-select-mini-v2",
+  "name": "Monoprice Select Mini V2",
+  "maker": "Monoprice"
+ },
+ "mtw-create-2015": {
+  "id": "mtw-create",
+  "name": "MTW Create",
+  "maker": "MTW"
+ },
+ "prusa-mini-plus-2020": {
+  "id": "prusa-mini-plus",
+  "name": "Prusa MINI+",
+  "maker": "Prusa Research"
+ },
+ "ratrig-v-minion-2021": {
+  "id": "ratrig-v-minion",
+  "name": "Rat Rig V-Minion",
+  "maker": "Rat Rig"
+ },
+ "robo3d-r2-2017": {
+  "id": "robo3d-r2",
+  "name": "Robo3D R2",
+  "maker": "Robo3D"
+ },
+ "sovol-sv01-2020": {
+  "id": "sovol-sv01",
+  "name": "Sovol SV01",
+  "maker": "Sovol"
+ },
+ "sovol-sv05-2022": {
+  "id": "sovol-sv05",
+  "name": "Sovol SV05",
+  "maker": "Sovol"
+ },
+ "sovol-sv06-plus-2023": {
+  "id": "sovol-sv06-plus",
+  "name": "Sovol SV06 Plus",
+  "maker": "Sovol"
+ },
+ "sunlu-s8-2020": {
+  "id": "sunlu-s8",
+  "name": "SUNLU S8",
+  "maker": "SUNLU"
+ },
+ "sunlu-t3-2022": {
+  "id": "sunlu-t3",
+  "name": "SUNLU Terminator T3",
+  "maker": "SUNLU"
+ },
+ "tevo-flash-2018": {
+  "id": "tevo-flash",
+  "name": "Tevo Flash",
+  "maker": "Tevo"
+ },
+ "tevo-tarantula-pro-2020": {
+  "id": "tevo-tarantula-pro",
+  "name": "Tevo Tarantula Pro (green board)",
+  "maker": "Tevo"
+ },
+ "tronxy-crux1-2022": {
+  "id": "tronxy-crux1",
+  "name": "Tronxy Crux1",
+  "maker": "Tronxy"
+ },
+ "tronxy-p802e-2020": {
+  "id": "tronxy-p802e",
+  "name": "Tronxy P802E",
+  "maker": "Tronxy"
+ },
+ "tronxy-p802m-2020": {
+  "id": "tronxy-p802m",
+  "name": "Tronxy P802M",
+  "maker": "Tronxy"
+ },
+ "tronxy-x5s-2018": {
+  "id": "tronxy-x5s",
+  "name": "Tronxy X5S",
+  "maker": "Tronxy"
+ },
+ "tronxy-x5sa-pro-2020": {
+  "id": "tronxy-x5sa-pro",
+  "name": "Tronxy X5SA Pro",
+  "maker": "Tronxy"
+ },
+ "tronxy-x5sa-v6-2019": {
+  "id": "tronxy-x5sa",
+  "name": "Tronxy X5SA (CXY-V6 board)",
+  "maker": "Tronxy"
+ },
+ "tronxy-x8-2018": {
+  "id": "tronxy-x8",
+  "name": "Tronxy X8",
+  "maker": "Tronxy"
+ },
+ "tronxy-xy-2-Pro-2020": {
+  "id": "tronxy-xy2-pro",
+  "name": "Tronxy XY-2 Pro",
+  "maker": "Tronxy"
+ },
+ "twotrees-sapphire-plus-sp-5-v1-2020": {
+  "id": "twotrees-sapphire-plus-v1",
+  "name": "Two Trees Sapphire Plus V1 (SP-5)",
+  "maker": "Two Trees"
+ },
+ "twotrees-sapphire-plus-sp-5-v1.1-2021": {
+  "id": "twotrees-sapphire-plus-v1.1",
+  "name": "Two Trees Sapphire Plus V1.1 (SP-5)",
+  "maker": "Two Trees"
+ },
+ "twotrees-sapphire-pro-sp-3-2020": {
+  "id": "twotrees-sapphire-pro",
+  "name": "Two Trees Sapphire Pro (SP-3)",
+  "maker": "Two Trees"
+ },
+ "velleman-k8200-2013": {
+  "id": "velleman-k8200",
+  "name": "Velleman K8200 / 3Drag",
+  "maker": "Velleman"
+ },
+ "voxelab-aquila-2021": {
+  "id": "voxelab-aquila",
+  "name": "Voxelab Aquila",
+  "maker": "Voxelab"
+ },
+ "wanhao-duplicator-6-2016": {
+  "id": "wanhao-duplicator-6",
+  "name": "Wanhao Duplicator 6 / Monoprice Ultimate",
+  "maker": "Wanhao"
+ },
+ "wanhao-duplicator-9-2018": {
+  "id": "wanhao-duplicator-9",
+  "name": "Wanhao Duplicator 9 MK1 / Monoprice Maker Pro MK1",
+  "maker": "Wanhao"
+ },
+ "wanhao-duplicator-i3-mini-2017": {
+  "id": "wanhao-duplicator-i3-mini",
+  "name": "Wanhao Duplicator i3 Mini",
+  "maker": "Wanhao",
+  "skip": "no heated bed (not supported yet)"
+ },
+ "wanhao-duplicator-i3-plus-2017": {
+  "id": "wanhao-duplicator-i3-plus",
+  "name": "Wanhao Duplicator i3 Plus",
+  "maker": "Wanhao"
+ },
+ "wanhao-duplicator-i3-plus-mark2-2019": {
+  "id": "wanhao-duplicator-i3-plus-mk2",
+  "name": "Wanhao Duplicator i3 Plus Mark II",
+  "maker": "Wanhao"
+ },
+ "wanhao-duplicator-i3-v2.1-2017": {
+  "id": "wanhao-duplicator-i3-v2.1",
+  "name": "Wanhao Duplicator i3 v2.1 / Monoprice Maker Select",
+  "maker": "Wanhao"
+ }
+}

@@ -1,0 +1,99 @@
+# Imported from Klipper's config/printer-artillery-sidewinder-x2-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: artillery-sidewinder-x2
+name: Artillery Sidewinder X2
+manufacturer: Artillery
+status: needs-review
+docs:
+- {title: 'Klipper: Artillery Sidewinder X2 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-artillery-sidewinder-x2-2022.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x2-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [300, 300]
+  position_max: {x: 300, y: 300, z: 410}
+  bed_screws:
+  - [50, 50]
+  - [250, 50]
+  - [250, 250]
+  - [50, 250]
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 250, max_accel: 1500, max_z_velocity: 50, max_z_accel: 400, square_corner_velocity: 5}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: 0, homing_speed: 10, second_homing_speed: 2, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 42.365, pid_ki: 0.545, pid_kd: 822.94}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [artillery-sidewinder-x2-board]
+  toolhead: null
+  extruder: artillery-sidewinder-x2-extruder
+  hotend: artillery-sidewinder-x2-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [bltouch]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend, controller]
+  probe: bltouch
+  probe_offsets:
+    bltouch: {x: 27.25, y: -12.8}
+stock_parts:
+  extruders:
+  - id: artillery-sidewinder-x2-extruder
+    name: Artillery Sidewinder X2 stock extruder
+    drive: unknown
+    rotation_distance: 20.925
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [artillery-sidewinder-x2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x2-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '66:22'
+  hotends:
+  - id: artillery-sidewinder-x2-hotend
+    name: Artillery Sidewinder X2 stock hotend
+    maker: Artillery
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [artillery-sidewinder-x2]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x2-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 20.86, pid_ki: 1.131, pid_kd: 96.218}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-artillery-sidewinder-x2-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

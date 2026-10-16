@@ -436,7 +436,7 @@ export function plan(build: Build, db: Db): Plan {
         pins.cs_pin = qpin(boardKind, slot.spi_cs_pin);
         // A toolhead board's driver brings its own SPI (bus or software pins); never the mainboard's.
         const spi = slot.spi_bus ? { bus: slot.spi_bus } : slot.spi_software ? { software: slot.spi_software } : boardKind === 'toolboard' ? undefined : board.tmc_spi;
-        if (!spi) err('no_tmc_spi', `The data for this toolhead board is missing how its ${od.chip.toUpperCase()} driver connects, so it can't be used yet.`);
+        if (!spi) err('no_tmc_spi', `The data for this ${boardKind === 'toolboard' ? 'toolhead board' : 'board'} is missing how its ${od.chip.toUpperCase()} driver connects, so it can't be used yet.`);
         Object.assign(pins, spiPins(spi, boardKind, mcuName));
       }
       return {
@@ -485,7 +485,7 @@ export function plan(build: Build, db: Db): Plan {
 
   function spiPins(spi: Rec | undefined, boardKind: BoardKind, mcuName = TOOLHEAD_MCU): Record<string, string> {
     const qpin = (b: BoardKind, raw: string) => qpinBase(b, raw, '', mcuName);
-    if (!spi) return {};
+    if (!spi || spi.default) return {};   // default: the MCU's first SPI bus, as when Klipper's config names none
     if (spi.bus) return { spi_bus: spi.bus };
     return {
       spi_software_mosi_pin: qpin(boardKind, spi.software.mosi_pin),
@@ -932,7 +932,7 @@ export function plan(build: Build, db: Db): Plan {
     fans, probe, bltouch, accel, leds, paBaseline, nevermore, homingCurrent, issues,
     links: finishLinks(),
     mcus: [
-      { name: 'mcu', chip: mcu.build_as ?? mcu.chip, what: board.name, klipperCheck: true },
+      { name: 'mcu', chip: mcu.build_as ?? mcu.chip, checkDict: mcu.check_dict, what: board.name, klipperCheck: true },
       ...(tools
         ? tools.map((t) => ({ name: t.mcu, chip: t.toolboard.mcu.chip, checkDict: t.toolboard.mcu.check_dict, what: `T${t.n}: ${t.toolboard.name}`, klipperCheck: true }))
         : toolboard ? [{ name: TOOLHEAD_MCU, chip: toolboard.mcu.chip, checkDict: toolboard.mcu.check_dict, what: toolboard.name, klipperCheck: true }] : []),

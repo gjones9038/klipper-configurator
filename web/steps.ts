@@ -28,6 +28,8 @@ const motorList = (db: Db): Rec[] => [...new Set(Object.values(db.motors))].sort
 const motorOptions = (db: Db): Option[] => motorList(db).map((m) => ({
   value: m.id, group: m.manufacturer, label: `${m.id.toUpperCase()} · ${m.rated_current_a} A${m.holding_torque_nm ? ` · ${m.holding_torque_nm} Nm` : ''}`,
 }));
+// Parts that belong to one printer (its stock extruder, hotend, probe, thermistor) show only there.
+const forPrinter = (build: Build) => (x: Rec) => !x.applies_to || x.applies_to.includes(build.printer);
 const statusPill = (status: string) => pill(status === 'reviewed' ? 'Reviewed' : 'Needs review', status === 'reviewed' ? 'ok' : 'warn');
 
 function sources(rec: Rec): Child {
@@ -62,7 +64,7 @@ const printerStep: Step = {
     const zDrives = Object.values(db.zDrives).filter((z) => z.applies_to.includes(build.printer));
     return [
       h('div', { class: 'grid' },
-        select('Printer', build.printer, Object.values(db.printers).sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ value: p.id, label: p.name })),
+        select('Printer', build.printer, Object.values(db.printers).sort((a, b) => String(a.manufacturer).localeCompare(String(b.manufacturer)) || a.name.localeCompare(b.name)).map((p) => ({ value: p.id, label: p.name, group: p.manufacturer })),
           (v) => update((b) => {
             const n = switchPrinter(structuredClone(b), db, v);
             for (const k of Object.keys(b)) delete (b as any)[k];
@@ -80,6 +82,8 @@ const printerStep: Step = {
           printer.leadscrew_options.map((l: Rec) => ({ value: l.id, label: `${l.id.toUpperCase()} (${l.rotation_distance} mm)` })), (v) => update((b) => { b.leadscrew = v; })) : null),
       (db.printers[build.printer].variants.find((v: Rec) => v.id === build.variant)?.notes ?? []).length
         ? h('ul', { class: 'hint' }, db.printers[build.printer].variants.find((v: Rec) => v.id === build.variant).notes.map((n: string) => h('li', null, n))) : null,
+      printer.stock?.display ? checkbox('Set up the printer\'s screen', build.display !== false, (v) => update((b) => { if (v) delete b.display; else b.display = false; }),
+        'Writes the settings for the stock LCD and its knob, so you can use the printer\'s own screen with Klipper. Only applies with the stock mainboard.') : null,
       printer.notes?.length ? h('ul', { class: 'hint' }, printer.notes.map((n: string) => h('li', null, n))) : null,
       sources(printer),
     ];
@@ -101,7 +105,9 @@ const mainboardStep: Step = {
       : n >= need - 1 ? (build.toolboard ? pill('Fits (extruder on the toolhead board)', 'ok') : pill('Needs a toolhead board', 'warn'))
       : pill(`Only ${n} of ${need} drivers`, 'bad');
     const stock: string[] = db.printers[build.printer].stock?.mainboards ?? [];
-    const boards = Object.values(db.mainboards).sort((a, b) => Number(stock.includes(b.id)) - Number(stock.includes(a.id)) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    // A printer's own stock board is listed only for that printer.
+    const boards = Object.values(db.mainboards).filter((b) => !b.stock_only || stock.includes(b.id) || b.id === build.mainboard.id)
+      .sort((a, b) => Number(stock.includes(b.id)) - Number(stock.includes(a.id)) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const variant = db.printers[build.printer].variants.find((v: Rec) => v.id === (build.variant ?? 'standard'));
     return [
       pickTable(['Board', 'Version', 'Motor drivers', 'Pin data', `Fits your printer${variant.id === 'awd' ? ' (AWD)' : ''}?`], boards.map((b) => ({
@@ -431,15 +437,15 @@ const hotendStep: Step = {
   render({ db, build, update }) {
     const toolhead = build.toolhead ? db.toolheads[build.toolhead] : undefined;
     const fits = (id: string) => !toolhead?.compatible_extruders || toolhead.compatible_extruders.includes(id);
-    const therm = Object.values(db.thermistors).map((t) => ({ value: t.id, label: t.label }));
+    const therm = Object.values(db.thermistors).filter(forPrinter(build)).map((t) => ({ value: t.id, label: t.label }));
     const hotend = db.hotends[build.hotend];
     return [
       h('div', { class: 'grid' },
-        select('Extruder', build.extruder, Object.values(db.extruders).map((e) => ({
+        select('Extruder', build.extruder, Object.values(db.extruders).filter(forPrinter(build)).map((e) => ({
           value: e.id, label: `${e.name}${e.gear_ratio ? ` · gears ${e.gear_ratio}` : ''}`,
           group: fits(e.id) ? (toolhead ? `Fits ${toolhead.name}` : 'Extruders') : 'Other extruders',
         })).sort((a, b) => Number(!fits(a.value)) - Number(!fits(b.value))), (v) => update((b) => { b.extruder = v; delete b.motors.extruder; })),
-        select('Hotend', build.hotend, Object.values(db.hotends).map((x) => ({ value: x.id, label: `${x.name} · ${x.flow_class} flow · ${x.max_temp == null ? 'no published max temp' : x.max_temp_basis === 'metalwork' ? `no heater/thermistor included (metal rated ${x.max_temp} °C)` : `max ${x.max_temp} °C`}` })),
+        select('Hotend', build.hotend, Object.values(db.hotends).filter(forPrinter(build)).map((x) => ({ value: x.id, label: `${x.name} · ${x.flow_class} flow · ${x.max_temp == null ? 'no published max temp' : x.max_temp_basis === 'metalwork' ? `no heater/thermistor included (metal rated ${x.max_temp} °C)` : `max ${x.max_temp} °C`}` })),
           (v) => update((b) => { b.hotend = v; }), hotend.common_thermistor ? `Usually ships with: ${db.thermistors[hotend.common_thermistor]?.label ?? hotend.common_thermistor}` : undefined)),
       h('div', { class: 'grid' },
         select('Hotend thermistor', build.thermistors.hotend, therm, (v) => update((b) => { b.thermistors.hotend = v; }), 'The temperature sensor in the heater block. The wrong type reads the wrong temperature.'),

@@ -1,0 +1,93 @@
+# Imported from Klipper's config/printer-wanhao-duplicator-i3-v2.1-2017.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: wanhao-duplicator-i3-v2.1
+name: Wanhao Duplicator i3 v2.1 / Monoprice Maker Select
+manufacturer: Wanhao
+status: needs-review
+docs:
+- {title: 'Klipper: Wanhao Duplicator i3 v2.1 / Monoprice Maker Select reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-v2.1-2017.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-i3-v2.1-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [200, 200]
+  position_max: {x: 200, y: 200, z: 180}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 200, max_accel: 1000, max_z_velocity: 2, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 40, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 40}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 40}
+  stepper_z: {microsteps: 16, position_endstop: 0.5, position_min: 0, homing_speed: 2, second_homing_speed: 1.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 70
+    pid: {pid_kp: 71.321, pid_ki: 1.989, pid_kd: 639.21}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [wanhao-duplicator-i3-v2.1-board]
+  toolhead: null
+  extruder: wanhao-duplicator-i3-v2.1-extruder
+  hotend: wanhao-duplicator-i3-v2.1-hotend
+  thermistors: {hotend: ntc100k-3950, bed: ntc100k-3950}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling]
+  display: {lcd_type: st7920, cs_pin: PC1, sclk_pin: PD3, sid_pin: PC0, encoder_pins: '^PA2, ^PA1', click_pin: ^!PA3, kill_pin: ^!PD2}
+stock_parts:
+  extruders:
+  - id: wanhao-duplicator-i3-v2.1-extruder
+    name: Wanhao Duplicator i3 v2.1 / Monoprice Maker Select stock extruder
+    drive: unknown
+    rotation_distance: 29.888
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [wanhao-duplicator-i3-v2.1]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-i3-v2.1-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    dir_inverted: true
+  hotends:
+  - id: wanhao-duplicator-i3-v2.1-hotend
+    name: Wanhao Duplicator i3 v2.1 / Monoprice Maker Select stock hotend
+    maker: Wanhao
+    flow_class: standard
+    max_temp: 230
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: ntc100k-3950
+    applies_to: [wanhao-duplicator-i3-v2.1]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-i3-v2.1-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 230'}
+    pid_seed: {pid_kp: 18.21403, pid_ki: 0.61638, pid_kd: 134.556146}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-i3-v2.1-2017.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

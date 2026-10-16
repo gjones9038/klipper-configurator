@@ -1,0 +1,79 @@
+# Imported from Klipper's config/printer-prusa-mini-plus-2020.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: prusa-mini-plus-board
+name: Prusa MINI+ mainboard
+manufacturer: Prusa Research
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f407, crystal_mhz: 8, bootloader_kib: 0}
+interfaces: [usb]
+firmware: {interface: USB communication, flash: 'The printer''s LCD is not currently supported by Klipper, so the touchscreen
+    will permanently display the bootloader screen after the Klipper firmware is flashed; use Fluidd, Mainsail, or OctoPrint
+    etc. If you prefer to remove Prusa''s stock bootloader entirely, select the "No bootloader" option. When flashing for
+    the first time, you will need to break the "appendix" on the Buddy board, then put the device into DFU mode by moving
+    the jumper on the 3-pin header (older boards) or shorting the 2-pin header (newer boards) and resetting, and finally use
+    "make flash" to install Klipper. Once Klipper is installed, you no longer need the jumper - just use "make flash" which
+    will automatically put the device into DFU mode. Note that if you were previously running Prusa firmware, you must fully
+    power cycle the board after flashing.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PD1
+  dir_pin: PD0
+  enable_pin: '!PD3'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.22}
+  uart_pin: PD5
+  uart_address: 1
+  diag_pin: PE2
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+- id: Y
+  step_pin: PD13
+  dir_pin: PD12
+  enable_pin: '!PD14'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.22}
+  uart_pin: PD5
+  uart_address: 3
+  diag_pin: PE1
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+- id: Z
+  step_pin: PD4
+  dir_pin: PD15
+  enable_pin: '!PD2'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.22}
+  uart_pin: PD5
+  uart_address: 0
+  diag_pin: PE3
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+- id: E
+  step_pin: PD9
+  dir_pin: PD8
+  enable_pin: '!PD10'
+  onboard_driver: {chip: tmc2209, klipper_section: tmc2209, sense_resistor: 0.22}
+  uart_pin: PD5
+  uart_address: 2
+  diag_pin: PA15
+  diag_pin_key: diag_pin
+  diag_modifier: ^
+endstops: []
+heaters:
+- {id: HEATER, pin: PB1, role: hotend}
+- {id: BED, pin: PB0, role: bed}
+thermistors:
+- {id: TH0, pin: PC0, typical_use: hotend}
+- {id: TB, pin: PA4, typical_use: bed}
+fans:
+- {id: FAN0, pin: PE9, typical_use: hotend, tachometer_pin: PE14}
+- {id: FAN1, pin: PE11, typical_use: part_cooling, tachometer_pin: PE10}
+probe_ports:
+- {id: PROBE, pin: PA8, modifier: ''}
+notes: []
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-prusa-mini-plus-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

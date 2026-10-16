@@ -1,0 +1,69 @@
+# Imported from Klipper's config/printer-lulzbot-mini2-2018.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: lulzbot-mini2-board
+name: LulzBot Mini 2 mainboard
+manufacturer: LulzBot
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega2560, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)'}
+tmc_spi: {default: true}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC0
+  dir_pin: PL0
+  enable_pin: '!PA7'
+  onboard_driver: {chip: tmc2130, klipper_section: tmc2130, sense_resistor: 0.12}
+  spi_cs_pin: PG0
+  diag_pin: PK2
+  diag_pin_key: diag0_pin
+  diag_modifier: ^!
+- id: Y
+  step_pin: PC1
+  dir_pin: PL1
+  enable_pin: '!PA6'
+  onboard_driver: {chip: tmc2130, klipper_section: tmc2130, sense_resistor: 0.12}
+  spi_cs_pin: PG2
+  diag_pin: PK7
+  diag_pin_key: diag0_pin
+  diag_modifier: ^!
+- id: Z
+  step_pin: PC2
+  dir_pin: PL2
+  enable_pin: '!PA5'
+  onboard_driver: {chip: tmc2130, klipper_section: tmc2130, sense_resistor: 0.12}
+  spi_cs_pin: PK5
+  diag_pin: PK6
+  diag_pin_key: diag0_pin
+  diag_modifier: ^!
+- id: E
+  step_pin: PC3
+  dir_pin: PL6
+  enable_pin: '!PA4'
+  onboard_driver: {chip: tmc2130, klipper_section: tmc2130, sense_resistor: 0.12}
+  spi_cs_pin: PK4
+  diag_pin: PK3
+  diag_pin_key: diag0_pin
+  diag_modifier: ^!
+endstops:
+- {id: Z-STOP, pin: PH4, modifier: ''}
+heaters:
+- {id: HEATER, pin: PE5, role: hotend}
+- {id: BED, pin: PG5, role: bed}
+thermistors:
+- {id: TH0, pin: PF0, typical_use: hotend}
+- {id: TB, pin: PF2, typical_use: bed}
+fans:
+- {id: FAN0, pin: PH5, typical_use: part_cooling}
+- {id: FAN1, pin: PH3, typical_use: hotend}
+probe_ports:
+- {id: PROBE, pin: PB4, modifier: ^!}
+notes: []
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-lulzbot-mini2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

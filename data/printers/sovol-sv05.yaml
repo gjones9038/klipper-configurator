@@ -1,0 +1,101 @@
+# Imported from Klipper's config/printer-sovol-sv05-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: sovol-sv05
+name: Sovol SV05
+manufacturer: Sovol
+status: needs-review
+docs:
+- {title: 'Klipper: Sovol SV05 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv05-2022.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-sovol-sv05-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [220, 220]
+  position_max: {x: 220, y: 220, z: 300}
+  bed_screws:
+  - [25, 28]
+  - [195, 28]
+  - [195, 197]
+  - [25, 197]
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 1000, max_z_velocity: 5, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: true, homing_positive_dir: true, position_min: -4, homing_speed: 50}
+    y: {endstop_at_max: true, homing_positive_dir: true, position_min: -4, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -3, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 64.742, pid_ki: 0.827, pid_kd: 1267.326}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [creality-v4.2.2]
+  toolhead: null
+  extruder: sovol-sv05-extruder
+  hotend: sovol-sv05-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [bltouch]
+  homing_xy: physical
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling]
+  probe: bltouch
+  probe_offsets:
+    bltouch: {x: 40, y: 7}
+  display: {lcd_type: st7920, cs_pin: PB12, sclk_pin: PB13, sid_pin: PB15, encoder_pins: '^PB14, ^PB10', click_pin: ^!PB2}
+stock_parts:
+  extruders:
+  - id: sovol-sv05-extruder
+    name: Sovol SV05 stock extruder
+    drive: unknown
+    rotation_distance: 7.394
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [sovol-sv05]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-sovol-sv05-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: sovol-sv05-hotend
+    name: Sovol SV05 stock hotend
+    maker: Sovol
+    flow_class: standard
+    max_temp: 280
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [sovol-sv05]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-sovol-sv05-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 280'}
+    pid_seed: {pid_kp: 28.85, pid_ki: 1.658, pid_kd: 125.496}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-sovol-sv05-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+tech_notes: [Pins match the existing board record creality-v4.2.2.]

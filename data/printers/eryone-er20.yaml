@@ -1,0 +1,94 @@
+# Imported from Klipper's config/printer-eryone-er20-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: eryone-er20
+name: Eryone ER-20
+manufacturer: Eryone
+status: needs-review
+docs:
+- {title: 'Klipper: Eryone ER-20 reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-eryone-er20-2021.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-er20-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [250, 235]
+  position_max: {x: 250, y: 235, z: 250}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 1500, max_z_velocity: 5, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 40, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.6}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 40, homing_retract_dist: 0}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -9, position_min: -9, homing_speed: 50, homing_retract_dist: 0}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -1, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.7}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.7}
+  bed:
+    max_power: 1.0
+    max_temp: 100
+    pid: {pid_kp: 100.12, pid_ki: 5, pid_kd: 305}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+  sensorless_thresholds: {stepper_x: 80, stepper_y: 100}
+stock:
+  mainboards: [eryone-er20-board]
+  toolhead: null
+  extruder: eryone-er20-extruder
+  hotend: eryone-er20-hotend
+  thermistors: {hotend: epcos-b57560, bed: semitec-104gt2}
+  probe_options: [bltouch]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend]
+  probe: bltouch
+  probe_offsets:
+    bltouch: {x: 34, y: 0}
+  display: {lcd_type: st7920, cs_pin: PE9, sclk_pin: PE8, sid_pin: PE10, encoder_pins: '^PE4, ^PE3', click_pin: ^!PE11}
+stock_parts:
+  extruders:
+  - id: eryone-er20-extruder
+    name: Eryone ER-20 stock extruder
+    drive: unknown
+    rotation_distance: 34.4
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [eryone-er20]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-er20-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: eryone-er20-hotend
+    name: Eryone ER-20 stock hotend
+    maker: Eryone
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [eryone-er20]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-er20-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 26.11, pid_ki: 2.01, pid_kd: 85}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-eryone-er20-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

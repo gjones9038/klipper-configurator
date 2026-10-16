@@ -1,0 +1,103 @@
+# Imported from Klipper's config/printer-anycubic-vyper-2021.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: anycubic-vyper
+name: Anycubic Vyper
+manufacturer: Anycubic
+status: needs-review
+docs:
+- {title: 'Klipper: Anycubic Vyper reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-vyper-2021.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [245, 245]
+  position_max: {x: 245, y: 245, z: 260}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 32}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+- {klipper: stepper_z1, role: Z1, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 4, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 10, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 30, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -3, position_min: -3, homing_speed: 30}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -17, position_min: -17, homing_speed: 30}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -3, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 110
+    pid: {pid_kp: 67.648, pid_ki: 1.044, pid_kd: 1095.893}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [anycubic-vyper-board]
+  toolhead: null
+  extruder: anycubic-vyper-extruder
+  hotend: anycubic-vyper-hotend
+  thermistors: {hotend: semitec-104gt2, bed: epcos-b57560}
+  probe_options: [anycubic-vyper-probe]
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [hotend, part_cooling, controller]
+  probe: anycubic-vyper-probe
+stock_parts:
+  extruders:
+  - id: anycubic-vyper-extruder
+    name: Anycubic Vyper stock extruder
+    drive: unknown
+    rotation_distance: 22.765
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [anycubic-vyper]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '50:17'
+    dir_inverted: true
+  hotends:
+  - id: anycubic-vyper-hotend
+    name: Anycubic Vyper stock hotend
+    maker: Anycubic
+    flow_class: standard
+    max_temp: 260
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [anycubic-vyper]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 260'}
+    pid_seed: {pid_kp: 28.937, pid_ki: 1.295, pid_kd: 161.688}
+  probes:
+  - id: anycubic-vyper-probe
+    name: Anycubic Vyper built-in probe
+    kind: integrated
+    applies_to: [anycubic-vyper]
+    z_endstop_capable: false
+    defaults: {x_offset: 0, y_offset: 0, z_offset: 0}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.', 'Both Z motors run from separate drivers but nothing levels them automatically; if the X axis is
+    tilted, level it by hand.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

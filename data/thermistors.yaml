@@ -103,6 +103,27 @@ user_choices:
     sources:
       - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491, note: "[thermistor my_thermistor]"}
     note: "Sovol calls it my_thermistor; renamed here."
+  - id: honeywell-135-104lag
+    max_temp_c: null
+    label: "Honeywell 100K 135-104LAG-J01"
+    sensor_type: "Honeywell 100K 135-104LAG-J01"
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: klippy/extras/temperature_sensors.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b, note: "Klipper built-in sensor_type"}
+    note: "No rated maximum recorded."
+  - id: ntc100k-mgb18
+    max_temp_c: null
+    label: "NTC 100K MGB18-104F39050L32"
+    sensor_type: "NTC 100K MGB18-104F39050L32"
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: klippy/extras/temperature_sensors.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b, note: "Klipper built-in sensor_type"}
+    note: "No rated maximum recorded."
+  - id: pt100-ina826
+    max_temp_c: null
+    label: "PT100 with INA826 amplifier"
+    sensor_type: "PT100 INA826"
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: klippy/extras/temperature_sensors.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b, note: "Klipper built-in sensor_type"}
+    note: "No rated maximum recorded."
   - id: ldo-cmfb103f3950
     max_temp_c: 120
     label: "LDO Nitehawk-SB chamber NTC (FH CMFB103F3950FANT)"

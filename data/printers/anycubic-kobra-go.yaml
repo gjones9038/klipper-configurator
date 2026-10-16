@@ -1,0 +1,100 @@
+# Imported from Klipper's config/printer-anycubic-kobra-go-2022.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: anycubic-kobra-go
+name: Anycubic Kobra Go
+manufacturer: Anycubic
+status: needs-review
+docs:
+- {title: 'Klipper: Anycubic Kobra Go reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-kobra-go-2022.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [236, 230]
+  position_max: {x: 236, y: 230, z: 255}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 500, max_z_velocity: 4, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -13, position_min: -13, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -9, position_min: -9, homing_speed: 50}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -10, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 120
+    pid: {pid_kp: 97.1, pid_ki: 1.41, pid_kd: 1675.16}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [anycubic-kobra-go-board]
+  toolhead: null
+  extruder: anycubic-kobra-go-extruder
+  hotend: anycubic-kobra-go-hotend
+  thermistors: {hotend: semitec-104gt2, bed: epcos-b57560}
+  probe_options: [anycubic-kobra-go-probe]
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [controller, hotend, part_cooling]
+  probe: anycubic-kobra-go-probe
+stock_parts:
+  extruders:
+  - id: anycubic-kobra-go-extruder
+    name: Anycubic Kobra Go stock extruder
+    drive: unknown
+    rotation_distance: 31.07
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [anycubic-kobra-go]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: anycubic-kobra-go-hotend
+    name: Anycubic Kobra Go stock hotend
+    maker: Anycubic
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [anycubic-kobra-go]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 19.56, pid_ki: 1.62, pid_kd: 200}
+  probes:
+  - id: anycubic-kobra-go-probe
+    name: Anycubic Kobra Go built-in probe
+    kind: integrated
+    applies_to: [anycubic-kobra-go]
+    z_endstop_capable: false
+    defaults: {x_offset: -20.8, y_offset: 0, z_offset: 0, speed: 2, samples: 3, samples_result: average, sample_retract_dist: 0.5,
+      samples_tolerance_retries: 3, lift_speed: 4}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-kobra-go-2022.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

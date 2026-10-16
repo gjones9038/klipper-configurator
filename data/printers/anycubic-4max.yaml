@@ -1,0 +1,91 @@
+# Imported from Klipper's config/printer-anycubic-4max-2018.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: anycubic-4max
+name: Anycubic 4Max
+manufacturer: Anycubic
+status: needs-review
+docs:
+- {title: 'Klipper: Anycubic 4Max reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-anycubic-4max-2018.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-4max-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [205, 215]
+  position_max: {x: 205, y: 215, z: 305}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 1200, max_accel: 1500, max_z_velocity: 40, max_z_accel: 60}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 60, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: -2, position_min: -2, homing_speed: 60}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 60}
+  stepper_z: {microsteps: 16, position_endstop: 0.5, position_min: 0, homing_speed: 8, second_homing_speed: 4.0, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 110
+    pid: {pid_kp: 73.735, pid_ki: 1.437, pid_kd: 945.653}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [anycubic-4max-board]
+  toolhead: null
+  extruder: anycubic-4max-extruder
+  hotend: anycubic-4max-hotend
+  thermistors: {hotend: semitec-104gt2, bed: epcos-b57560}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling, hotend]
+  display: {lcd_type: st7920, cs_pin: PH1, sclk_pin: PA1, sid_pin: PH0, encoder_pins: '^PC6, ^PC4', click_pin: ^!PC2, kill_pin: ^!PG0}
+stock_parts:
+  extruders:
+  - id: anycubic-4max-extruder
+    name: Anycubic 4Max stock extruder
+    drive: unknown
+    rotation_distance: 33.133
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [anycubic-4max]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-4max-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+  hotends:
+  - id: anycubic-4max-hotend
+    name: Anycubic 4Max stock hotend
+    maker: Anycubic
+    flow_class: standard
+    max_temp: 300
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: semitec-104gt2
+    applies_to: [anycubic-4max]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-4max-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 300'}
+    pid_seed: {pid_kp: 27.725, pid_ki: 1.224, pid_kd: 156.991}
+  probes: []
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-4max-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

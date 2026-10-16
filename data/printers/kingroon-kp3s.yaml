@@ -1,0 +1,103 @@
+# Imported from Klipper's config/printer-kingroon-kp3s-2020.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: kingroon-kp3s
+name: Kingroon KP3S
+manufacturer: Kingroon
+status: needs-review
+docs:
+- {title: 'Klipper: Kingroon KP3S reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-kingroon-kp3s-2020.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+hotend_fan: always_on
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-kingroon-kp3s-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [180, 180]
+  position_max: {x: 180, y: 180, z: 180}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 250, max_accel: 2000, max_z_velocity: 25, max_z_accel: 100}
+  stepper_xy: {microsteps: 32, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.58}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50}
+  stepper_z: {microsteps: 32, position_endstop: 0.5, position_min: 0, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.58}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.5}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 61.779, pid_ki: 1.572, pid_kd: 606.98}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+stock:
+  mainboards: [kingroon-kp3s-board]
+  toolhead: null
+  extruder: kingroon-kp3s-extruder
+  hotend: kingroon-kp3s-hotend
+  thermistors: {hotend: kingroon-kp3s-kingroon-b3950, bed: kingroon-kp3s-kingroon-b3950}
+  probe_options: []
+  homing_xy: physical
+  homing_z: physical_min
+  fans: [part_cooling]
+stock_parts:
+  extruders:
+  - id: kingroon-kp3s-extruder
+    name: Kingroon KP3S stock extruder
+    drive: unknown
+    rotation_distance: 23.244
+    microsteps: 32
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [kingroon-kp3s]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-kingroon-kp3s-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '3:1'
+    dir_inverted: true
+  hotends:
+  - id: kingroon-kp3s-hotend
+    name: Kingroon KP3S stock hotend
+    maker: Kingroon
+    flow_class: standard
+    max_temp: 250
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: kingroon-kp3s-kingroon-b3950
+    applies_to: [kingroon-kp3s]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-kingroon-kp3s-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 250'}
+    pid_seed: {pid_kp: 27.057, pid_ki: 1.171, pid_kd: 156.254}
+  probes: []
+  thermistors:
+  - id: kingroon-kp3s-kingroon-b3950
+    max_temp_c: null
+    label: Kingroon KP3S stock thermistor (Kingroon_B3950)
+    sensor_type: kingroon_kp3s_kingroon_b3950
+    custom_definition_required: true
+    definition: {temperature1: 25, resistance1: 103180, temperature2: 150, resistance2: 1366.2, temperature3: 250, resistance3: 168.6}
+    applies_to: [kingroon-kp3s]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-kingroon-kp3s-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    note: Defined in Klipper's Kingroon KP3S config as [thermistor Kingroon_B3950].
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.', 'The stock motor drivers can''t be adjusted from Klipper, so the motor current settings and sensorless
+    homing don''t apply.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-kingroon-kp3s-2020.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

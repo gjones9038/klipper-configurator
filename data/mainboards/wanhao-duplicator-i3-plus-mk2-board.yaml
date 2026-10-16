@@ -1,0 +1,58 @@
+# Imported from Klipper's config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: wanhao-duplicator-i3-plus-mk2-board
+name: Wanhao Duplicator i3 Plus Mark II mainboard
+manufacturer: Wanhao
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: atmega2560, arch: avr, cpu_mhz: 16}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0}
+firmware: {interface: 'Serial (UART0), 250000 baud (Klipper''s AVR default)'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PF7
+  dir_pin: PK0
+  enable_pin: '!PF6'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PK2
+  dir_pin: PK3
+  enable_pin: '!PE4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PK5
+  dir_pin: PK7
+  enable_pin: '!PK4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PF4
+  dir_pin: PF5
+  enable_pin: '!PF3'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PF0, modifier: ^!}
+- {id: Y-STOP, pin: PA2, modifier: ^!}
+heaters:
+- {id: HEATER, pin: PG5, role: hotend}
+- {id: BED, pin: PE5, role: bed}
+thermistors:
+- {id: TH0, pin: PF1, typical_use: hotend}
+- {id: TB, pin: PK6, typical_use: bed}
+fans:
+- {id: FAN0, pin: PE3, typical_use: part_cooling}
+probe_ports:
+- {id: PROBE, pin: PH3, modifier: '!'}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-wanhao-duplicator-i3-plus-mark2-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

@@ -1,0 +1,61 @@
+# Imported from Klipper's config/printer-alfawise-u30-2018.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: alfawise-u30-board
+name: Alfawise U30 mainboard
+manufacturer: Alfawise
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 64, check_dict: stm32f103-serial}
+interfaces: [usb-serial]
+usb_serial: {chip: CH340, serial_path: /dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0}
+firmware: {interface: Serial (on USART1 PA10/PA9), flash: 'The "make flash" command does not work on the Alfawise U30. Instead,
+    after running "make", copy the generated "out/klipper.bin" file to a file named "project.bin" on an SD card and then restart
+    the Alfawise with that SD card.'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PB5'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PB7
+  dir_pin: PB6
+  enable_pin: '!PB8'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PE0
+  dir_pin: PB9
+  enable_pin: '!PE1'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PE3
+  dir_pin: PE2
+  enable_pin: '!PE4'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PC1, modifier: '!'}
+- {id: Y-STOP, pin: PC15, modifier: '!'}
+- {id: Z-STOP, pin: PE6, modifier: '!'}
+heaters:
+- {id: HEATER, pin: PD3, role: hotend}
+- {id: BED, pin: PA8, role: bed}
+thermistors:
+- {id: TH0, pin: PA0, typical_use: hotend}
+- {id: TB, pin: PA1, typical_use: bed}
+fans:
+- {id: FAN0, pin: PA15, typical_use: part_cooling}
+probe_ports: []
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-alfawise-u30-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

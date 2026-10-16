@@ -1,0 +1,100 @@
+# Imported from Klipper's config/printer-hiprecy-leo-2019.cfg by tools/import_klipper_printer.py (only source: needs review).
+schema: printer/1
+id: hiprecy-leo
+name: Hiprecy Leo
+manufacturer: Hiprecy
+status: needs-review
+docs:
+- {title: 'Klipper: Hiprecy Leo reference config', url: 'https://github.com/Klipper3d/klipper/blob/master/config/printer-hiprecy-leo-2019.cfg'}
+- {title: 'Klipper: configuration checks (first power-on)', url: 'https://www.klipper3d.org/Config_checks.html'}
+kinematics: cartesian
+z_leveling: null
+bed_heater: unknown
+imported_from: {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-hiprecy-leo-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+sizes:
+- id: stock
+  bed_mm: [220, 230]
+  position_max: {x: 220, y: 230, z: 260}
+steppers:
+- {klipper: stepper_x, role: X, rotation_distance: 40}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+variants:
+- id: standard
+  name: Stock
+  drivers_required: {motion: 3, extruder: 1}
+defaults:
+  printer: {max_velocity: 300, max_accel: 3000, max_z_velocity: 8, max_z_accel: 100}
+  stepper_xy: {microsteps: 16, full_steps_per_rotation: 200, homing_speed: 50, homing_retract_dist: 5, homing_positive_dir: false,
+    position_min: 0, endstop_at_max: false, position_endstop: 0, run_current: 0.6}
+  axes:
+    x: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50, homing_retract_dist: 0}
+    y: {endstop_at_max: false, homing_positive_dir: false, position_endstop: 0, position_min: 0, homing_speed: 50, homing_retract_dist: 0}
+  stepper_z: {microsteps: 16, position_endstop: 0, position_min: -2, homing_speed: 5, second_homing_speed: 2.5, homing_retract_dist: 5,
+    run_current: 0.8}
+  tmc: {interpolate: false, stealthchop_threshold: 0}
+  extruder: {run_current: 0.6}
+  bed:
+    max_power: 1.0
+    max_temp: 130
+    pid: {pid_kp: 69.584, pid_ki: 1.393, pid_kd: 868.925}
+  safe_z_home: {home_xy_position: user, speed: 100, z_hop: 10}
+  idle_timeout: 1800
+  sensorless_thresholds: {stepper_x: 3, stepper_y: 3}
+stock:
+  mainboards: [hiprecy-leo-board]
+  toolhead: null
+  extruder: hiprecy-leo-extruder
+  hotend: hiprecy-leo-hotend
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe_options: [hiprecy-leo-probe]
+  homing_xy: sensorless
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend]
+  probe: hiprecy-leo-probe
+stock_parts:
+  extruders:
+  - id: hiprecy-leo-extruder
+    name: Hiprecy Leo stock extruder
+    drive: unknown
+    rotation_distance: 23.133
+    microsteps: 16
+    full_steps_per_rotation: 200
+    pa_baseline:
+      start: 0
+      range: [0, 1]
+    confidence: medium
+    applies_to: [hiprecy-leo]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-hiprecy-leo-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+    unverified: ['Klipper''s config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts
+        at 0: tune it (TUNE_PA).']
+    gear_ratio: '50:17'
+  hotends:
+  - id: hiprecy-leo-hotend
+    name: Hiprecy Leo stock hotend
+    maker: Hiprecy
+    flow_class: standard
+    max_temp: 260
+    max_temp_basis: hotend
+    includes: {heater: true, thermistor: true}
+    common_thermistor: epcos-b57560
+    applies_to: [hiprecy-leo]
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-hiprecy-leo-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b,
+      note: '[extruder] max_temp: 260'}
+    pid_seed: {pid_kp: 22, pid_ki: 1.08, pid_kd: 114}
+  probes:
+  - id: hiprecy-leo-probe
+    name: Hiprecy Leo built-in probe
+    kind: integrated
+    applies_to: [hiprecy-leo]
+    z_endstop_capable: true
+    defaults: {x_offset: 35, y_offset: 2, z_offset: 0, speed: 5, samples: 2}
+    sources:
+    - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-hiprecy-leo-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  thermistors: []
+notes: ['Made from Klipper''s reference config for this printer. Check the pins against your printer before powering on, and
+    run PREFLIGHT first.']
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-hiprecy-leo-2019.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

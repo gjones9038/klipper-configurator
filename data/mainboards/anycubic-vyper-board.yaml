@@ -1,0 +1,71 @@
+# Imported from Klipper's config/printer-anycubic-vyper-2021.cfg by tools/import_klipper_printer.py.
+schema: mainboard/1
+id: anycubic-vyper-board
+name: Anycubic Vyper mainboard
+manufacturer: Anycubic
+revisions: [stock]
+status: needs-review
+stock_only: true
+mcu_variants:
+- {chip: stm32f103, crystal_mhz: 8, bootloader_kib: 0, check_dict: stm32f103-serial}
+interfaces: [usb-serial]
+firmware: {interface: Serial (on USART1 PA10/PA9), flash: 'To create the Firmware you need to use the following configuration:
+    - Micro-controller: STM32 - Processor model: STM32F103 - Bootloader offset: 32KiB - Communication interface: Serial (on
+    USART1 PA10/PA9)  To install the Firmware rename the klipper bin to `main_board_20xxxxxx.bin` and copy it to an SD Card.
+    Power off the Printer, insert the SD Card and power it on. If you want to revert the Firmware back to Marlin you simply
+    need to flash it with a anycubic firmware through the SD Card'}
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC2
+  dir_pin: PB9
+  enable_pin: '!PC3'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Y
+  step_pin: PB8
+  dir_pin: PB7
+  enable_pin: '!PC13'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z
+  step_pin: PB6
+  dir_pin: PB5
+  enable_pin: '!PC14'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: Z1
+  step_pin: PC0
+  dir_pin: PC1
+  enable_pin: '!PC15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+- id: E
+  step_pin: PB4
+  dir_pin: PB3
+  enable_pin: '!PA15'
+  onboard_driver: {chip: null, standalone: true, microsteps: 16, note: 'No TMC section in Klipper''s config: Klipper does
+      not set this driver''s current.'}
+endstops:
+- {id: X-STOP, pin: PA7, modifier: '!'}
+- {id: Y-STOP, pin: PC5, modifier: '!'}
+- {id: Z-STOP, pin: PB2, modifier: ''}
+heaters:
+- {id: HEATER, pin: PA1, role: hotend}
+- {id: BED, pin: PA4, role: bed}
+thermistors:
+- {id: TH0, pin: PC4, typical_use: hotend}
+- {id: TB, pin: PB0, typical_use: bed}
+fans:
+- {id: FAN0, pin: PB1, typical_use: hotend}
+- {id: FAN1, pin: PA0, typical_use: part_cooling}
+- {id: FAN2, pin: PA14, typical_use: controller}
+probe_ports:
+- {id: PROBE, pin: PB12, modifier: '!'}
+notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
+    homing (homing without switches) isn''t possible.']
+unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
+    source does not state it.]
+sources:
+- {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-anycubic-vyper-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
