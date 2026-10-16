@@ -532,3 +532,19 @@ test('Prusa MK3S+: Einsy TMC2130 on AVR SPI, sensorless X at max / Y at -4, fans
   assert.match(mb, /\[probe\][^\n]*\npin: \^PB4\nx_offset: 23\ny_offset: 5/);
   assert.match(r.files['FIRMWARE.md'], /Atmega AVR[\s\S]*atmega2560[\s\S]*16 MHz/);
 });
+
+test('Elegoo Neptune 3 Pro: Klipper reference pins, X endstop at -5, built-in probe homes Z', () => {
+  const b: Build = JSON.parse(readFileSync(new URL('../../examples/elegoo-neptune3-pro.json', import.meta.url), 'utf8'));
+  const r = generate(b, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const mb = r.files['mainboard.cfg'];
+  // printer-elegoo-neptune3-pro-2023.cfg / Elegoo pins_MKS_E3_V2.h
+  assert.match(mb, /\[stepper_x\][^[]*step_pin: PC12\ndir_pin: PB3[^[]*endstop_pin: PA13[^[]*position_min: -5\nposition_endstop: -5/);
+  assert.match(mb, /\[stepper_z\][^[]*dir_pin: !PC9[^[]*endstop_pin: probe:z_virtual_endstop/);
+  assert.match(mb, /\[probe\][^\n]*\npin: PA8\nx_offset: -28\.5\ny_offset: 22/);
+  assert.match(mb, /\[fan\][^\n]*\npin: PA7/);
+  assert.match(mb, /\[heater_fan hotend_fan\][^\n]*\npin: PB0/);
+  assert.match(mb, /\[extruder\][^[]*rotation_distance: 8\.42[^[]*max_temp: 260/);
+  assert.doesNotMatch(mb, /\[tmc/);
+  assert.match(r.files['FIRMWARE.md'], /32KiB bootloader[\s\S]*ZNP_ROBIN_NANO\.bin/);
+});

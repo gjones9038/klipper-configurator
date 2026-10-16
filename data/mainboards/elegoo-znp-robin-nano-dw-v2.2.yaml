@@ -1,0 +1,100 @@
+schema: mainboard/1
+id: elegoo-znp-robin-nano-dw-v2.2
+name: Elegoo ZNP Robin Nano_DW
+manufacturer: Elegoo (MKS)
+revisions:
+- V2.2
+status: reviewed
+# Stock board of the Neptune 3 Pro. Elegoo's Marlin builds it as BOARD_MKS_E3D_V2 (pins_MKS_E3_V2.h).
+mcu_variants:
+- chip: stm32f401
+  crystal_mhz: 8
+  bootloader_kib: 32
+interfaces:
+- usb-serial
+usb_serial:
+  chip: CH340
+  serial_path: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+firmware:
+  interface: Serial (on USART1 PA10/PA9)
+  flash: >-
+    "make flash" does not work on ZNP Robin boards: rename out/klipper.bin to ZNP_ROBIN_NANO.bin,
+    copy it to a FAT32 SD card and restart the printer with the card inserted (Klipper's config).
+power:
+  vin_v: [24, 24]
+driver_mount: onboard
+driver_slots:
+- id: X
+  step_pin: PC12
+  dir_pin: PB3
+  enable_pin: '!PD2'
+  onboard_driver: &drv
+    chip: null
+    standalone: true
+    microsteps: 16
+    note: Standalone step/dir drivers (Elegoo's Marlin declares them as A4988; Klipper's config has no TMC sections).
+- id: Y
+  step_pin: PC11
+  dir_pin: PA15
+  enable_pin: '!PC10'
+  onboard_driver: *drv
+- id: Z
+  step_pin: PC7
+  dir_pin: PC9
+  enable_pin: '!PC8'
+  onboard_driver: *drv
+- id: E
+  step_pin: PB10
+  dir_pin: PB1
+  enable_pin: '!PC6'
+  onboard_driver: *drv
+endstops:
+- id: X-STOP
+  pin: PA13
+  modifier: ''
+- id: Y-STOP
+  pin: PB8
+  modifier: ''
+- id: Z-STOP
+  pin: PC13
+  modifier: ''
+heaters:
+- id: HE
+  pin: PA6
+  role: hotend
+- id: HB
+  pin: PA5
+  role: bed
+  drive: dc
+thermistors:
+- id: TH1
+  pin: PC1
+  typical_use: hotend
+- id: TB1
+  pin: PC0
+  typical_use: bed
+fans:
+- id: FAN1
+  pin: PA7
+  typical_use: part_cooling
+- id: FAN2
+  pin: PB0
+  typical_use: hotend
+probe_ports:
+- id: PROBE
+  pin: PA8
+  modifier: ''
+filament_sensor_ports:
+- id: FIL
+  pin: PB4
+misc:
+  top_led_pin: PB9          # Klipper [led top_LEDs] / Elegoo LED3_PIN
+notes:
+- Drivers are standalone, so run current is not set from Klipper and sensorless homing is not possible.
+unverified:
+- crystal_mhz 8 is Klipper's default; neither source states it.
+- Z-STOP (PC13) comes from Elegoo's Marlin only; the stock printer homes Z with its probe.
+sources:
+- {repo: https://github.com/Klipper3d/klipper, path: config/printer-elegoo-neptune3-pro-2023.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+- {repo: https://github.com/elegooofficial/neptune3pro, path: "Firmware/Mainboard/Marlin-2.1.1_TJC_029/Marlin-2.1.1_TJC_029/Marlin/src.zip", commit: fc671ca3b85bf8169609a75ed0e1e3e2695b82d4, note: "pins/stm32f4/pins_MKS_E3_V2.h (BOARD_MKS_E3D_V2 in Configuration.h); agrees on every pin above"}
+- {repo: https://github.com/elegooofficial/neptune3pro, path: "Firmware/Mainboard/Marlin-2.1.1_TJC_029/Marlin-2.1.1_TJC_029/Marlin/Configuration.h", commit: fc671ca3b85bf8169609a75ed0e1e3e2695b82d4, note: "X/Y/Z/E0_DRIVER_TYPE A4988, FIX_MOUNTED_PROBE, NOZZLE_TO_PROBE_OFFSET {-28.5, 22, 0}"}

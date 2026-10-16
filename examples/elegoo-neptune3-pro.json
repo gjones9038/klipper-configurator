@@ -1,0 +1,16 @@
+{
+  "printer": "elegoo-neptune3-pro",
+  "size": "stock",
+  "variant": "standard",
+  "mainboard": { "id": "elegoo-znp-robin-nano-dw-v2.2", "connection": "usb-serial" },
+  "drivers": { "xy": { "module": "btt-tmc2209" }, "z": { "module": "btt-tmc2209" } },
+  "motors": { "xy": "", "z": "" },
+  "homing": { "xy": "physical", "z": "probe_virtual_endstop" },
+  "probe": "elegoo-neptune3pro-probe",
+  "extruder": "elegoo-neptune3pro",
+  "hotend": "elegoo-neptune3pro",
+  "thermistors": { "hotend": "epcos-b57560", "bed": "epcos-b57560" },
+  "fans": [{ "role": "part_cooling" }, { "role": "hotend" }],
+  "autotune": false,
+  "webUi": "mainsail"
+}

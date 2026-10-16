@@ -1,0 +1,89 @@
+schema: printer/1
+id: elegoo-neptune3-pro
+name: Elegoo Neptune 3 Pro
+manufacturer: Elegoo
+status: reviewed
+docs:
+  - {title: "Klipper: Neptune 3 Pro reference config", url: "https://github.com/Klipper3d/klipper/blob/master/config/printer-elegoo-neptune3-pro-2023.cfg"}
+  - {title: "Elegoo Neptune 3 Pro open-source files", url: "https://github.com/elegooofficial/neptune3pro"}
+kinematics: cartesian
+z_leveling: null                 # two Z leadscrews on one driver
+bed_heater: dc
+display: unsupported             # the stock touchscreen needs a third-party service (KlipperLCD); not configured
+
+sizes:
+  - id: stock
+    bed_mm: [235, 234]
+    position_max: {x: 235, y: 234, z: 283}
+
+steppers:
+  - {klipper: stepper_x, role: X, rotation_distance: 40}
+  - {klipper: stepper_y, role: Y, rotation_distance: 40}
+  - {klipper: stepper_z, role: Z0, rotation_distance: 8, dir_inverted: true}
+
+variants:
+  - id: standard
+    name: Stock
+    drivers_required: {motion: 3, extruder: 1}
+
+defaults:
+  printer:
+    max_velocity: 300
+    max_accel: 3000
+    max_z_velocity: 5
+    max_z_accel: 100
+  stepper_xy:
+    microsteps: 16
+    full_steps_per_rotation: 200
+    homing_speed: 50
+    homing_retract_dist: 5
+    homing_positive_dir: false
+    position_min: 0
+    endstop_at_max: false
+    position_endstop: 0
+    run_current: 0.58
+  axes:
+    x: {position_endstop: -5, position_min: -5}
+  stepper_z:
+    microsteps: 16
+    position_endstop: 0
+    position_min: -0.8
+    homing_speed: 10
+    second_homing_speed: 5
+    homing_retract_dist: 5
+    run_current: 0.58
+  tmc:
+    interpolate: false
+    stealthchop_threshold: 0
+  extruder:
+    run_current: 0.5
+  bed:
+    max_power: 1.0
+    max_temp: 100                 # Klipper (Elegoo's Marlin BED_MAXTEMP 150)
+    pid: {pid_kp: 70.173, pid_ki: 1.418, pid_kd: 868.388}
+  safe_z_home:
+    home_xy_position: user
+    speed: 100
+    z_hop: 10
+  idle_timeout: 1800
+
+stock:
+  mainboards: [elegoo-znp-robin-nano-dw-v2.2]
+  toolhead: null
+  extruder: elegoo-neptune3pro
+  hotend: elegoo-neptune3pro
+  thermistors: {hotend: epcos-b57560, bed: epcos-b57560}
+  probe: elegoo-neptune3pro-probe
+  probe_options: [elegoo-neptune3pro-probe]
+  homing_z: probe_virtual_endstop
+  fans: [part_cooling, hotend]
+
+notes:
+  - "Stock drivers are standalone: run_current and sensorless homing do not apply."
+  - "The top LED bar (PB9) is not generated; Klipper's reference config has an [led top_LEDs] example."
+unverified:
+  - "run_current values are only used with a replacement board with UART drivers; they are not from a source."
+  - "second_homing_speed 5 is Klipper's default (homing_speed / 2)."
+sources:
+  - {repo: https://github.com/Klipper3d/klipper, path: config/printer-elegoo-neptune3-pro-2023.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+  - {repo: https://github.com/elegooofficial/neptune3pro, path: "Firmware/Mainboard/Marlin-2.1.1_TJC_029/Marlin-2.1.1_TJC_029/Marlin/Configuration.h", commit: fc671ca3b85bf8169609a75ed0e1e3e2695b82d4}

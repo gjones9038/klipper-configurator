@@ -226,6 +226,18 @@ probes:
     sources:
       - {repo: https://github.com/Sovol3d/SV08, path: home/sovol/printer_data/config/printer.cfg, commit: a60644875f8c756d20b3828c9416518b414b5491}
 
+  - id: elegoo-neptune3pro-probe
+    name: Elegoo Neptune 3 Pro built-in probe
+    kind: integrated
+    applies_to: [elegoo-neptune3-pro]
+    z_endstop_capable: true          # Klipper: stepper_z endstop_pin: probe:z_virtual_endstop (Elegoo Marlin: USE_PROBE_FOR_Z_HOMING)
+    defaults: {x_offset: -28.5, y_offset: 22, z_offset: 0, speed: 5.0, samples: 1, samples_result: average,
+               sample_retract_dist: 2.0, samples_tolerance: 0.1, samples_tolerance_retries: 0}
+    sources:
+      - {repo: https://github.com/Klipper3d/klipper, path: config/printer-elegoo-neptune3-pro-2023.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}
+      - {repo: https://github.com/elegooofficial/neptune3pro, path: "Firmware/Mainboard/Marlin-2.1.1_TJC_029/Marlin-2.1.1_TJC_029/Marlin/Configuration.h", commit: fc671ca3b85bf8169609a75ed0e1e3e2695b82d4, note: "FIX_MOUNTED_PROBE, NOZZLE_TO_PROBE_OFFSET {-28.5, 22, 0}"}
+    unverified: ["Sampling values are Klipper defaults (the reference config sets only pin and offsets)"]
+
   - id: bltouch
     name: BLTouch / CR-Touch
     kind: servo_pin
