@@ -1,7 +1,7 @@
 // G-code macro files. Kept as plain templates: easy to read and diff against
 // what users already know from Voron/Klipper docs.
 import type { Plan } from './plan.ts';
-import { bedGeometry } from './plan.ts';
+import { bedGeometry, zHomeXY } from './plan.ts';
 import { extraExtruders, extraHeaters } from './emit.ts';
 
 const hdr = (lines: string[]) => lines.map((l) => `# ${l}`).join('\n');
@@ -194,7 +194,7 @@ gcode:
 }
 
 export function levelingMacros(p: Plan, header: string[]): string {
-  const [bx, by] = bedGeometry(p).center.map((v) => v * 2);
+  const [cx, cy] = bedGeometry(p).center;
   const lvl = levelCmd(p);
   const status = p.printer.z_leveling === 'quad_gantry_level' ? 'quad_gantry_level' : 'z_tilt';
   const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
@@ -217,7 +217,7 @@ gcode:
     G28
     ${lvl}
     G28 Z
-    G0 X${bx / 2} Y${by / 2} Z30 F3600
+    G0 X${cx} Y${cy} Z30 F3600
 `)}
 
 ${block(`
@@ -405,11 +405,8 @@ gcode:
 }
 
 export function homingMacros(p: Plan, header: string[]): string {
-  const [bx, by] = p.size.bed_mm;
   // Probe homing: the probe (nozzle + offset) over the bed centre, as in [safe_z_home].
-  const off = p.probe?.offset ?? { x: 0, y: 0 };
-  const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
-  const zxy = p.build.homing.z === 'probe_virtual_endstop' ? [clamp(bx / 2 - off.x, 'x'), clamp(by / 2 - off.y, 'y')] : p.build.homing.zSwitchXY ?? [bx / 2, by / 2];
+  const zxy = zHomeXY(p);
   const cur = p.homingCurrent;
   const run = Object.fromEntries(p.steppers.map((s) => [s.name, s.runCurrent]));
   const names = Object.keys(cur);
@@ -499,7 +496,7 @@ gcode:${tc ? '\n    INITIALIZE_TOOLCHANGER' : ''}
 function probeMacros(p: Plan): string {
   const pr = p.probe;
   if (!pr) return '';
-  const [bx, by] = bedGeometry(p).center.map((v) => v * 2);   // bx / 2, by / 2 below = bed centre
+  const [cx, cy] = bedGeometry(p).center;
   const homes = p.build.homing.z === 'probe_virtual_endstop';
   if (pr.kind === 'eddy_plugin') {
     return block(`
@@ -507,7 +504,7 @@ function probeMacros(p: Plan): string {
 description: Beacon first calibration (BEACON_CALIBRATE, paper test). See docs.beacon3d.com.
 gcode:
     G28 X Y
-    G0 X${bx / 2} Y${by / 2} F6000
+    G0 X${cx} Y${cy} F6000
     RESPOND MSG="Follow the Beacon quickstart: BEACON_CALIBRATE runs the paper test, then SAVE_CONFIG."
     BEACON_CALIBRATE
 `) + '\n';
@@ -518,25 +515,25 @@ gcode:
     {% if params.FIRST|default(0)|int == 1 %}
         RESPOND MSG="First calibration: Z is not homed. Place the nozzle about 20 mm above the bed centre before running this."
         G28 X Y
-        G0 X${bx / 2} Y${by / 2} F6000
+        G0 X${cx} Y${cy} F6000
         SET_STEPPER_ENABLE STEPPER=stepper_z ENABLE=1
         SET_KINEMATIC_POSITION Z=25
     {% else %}
         G28
-        G0 X${bx / 2} Y${by / 2} Z5 F6000
+        G0 X${cx} Y${cy} Z5 F6000
     {% endif %}` : `
     G28
-    G0 X${bx / 2} Y${by / 2} Z5 F6000`;
+    G0 X${cx} Y${cy} Z5 F6000`;
   return block(`
 [gcode_macro TUNE_EDDY_DRIVE]
 description: Eddy step 1 (Klipper Eddy_Probe.md): calibrate the drive current with the sensor about 20 mm above the bed.
 gcode:${homes ? `
     RESPOND MSG="If Z cannot home yet, move the nozzle by hand to about 20 mm above the bed centre first."
     {% if printer.toolhead.homed_axes == "xyz" %}
-        G0 X${bx / 2} Y${by / 2} Z20 F6000
+        G0 X${cx} Y${cy} Z20 F6000
     {% endif %}` : `
     G28
-    G0 X${bx / 2} Y${by / 2} Z20 F6000`}
+    G0 X${cx} Y${cy} Z20 F6000`}
     LDC_CALIBRATE_DRIVE_CURRENT CHIP=${chip}
     RESPOND MSG="Drive current found. Run SAVE_CONFIG, then TUNE_EDDY_HEIGHT${homes ? ' FIRST=1' : ''}."
 `) + '\n\n' + block(`

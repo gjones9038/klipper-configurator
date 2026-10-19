@@ -1,7 +1,7 @@
 // Render a Plan into Klipper config files. No decisions here beyond formatting.
 import { CfgFile, Section } from './cfg.ts';
 import type { Plan, StepperPlan, FanPlan, PortUse } from './plan.ts';
-import { TOOLHEAD_MCU, bedGeometry } from './plan.ts';
+import { TOOLHEAD_MCU, bedGeometry, zHomeXY } from './plan.ts';
 import type { Db, Rec } from './types.ts';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -77,8 +77,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       .set('enable_force_move', true));
   }
 
-  const [bedX, bedY] = p.size.bed_mm;
-  const center = `${bedX / 2}, ${bedY / 2}`;
+  const geo = bedGeometry(p);
+  const center = geo.center.join(', ');
   // Beacon's own homing (home_xy_position in [beacon]) excludes [safe_z_home];
   // sensorless homing uses homing_override, which also excludes it.
   // A Z endstop switch (bed-slingers) homes anywhere: no safe_z_home needed.
@@ -89,8 +89,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   if (!dg && !sensorless && !p.tools && !(beacon && probeHoming) && !['physical_min', 'physical_max', 'belt'].includes(b.homing.z)) {
     // Probe homing: put the probe (not the nozzle) over the bed centre, within travel.
     const off = p.probe?.offset ?? { x: 0, y: 0 };
-    const clamp = (v: number, axis: 'x' | 'y') => Math.min(Math.max(v, 0), p.size.position_max[axis]);
-    const xy = probeHoming ? [clamp(bedX / 2 - off.x, 'x'), clamp(bedY / 2 - off.y, 'y')] : b.homing.zSwitchXY ?? [bedX / 2, bedY / 2];
+    const xy = zHomeXY(p);
     pc.add(new Section('safe_z_home')
       .set('home_xy_position', `${xy[0]}, ${xy[1]}`, b.homing.z === 'nozzle_switch' ? 'nozzle switch position' : off.x || off.y ? 'probe over the bed centre' : 'bed center')
       .set('speed', d.safe_z_home.speed)
@@ -123,8 +122,9 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     // Mesh limits are probe coordinates: nozzle travel shifted by the probe offset, with a margin.
     const off = p.probe!.offset;
     const margin = eddy || beacon ? 15 : 30;
-    const lo = (o: number) => Math.max(0, o) + margin;
-    const hi = (size: number, o: number) => Math.min(size, size + o) - margin;
+    // The probe reaches the bed edge on the side its offset points to; the bed may not start at 0 (Creator Pro).
+    const lo = (min: number, o: number) => r2(min + Math.max(0, o) + margin);
+    const hi = (max: number, o: number) => r2(max + Math.min(0, o) - margin);
     const mesh = p.probe?.mesh ?? {};
     const scan = eddy || beacon;
     const bm = new Section('bed_mesh')
@@ -136,8 +136,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       bm.set('mesh_radius', rr, `print radius minus the probe offset and 10 mm`).set('mesh_origin', '0, 0')
         .set('round_probe_count', 5, 'odd number of points across');
     } else {
-      bm.set('mesh_min', `${lo(off.x)}, ${lo(off.y)}`, `probe coordinates (offset ${off.x}, ${off.y}), ${margin} mm margin`)
-        .set('mesh_max', `${hi(bedX, off.x)}, ${hi(bedY, off.y)}`)
+      bm.set('mesh_min', `${lo(geo.min[0], off.x)}, ${lo(geo.min[1], off.y)}`, `probe coordinates (offset ${off.x}, ${off.y}), ${margin} mm margin`)
+        .set('mesh_max', `${hi(geo.max[0], off.x)}, ${hi(geo.max[1], off.y)}`)
         .set('probe_count', (mesh.probe_count ?? [5, 5]).join(', '));
     }
     bm.set('algorithm', 'bicubic')
@@ -554,8 +554,7 @@ function probeFile(p: Plan, header: string[]): string {
     const s = new Section('beacon').set('serial', `/dev/serial/by-id/${pr.serial_hint}`, 'ls /dev/serial/by-id/*')
       .set('x_offset', pr.offset.x).set('y_offset', pr.offset.y);
     if (p.build.homing.z === 'probe_virtual_endstop') {
-      const [bx, by] = p.size.bed_mm;
-      s.set('home_xy_position', `${bx / 2}, ${by / 2}`, 'Beacon homes Z here; replaces [safe_z_home]')
+      s.set('home_xy_position', bedGeometry(p).center.join(', '), 'Beacon homes Z here; replaces [safe_z_home]')
         .set('home_z_hop', 5).set('home_z_hop_speed', 30);
     }
     f.add(s);

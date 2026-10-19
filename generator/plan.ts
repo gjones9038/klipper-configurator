@@ -147,7 +147,7 @@ export function bedGeometry(p: { printer: Rec; size: Rec }) {
     const y = -r2(r * 0.85);
     const half = r2(Math.sqrt(r * r - y * y) * 0.8);
     return {
-      delta: true, radius: r, center: [0, 0] as [number, number], front: [0, -r2(r * 0.6)] as [number, number],
+      delta: true, radius: r, min: [-r, -r] as [number, number], max: [r, r] as [number, number], center: [0, 0] as [number, number], front: [0, -r2(r * 0.6)] as [number, number],
       purge: { x0: -half, x1: half - 10, x2: half, y }, park: [0, 0] as [number, number],
     };
   }
@@ -155,9 +155,25 @@ export function bedGeometry(p: { printer: Rec; size: Rec }) {
   // origin: the bed's front-left corner when it isn't 0,0 (Creator Pro: the bed is centred on 0,0).
   const [ox, oy] = p.size.origin ?? [0, 0];
   return {
-    delta: false, radius: 0, center: [ox + bx / 2, oy + by / 2] as [number, number], front: [ox + bx / 2, oy + 20] as [number, number],
+    delta: false, radius: 0, min: [ox, oy] as [number, number], max: [ox + bx, oy + by] as [number, number],
+    center: [ox + bx / 2, oy + by / 2] as [number, number], front: [ox + bx / 2, oy + 20] as [number, number],
     purge: { x0: ox + 20, x1: ox + 100, x2: ox + 110, y: oy + 5 }, park: [ox + bx / 2, oy + by - 10] as [number, number],
   };
+}
+
+/** Nozzle travel on X / Y: per-axis position_min (Creator Pro: -116) to position_max. */
+export function travel(p: { printer: Rec; size: Rec }, axis: 'x' | 'y'): [number, number] {
+  const d = p.printer.defaults;
+  return [d.axes?.[axis]?.position_min ?? d.stepper_xy.position_min ?? 0, p.size.position_max[axis]];
+}
+
+/** Where Z homes: the probe (nozzle + offset) over the bed centre, within travel; else the Z switch or the centre. */
+export function zHomeXY(p: { printer: Rec; size: Rec; build: Rec; probe?: Rec }): [number, number] {
+  const [cx, cy] = bedGeometry(p).center;
+  if (p.build.homing.z !== 'probe_virtual_endstop') return p.build.homing.zSwitchXY ?? [cx, cy];
+  const off = p.probe?.offset ?? { x: 0, y: 0 };
+  const clamp = (v: number, axis: 'x' | 'y') => { const [lo, hi] = travel(p, axis); return r2(Math.min(Math.max(v, lo), hi)); };
+  return [clamp(cx - off.x, 'x'), clamp(cy - off.y, 'y')];
 }
 
 /** Split "!^PA1" into modifiers and bare pin. */
@@ -744,9 +760,6 @@ export function plan(build: Build, db: Db): Plan {
   if (!fans.some((f) => f.role === 'hotend') && !printer.hotend_fan) err('no_hotend_fan', 'Add a hotend fan (Fans step). Without it, heat creeps up the hotend and jams the filament.');
 
   // --- probe ---------------------------------------------------------------
-  if (size.origin && (build.probe || build.homing.z === 'probe_virtual_endstop')) {
-    err('bed_origin_probe', `The ${printer.name}'s bed is centred on 0,0, and probe and bed mesh positions are not worked out for that yet. Leave the probe out (Probe step).`);
-  }
   let probe: Plan['probe'];
   let bltouch: Plan['bltouch'];
   const extraMcus: McuInfo[] = [];

@@ -10,7 +10,7 @@ const db = loadDb();
 const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24-350-leviathan-sb2209.json', import.meta.url), 'utf8'));
 
 // Errors a matrix case may legitimately end in; anything else is a bug.
-const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'bed_origin_probe', 'no_thermistor', 'no_hotend_heater', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
+const EXPECTED_ERRORS = new Set(['not_enough_drivers', 'no_thermistor', 'no_hotend_heater', 'no_fan_port', 'no_endstop_port', 'sensorless_no_diag', 'no_probe_port',
   // matrix deliberately includes combinations the generator must refuse:
   'pnp_unsupported_port', 'beacon_sensorless', 'fan_port_voltage', 'no_can_path', 'probe_supply']);
 
@@ -593,4 +593,19 @@ test('Anycubic Kossel (delta, no probe, no heated bed): manual delta calibration
   assert.doesNotMatch(r.files['macros/print.cfg'], /M190/);
   assert.doesNotMatch(r.files['macros/tuning.cfg'], /TUNE_PID_BED/);
   assert.doesNotMatch(r.files['macros/preflight.cfg'], /heater_bed/);
+});
+
+test('FlashForge Creator Pro (bed centred on 0,0, two nozzles): probe, mesh and macros inside the bed', () => {
+  const b = stockBuild('flashforge-creator-pro');
+  const r = generate({ ...b, probe: 'btt-eddy-usb', homing: { ...b.homing, z: 'probe_virtual_endstop' } }, db, 'test');
+  assert.ok(r.ok, JSON.stringify(r.issues));
+  const pc = r.files['printer.cfg'];
+  assert.match(pc, /home_xy_position: 0, -21\.42/);              // probe (offset 0, 21.42) over the bed centre 0,0
+  assert.match(pc, /mesh_min: -101, -43\.58/);                   // bed -116..116 x -80..80, 15 mm margin
+  assert.match(pc, /mesh_max: 101, 65\n/);
+  assert.match(pc, /zero_reference_position: 0, 0/);
+  const pm = r.files['macros/print.cfg'];
+  assert.match(pm, /G0 X-96 Y-75 Z5/);                           // purge at the front-left of the bed, not at 20,5
+  assert.match(pm, /\[gcode_macro T1\][^[]*SET_GCODE_OFFSET X=0[^[]*ACTIVATE_EXTRUDER EXTRUDER=extruder1/);
+  assert.match(r.files['mainboard.cfg'], /\[heater_fan extruder1_fan\][^[]*heater: extruder1/);
 });
