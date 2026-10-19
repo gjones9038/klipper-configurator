@@ -222,7 +222,7 @@ function extensionCases(db: Db, start: number): Case[] {
           ...(i === 3 ? { nevermore: { model: 'nevermore-micro-v6', voltage: 24, mode: 'hot_bed' as const, port: ext.fans?.[1]?.id } } : {}),
           autotune: i % 2 === 0, webUi: 'mainsail',
         };
-        out.push({ name: `${String(start + out.length).padStart(3, '0')}-${ext.id}-${printer}-${variant}${withToolboard ? '-toolboard' : ''}`, build });
+        out.push({ name: `${String(start + out.length).padStart(3, '0')}-${board.id}-${ext.id}-${printer}-${variant}${withToolboard ? '-toolboard' : ''}`, build });
       });
     }
   }

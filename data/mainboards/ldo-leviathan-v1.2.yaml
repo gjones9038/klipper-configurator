@@ -319,8 +319,8 @@ discrepancies:
   Using PB8 (manufacturer).'
 - 'Bootloader: Klipper generic says 32KiB bootloader, LDO''s config says ''No bootloader''. Depends on
   how the board was flashed (stock vs Katapult); the generator should ask.'
-- LDO README lists an STM32H743, but both v1.2 configs target STM32F446. The README probably describes
-  a later revision; confirm before adding one.
+- LDO README lists an STM32H743, but both v1.2 configs target STM32F446. The README describes V1.3
+  (STM32H743, V1.3 manual), which is its own record (ldo-leviathan-v1.3).
 sources:
 - repo: https://github.com/MotorDynamicsLab/Leviathan
   path: Klipper_config/voron2_leviathan.cfg
