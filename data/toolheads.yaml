@@ -31,6 +31,7 @@ toolheads:
     compatible_extruders: [clockwork2, galileo2]
     toolboard_form_factors: [stealthburner, nema14-back]
     requires_toolboard: true      # each tool carries its own CAN/USB board
+    dock_spacing_mm: 76           # StealthChanger wiki, Docks: space per tool
     fans:
       - {role: part_cooling, count: 2, size: "4010 blower", voltage: 24, wiring: "both on one port"}
       - {role: hotend, count: 1, size: "3010 axial", voltage: 24}
@@ -43,6 +44,109 @@ toolheads:
       - "Generator v2: per-tool [extruderN], [tool N] / klipper-toolchanger sections, tool
         offsets and dock positions. Not modelled yet."
     unverified: ["everything in this entry beyond the SB fan layout"]
+
+  - id: stealthchanger-dragonburner
+    name: StealthChanger tool (Dragon Burner)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    dock_spacing_mm: 60           # StealthChanger wiki, Docks: space per tool
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a Dragon Burner on a StealthChanger backplate. This tool doesn't know the Dragon Burner's fans or lights, so pick its fans on the Fans step as you wired them."
+      - "Some extruders need the Dragon Burner extended extruder mount (StealthChanger bill of materials)."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/DragonBurner.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-rapidburner
+    name: StealthChanger tool (Rapid Burner)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a Rapid Burner on a StealthChanger backplate. This tool doesn't know the Rapid Burner's fans or lights, so pick its fans on the Fans step as you wired them."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/RapidBurner.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-yavoth
+    name: StealthChanger tool (Yavoth)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    dock_spacing_mm: 60           # StealthChanger wiki, Docks: space per tool
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a Yavoth on a StealthChanger backplate. This tool doesn't know the Yavoth's fans or lights, so pick its fans on the Fans step as you wired them."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/Yavoth_HF.stl / Yavoth_UHF.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-anthead
+    name: StealthChanger tool (AntHead)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a AntHead on a StealthChanger backplate. This tool doesn't know the AntHead's fans or lights, so pick its fans on the Fans step as you wired them."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/Anthead_SF.stl / _HF / _UHF", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-a4t
+    name: StealthChanger tool (A4T)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a A4T on a StealthChanger backplate. This tool doesn't know the A4T's fans or lights, so pick its fans on the Fans step as you wired them."
+      - "XOL and A4T sit lower than a Stealthburner: the stock Voron 2.4 Z joints bottom out on the deck panel, so they need low-profile Z joints (StealthChanger bill of materials)."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/A4T.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-xol
+    name: StealthChanger tool (XOL)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    dock_spacing_mm: 76           # StealthChanger wiki, Docks: space per tool
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a XOL on a StealthChanger backplate. This tool doesn't know the XOL's fans or lights, so pick its fans on the Fans step as you wired them."
+      - "XOL and A4T sit lower than a Stealthburner: the stock Voron 2.4 Z joints bottom out on the deck panel, so they need low-profile Z joints (StealthChanger bill of materials)."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/XOL_Short.stl / XOL_Medium.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-jabberwocky
+    name: StealthChanger tool (Jabberwocky)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a Jabberwocky on a StealthChanger backplate. This tool doesn't know the Jabberwocky's fans or lights, so pick its fans on the Fans step as you wired them."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/JabberWocky.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
+
+  - id: stealthchanger-blackbird
+    name: StealthChanger tool (Archetype Blackbird)
+    applies_to: [voron-2.4]
+    multi_tool: true
+    requires_toolboard: true      # each tool carries its own CAN/USB board
+    dock_spacing_mm: 76           # StealthChanger wiki, Docks: space per tool
+    input_shaper_baseline: null   # no published figure; measure with TUNE_SHAPER
+    notes:
+      - "Each tool is a Archetype Blackbird on a StealthChanger backplate. This tool doesn't know the Archetype Blackbird's fans or lights, so pick its fans on the Fans step as you wired them."
+    sources:
+      - {repo: https://github.com/DraftShift/StealthChanger, path: README.md, commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099, note: "supported toolheads: Stealth Burner, Dragon Burner, Rapid Burner, Yavoth, AntHead, A4T, XOL, Jabberwocky, Archetype BlackBird"}
+      - {repo: https://github.com/DraftShift/StealthChanger, path: "STLs/Backplates/Blackbird_Short.stl / Blackbird_Medium.stl", commit: 50e3c769297b273ac390fb33b455aa7f4dfe3099}
 
   - id: custom
     name: Other / custom toolhead

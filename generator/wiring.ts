@@ -24,7 +24,9 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     if (s.endstop && typeof s.endstop === 'object') {
       add({ component: `${/^stepper_[abc]$/.test(s.name) ? `Tower ${s.name.slice(-1).toUpperCase()}` : s.name.replace('stepper_', '').toUpperCase()} endstop`, board: s.endstop.board,
         connector: s.endstop.port, pins: bare(s.endstop.pin),
-        note: s.name === 'stepper_z' ? 'nozzle switch' : 'wire the switch normally closed (NC)' });
+        // "!" in the pin means the config expects a normally open switch (stock printers); without it, normally closed.
+        note: [s.name === 'stepper_z' ? ({ nozzle_switch: 'nozzle switch', physical_max: 'switch at the bottom (Z max)', belt: 'not used for homing (belt)' } as Record<string, string>)[p.build.homing.z] ?? 'Z endstop switch' : '',
+          /^[\^~!]*/.exec(s.endstop.pin)![0].includes('!') ? 'normally open (NO) switch, as stock' : 'wire the switch normally closed (NC)'].filter(Boolean).join('; ') });
     }
   }
   if (!p.tools) {
@@ -111,7 +113,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
   ];
   if (fanPorts.length) j.push(`Fan voltage: set the voltage jumper for ${fanPorts.join(', ')} to match each fan.`);
   if (p.probe?.kind === 'inductive' && p.probe.port?.board === 'mainboard') {
-    j.push(`Probe port ${p.probe.port.port}: set it for an ${p.probe.output === 'npn-no' ? 'NPN' : 'PNP'} probe if the board has a selector jumper, and check its voltage setting.`);
+    j.push(`Probe port ${p.probe.port.port}: set it for a ${p.probe.output?.startsWith('pnp') ? 'PNP' : 'NPN'} probe if the board has a selector jumper, and check its voltage setting.`);
   }
   for (const s of [p.hotendSensor, p.bedSensor]) {
     if (!s) continue;
@@ -122,7 +124,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
   if (p.tools) {
     const can = p.tools.filter((t) => t.connection === 'can').map((t) => `T${t.n}`);
     if (can.length) j.push(`CAN termination: exactly two 120 ohm terminators, at the two physical ends of the CAN bus. With several tool boards (${can.join(', ')}) only the board at the far end keeps its jumper; remove it on the others.`);
-  } else if (p.toolboard && (p.build.toolboard!.connection ?? 'can') === 'can') {
+  } else if (p.toolboard && (p.build.toolboard!.connection ?? (p.toolboard.interfaces.includes('can') ? 'can' : 'usb')) === 'can') {
     j.push('CAN termination: 120 ohm jumper ON at both ends of the CAN bus (mainboard/adapter and toolhead board), off anywhere in between.');
   }
   return { connections: c, jumpers: j };
@@ -191,10 +193,13 @@ export function slicerMarkdown(p: Plan): string {
 export function firmwareMarkdown(p: Plan): string {
   const b = p.build.mainboard;
   const boot = b.bootloaderKib ?? p.mcu.bootloader_kib;
+  const stm32 = /^stm32/.test(p.mcu.build_as ?? p.mcu.chip);
+  // No guessing: a wrong CAN pin choice gives a bridge with no CAN traffic.
+  const canPins = p.board.can_pins ? `CAN bus (on ${p.board.can_pins})` : 'the CAN pins in your board manual (this tool has no source for them yet)';
   const iface = ['usb-serial', 'serial'].includes(b.connection) ? (p.board.firmware?.interface ?? 'Serial (see the board manual for the USART)')
-    : b.connection === 'usb' ? 'USB (on PA11/PA12)'
-    : b.connection === 'usb-can-bridge' ? `USB to CAN bus bridge (USB on PA11/PA12), CAN bus on ${p.board.can_pins ?? 'the board CAN pins (see manual)'}`
-    : `CAN bus (on ${p.board.can_pins ?? 'the board CAN pins'})`;
+    : b.connection === 'usb' ? (stm32 ? 'USB (on PA11/PA12)' : 'USB')
+    : b.connection === 'usb-can-bridge' ? `USB to CAN bus bridge (USB on PA11/PA12), CAN bus interface: ${canPins}`
+    : `CAN bus (${canPins})`;
   const lines = [
     '# Firmware build (make menuconfig)',
     '',

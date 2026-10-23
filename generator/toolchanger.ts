@@ -94,7 +94,9 @@ export function toolchangerFile(p: Plan, header: string[]): string {
     .set('params_path_speed', rec.toolchanger.params_path_speed)
     .set('params_safe_y', tc.safeY ?? 0, tc.safeY === undefined ? `not set: ${rec.safe_y_rule}` : rec.safe_y_rule)
     .set('params_close_y', tc.closeY ?? 0, tc.closeY === undefined ? 'set once every dock is measured: park_y + 30' : `largest park_y + ${rec.close_y_offset} (StealthChanger wiki)`)
-    .set('params_layout_set', tc.safeY === undefined ? 0 : 1)
+    // Both are needed: with close_y 0 an empty shuttle would sweep X in front of (or through) the dock row.
+    .set('params_layout_set', tc.safeY === undefined || tc.closeY === undefined ? 0 : 1,
+      tc.safeY === undefined || tc.closeY === undefined ? 'set to 1 once safe_y and close_y are filled in' : undefined)
     .set('params_dropoff_path', py(rec.dropoff_path))
     .set('params_pickup_path', py(rec.pickup_path))
     .set('error_gcode', ['PAUSE'])
@@ -105,7 +107,7 @@ export function toolchangerFile(p: Plan, header: string[]): string {
     ])
     .set('dropoff_gcode', [
       '{% if not (tool.params_dock_set and tool.params_layout_set) %}',
-      '    SELECT_TOOL_ERROR MESSAGE="{tool.name}: dock position or safe Y not set. Measure it with TC_DOCK_ALIGN_START."',
+      '    SELECT_TOOL_ERROR MESSAGE="{tool.name}: dock position, safe_y or close_y not set. Measure the dock with TC_DOCK_ALIGN_START, then in toolchanger.cfg set params_close_y (largest park_y + 30) and params_layout_set: 1."',
       '{% else %}',
       '    {% set x = tool.params_park_x|float %}',
       '    {% set y = tool.params_park_y|float %}',

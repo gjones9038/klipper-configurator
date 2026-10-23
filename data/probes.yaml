@@ -61,13 +61,17 @@ probes:
   - id: voron-tap
     name: Voron Tap (optical)
     kind: nozzle_contact
-    supply_v: [5, 24]
+    supply_v: [5]                    # OptoTap V1: 5 V only
+    supply_v_alt: {v: [5, 24], who: "an OptoTap V2 board (it has a 5-24 V regulator)"}
     z_endstop_capable: true
     offsets: {x_offset: 0, y_offset: 0}
     activate_gcode_note: "Limit nozzle to about 150C before probing to avoid marking the bed."
     docs:
       - {title: "Voron Tap", url: "https://github.com/VoronDesign/Voron-Tap"}
-    unverified: ["supply_v per version", "activate_gcode details"]
+    sources:
+      - {repo: https://github.com/VoronDesign/Voron-Tap, path: OptoTap/README.md, note: "V1: 5V only, '24V will fry the optical sensor'; V2: 5 or 24V capable"}
+      - {repo: https://github.com/VoronDesign/Voron-Tap, path: README.md, note: "Must have 5V at toolhead or special 24V sensor PCB"}
+    unverified: ["activate_gcode details"]
 
   - id: klicky
     name: Klicky / Euclid (dockable microswitch)

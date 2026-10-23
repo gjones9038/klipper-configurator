@@ -75,6 +75,8 @@ notes:
   cannot be powered from it.'
 - 'Heater moved from PA2 (v1.1) to PB13 (v1.2): using the v1.1 map on a v1.2 board leaves the heater pin
   wrong.'
+tech_notes:
+- "TH0 has a PT1000 jumper: fitted, it adds a 4.12k resistor in parallel with the 4.7k pull-up (V1.2 schematic). The 4700 pull-up written here assumes the jumper is off, as for normal thermistors."
 unverified:
 - connector labels (taken from sample config order)
 sources:

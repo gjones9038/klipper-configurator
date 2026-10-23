@@ -1,12 +1,13 @@
 // Render a Plan into Klipper config files. No decisions here beyond formatting.
 import { CfgFile, Section } from './cfg.ts';
 import type { Plan, StepperPlan, FanPlan, PortUse } from './plan.ts';
-import { TOOLHEAD_MCU, bedGeometry, zHomeXY } from './plan.ts';
+import { TOOLHEAD_MCU, bedGeometry, travel, zHomeXY } from './plan.ts';
 import type { Db, Rec } from './types.ts';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 import { toolFile, toolchangerFile } from './toolchanger.ts';
 import { homingMacros, levelingMacros, preflightMacros, printMacros, tuningMacros } from './macros.ts';
+import { buildFingerprint } from './saveconfig.ts';
 
 export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const b = p.build;
@@ -27,6 +28,8 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   const webUi = b.webUi ?? 'mainsail';
   const pc = new CfgFile([
     ...header('printer.cfg'),
+    // Read back on upload (saveconfig.ts): a saved z_offset / Z position_endstop is only kept when these match.
+    `build: ${buildFingerprint(b)}`,
     '',
     'Start here after wiring:',
     ...p.links.filter((l) => ['first power-on', 'printer'].includes(l.topic)).map((l) => `  ${l.title}: ${l.url}`),
@@ -102,11 +105,26 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     p.size.bed_screws.forEach((xy: number[], i: number) => s.set(`screw${i + 1}`, xy.join(', ')));
     pc.add(s);
   }
+  // Leveling points are nozzle positions; the probe lands at point + offset. A maker's points assume
+  // its own probe, so move any point whose probe position would be off the bed (or nozzle out of travel).
+  const fitPoints = (pts: number[][]): [string[], string | undefined] => {
+    const off = p.probe?.offset ?? { x: 0, y: 0 };
+    const g = bedGeometry(p);
+    const fit = (v: number, o: number, i: 0 | 1) => {
+      const [tlo, thi] = travel(p, i ? 'y' : 'x');
+      const onBed = Math.min(Math.max(v + o, g.min[i] + 5), g.max[i] - 5) - o;
+      return r2(Math.min(Math.max(onBed, tlo), thi));
+    };
+    const out = pts.map(([x, y]) => [fit(x, off.x, 0), fit(y, off.y, 1)]);
+    const moved = out.some((q, i) => q[0] !== pts[i][0] || q[1] !== pts[i][1]);
+    return [out.map((c) => c.join(', ')), moved ? `moved so the probe (offset ${off.x}, ${off.y}) stays on the bed` : undefined];
+  };
   if (p.printer.z_leveling === 'quad_gantry_level' && p.size.quad_gantry_level) {
     const q = p.size.quad_gantry_level;
+    const [qp, qpNote] = fitPoints(q.points);
     const s = new Section('quad_gantry_level', `${p.printer.name} ${p.size.id} (maker reference geometry)`)
       .set('gantry_corners', q.gantry_corners.map((c: number[]) => c.join(', ')))
-      .set('points', q.points.map((c: number[]) => c.join(', ')));
+      .set('points', qp, qpNote);
     for (const [k, v] of Object.entries(d.quad_gantry_level)) s.set(k, v as number);
     pc.add(s);
   }
@@ -114,7 +132,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     const z = p.size.z_tilt;
     const s = new Section('z_tilt', `${p.printer.name} ${p.size.id} (maker reference geometry)`)
       .set('z_positions', z.z_positions.map((c: number[]) => c.join(', ')))
-      .set('points', z.points.map((c: number[]) => c.join(', ')));
+      .set('points', ...fitPoints(z.points));
     for (const [k, v] of Object.entries(d.z_tilt)) s.set(k, v as number);
     pc.add(s);
   }
@@ -389,7 +407,47 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   files['macros/leveling.cfg'] = levelingMacros(p, header('macros/leveling.cfg'));
   files['macros/preflight.cfg'] = preflightMacros(p, header('macros/preflight.cfg'));
   files['macros/tuning.cfg'] = tuningMacros(p, header('macros/tuning.cfg'));
+  hoistAutosaved(files);
   return files;
+}
+
+// Options SAVE_CONFIG writes (PID_CALIBRATE, PROBE_CALIBRATE, Z_ENDSTOP_CALIBRATE, DELTA_CALIBRATE,
+// klipper-toolchanger tool params and offsets). Klipper refuses SAVE_CONFIG when one of them is set in
+// an included file (configfile.py _disallow_include_conflicts); in printer.cfg itself it comments the
+// old value out. So these options are moved from the included files to the end of printer.cfg.
+const AUTOSAVED: Array<[RegExp, RegExp]> = [
+  [/^(extruder\d*|heater_bed|heater_generic .+)$/, /^(control|pid_kp|pid_ki|pid_kd)$/i],
+  [/^(probe|bltouch|tool_probe .+|probe_eddy_current .+)$/, /^z_offset$/],
+  [/^stepper_z$/, /^position_endstop$/],
+  [/^stepper_[abc]$/, /^(position_endstop|angle|arm_length)$/],
+  [/^tool .+$/, /^(params_\w+|gcode_[xyz]_offset)$/],
+];
+
+export function hoistAutosaved(files: Record<string, string>): void {
+  const moved = new Map<string, string[]>();
+  for (const [name, text] of Object.entries(files)) {
+    if (name === 'printer.cfg' || !name.endsWith('.cfg')) continue;
+    let section = '';
+    const kept: string[] = [];
+    for (const line of text.split('\n')) {
+      const h = /^\[([^\]]+)\]/.exec(line);
+      if (h) section = h[1].trim();
+      const k = /^([A-Za-z_]\w*)\s*:/.exec(line);
+      if (!h && k && AUTOSAVED.some(([sec, opt]) => sec.test(section) && opt.test(k[1]))) {
+        if (!moved.has(section)) moved.set(section, []);
+        moved.get(section)!.push(line);
+        continue;
+      }
+      kept.push(line);
+    }
+    files[name] = kept.join('\n');
+  }
+  if (!moved.size) return;
+  const out = ['', '# --- Values SAVE_CONFIG may change ------------------------------------------------',
+    '# PID tuning, probe and endstop calibration and tool settings save over these lines. Klipper only',
+    '# allows that in printer.cfg, so they live here instead of in the files they belong to.'];
+  for (const [section, lines] of moved) out.push('', `[${section}]`, ...lines);
+  files['printer.cfg'] = files['printer.cfg'].replace(/\n*$/, '\n') + out.join('\n') + '\n';
 }
 
 export interface HotendParts {
@@ -485,6 +543,8 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
     } else {
       const atMax = p.build.homing.z === 'physical_max';
       sec.set('endstop_pin', (s.endstop as any).pin, (s.endstop as any).port)
+        // Stated, not inferred: Klipper guesses the direction from position_endstop, and a saved value could flip it.
+        .set('homing_positive_dir', atMax ? true : undefined, atMax ? 'switch at the bottom (Z max)' : undefined)
         .set('position_endstop', atMax ? p.size.position_max.z : z.position_endstop,
           atMax ? 'switch at Z max: set it from a paper test after homing' : p.build.homing.z === 'belt' ? 'not used: homing_override sets Z to 0 on the belt' : 'Z_ENDSTOP_CALIBRATE stores the real value');
     }

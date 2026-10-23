@@ -71,9 +71,12 @@ test('run current: maker recommendation wins, capped by motor rating', () => {
   const p = plan(example(), db);
   assert.equal(p.steppers.find((s) => s.name === 'extruder')!.runCurrent, 0.6); // Galileo 2 README
   const b = example();
-  b.runCurrent = { xy: 3.0 };
+  b.runCurrent = { xy: 3.0 };                                    // above the LDO 2.5 A motors' rating
+  assert.ok(plan(b, db).issues.some((i) => i.code === 'run_current_too_high' && i.level === 'error'));
+  b.runCurrent = { xy: 2.2 };                                    // above 70% of the rating, below the rating
   const p2 = plan(b, db);
-  assert.ok(p2.issues.some((i) => i.code === 'run_current_high'));
+  assert.ok(p2.issues.some((i) => i.code === 'run_current_high' && i.level === 'warning'));
+  assert.ok(!p2.issues.some((i) => i.level === 'error'));
 });
 
 test('AWD on the 7-slot Leviathan is refused with a clear reason', () => {
@@ -483,8 +486,10 @@ test('Voron 0.2 on the SKR Mini E3 V3: shared UART with addresses, sensorless X/
     assert.match(mb, new RegExp(`\\[tmc2209 ${name}\\][^[]*uart_pin: PC11\\ntx_pin: PC10\\nuart_address: ${addr}\\n`));
   }
   assert.match(mb, /\[stepper_x\][^[]*position_endstop: 120\nposition_max: 120[^[]*homing_positive_dir: True/);
+  const pcv0 = r.files['printer.cfg'];
   assert.match(mb, /\[tmc2209 stepper_x\][^[]*diag_pin: \^PC0[^\n]*\ndriver_SGTHRS: 255/);
-  assert.match(mb, /\[stepper_z\][^[]*dir_pin: !PC5[^[]*endstop_pin: \^PC2[^\n]*\nposition_endstop: 120/);
+  assert.match(mb, /\[stepper_z\][^[]*dir_pin: !PC5[^[]*endstop_pin: \^PC2[^\n]*\nhoming_positive_dir: True[^\n]*\nposition_max: 120/);
+  assert.match(pcv0, /\[stepper_z\]\nposition_endstop: 120/);   // SAVE_CONFIG-managed: in printer.cfg
   assert.match(mb, /\[extruder\][^[]*rotation_distance: 22\.23\ngear_ratio: 50:10/);
   assert.match(r.files['printer.cfg'], /\[bed_screws\][^[]*screw1: 60, 5\nscrew2: 5, 115/);
   assert.match(r.files['homing.cfg'], /G28 X\n\s*G91\n\s*G1 X-10/);   // homes at max, backs off toward 0
@@ -576,12 +581,13 @@ test('FLSUN Q5 (delta): delta geometry, towers home up, round mesh, centred purg
   assert.match(pc, /\[delta_calibrate\][^\n]*\nradius: 95\nhorizontal_move_z: 25\nspeed: 10/);
   assert.match(pc, /\[bed_mesh\][^[]*mesh_radius: 90[^\n]*\nmesh_origin: 0, 0/);
   assert.doesNotMatch(pc, /safe_z_home|mesh_min/);
-  assert.match(mb, /\[stepper_a\][^[]*endstop_pin: PA15[^[]*position_endstop: 220[^\n]*\narm_length: 215\nangle: 210/);
-  assert.match(mb, /\[stepper_c\][^[]*angle: 90/);
+  assert.match(mb, /\[stepper_a\][^[]*endstop_pin: PA15/);
+  assert.match(pc, /\[stepper_a\]\nposition_endstop: 220[^\n]*\narm_length: 215\nangle: 210/);   // DELTA_CALIBRATE saves these
+  assert.match(pc, /\[stepper_c\][^[]*angle: 90/);   // DELTA_CALIBRATE saves angle: in printer.cfg
   assert.doesNotMatch(mb, /\[stepper_[xyz]\]/);
   const pm = r.files['macros/print.cfg'];
-  assert.match(pm, /G0 X-42\.14 Y-85 Z5/);                      // purge inside the 100 mm circle
-  assert.match(pm, /G0 X0 Y0 F6000[^\n]*\n\s*G0 Z\{z\}/);       // park at the centre, then rise
+  assert.match(pm, /G0 X\{-42\.14 - ox\} Y\{-85 - oy\} Z5/);    // purge inside the 100 mm circle (minus any gcode offset)
+  assert.match(pm, /G0 Z2 F3000[^\n]*\n\s*G90\n\s*G0 X0 Y0 F6000[^\n]*\n\s*G0 Z\{z\}/);   // lift clear, park at the centre, then rise
   assert.match(r.files['macros/leveling.cfg'], /\[gcode_macro CALIBRATE_DELTA\][^[]*DELTA_CALIBRATE\n/);
 });
 
@@ -605,7 +611,7 @@ test('FlashForge Creator Pro (bed centred on 0,0, two nozzles): probe, mesh and 
   assert.match(pc, /mesh_max: 101, 65\n/);
   assert.match(pc, /zero_reference_position: 0, 0/);
   const pm = r.files['macros/print.cfg'];
-  assert.match(pm, /G0 X-96 Y-75 Z5/);                           // purge at the front-left of the bed, not at 20,5
+  assert.match(pm, /G0 X\{-96 - ox\} Y\{-75 - oy\} Z5/);         // purge at the front-left of the bed, minus T0's X=-34 gcode offset at run time
   assert.match(pm, /\[gcode_macro T1\][^[]*SET_GCODE_OFFSET X=0[^[]*ACTIVATE_EXTRUDER EXTRUDER=extruder1/);
   assert.match(r.files['mainboard.cfg'], /\[heater_fan extruder1_fan\][^[]*heater: extruder1/);
 });

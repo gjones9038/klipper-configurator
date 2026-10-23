@@ -9,10 +9,12 @@ mcu_variants:
 - chip: stm32f446
   crystal_mhz: 12
   bootloader_kib: 32
+  bootloader_note: LDO's guide installs Katapult at 32KiB; choose "No bootloader" only if you flash Klipper straight over DFU without Katapult
 interfaces:
 - usb
 - can
 - usb-can-bridge
+can_pins: PB5/PB6
 power:
   vin_v:
   - 18
@@ -116,6 +118,9 @@ driver_slots:
     sense_resistor: 0.11
     max_current_a: 2.0
   uart_pin: PD11
+  diag_pin: PD12
+  diag_pin_key: diag_pin
+  diag_modifier: ^!
 endstops:
 - id: X-ENDSTOP
   pin: PC1
@@ -175,7 +180,8 @@ probe_ports:
   pin: PF1
   modifier: ^
   protected: true
-  note: Selectable voltage, integrated diode (vendor README). LDO config uses ^PF1.
+  supply_v: [5, 24]
+  note: Voltage set by the probe voltage jumper (5V / 24V), integrated diode (vendor README, manual). LDO config uses ^PF1.
 neopixel_ports:
 - id: RGB
   pin: PF10
@@ -297,7 +303,7 @@ exp_aliases:
   EXP2_1: PA6
   EXP2_2: PA5
   EXP2_3: PE2
-  EXP2_4: PE4
+  EXP2_4: PA4   # SPI_CS (manual pin table, KiCad); LDO's and Klipper's configs say PE4 by mistake
   EXP2_5: PE3
   EXP2_6: PA7
   EXP2_7: PE5
@@ -310,15 +316,18 @@ tech_notes:
 - "Thermistor pull-ups are 2.2k: every thermistor section needs ''pullup_resistor: 2200''."
 - "HV-STEPPER-0/1 (TMC5160) are intended for A/B; they need the HV input powered."
 checks:
-- "Guides disagree on the Leviathan's bootloader offset. Use the one that matches how your board was flashed (Mainboard step); if unsure, follow LDO's guide."
+- "Bootloader: if you followed LDO's guide (Katapult installed), use the 32KiB bootloader setting. Only if you flash Klipper straight onto the board over USB-DFU without Katapult, choose \"No bootloader\" instead."
 discrepancies:
 - 'Klipper''s generic-ldo-leviathan-v1.2.cfg has copy errors: stepper_z1 reuses Z''s UART pin (PD5), stepper_z3''s
   TMC section is named stepper_z2, and the extruder TMC section is named stepper_z. Pins here follow LDO''s
   voron2_leviathan.cfg.'
 - 'FAN0 tachometer: LDO configs use PB8, Klipper''s generic uses PB0 (which Klipper also lists as EXP3_13).
   Using PB8 (manufacturer).'
-- 'Bootloader: Klipper generic says 32KiB bootloader, LDO''s config says ''No bootloader''. Depends on
-  how the board was flashed (stock vs Katapult); the generator should ask.'
+- 'Bootloader: LDO''s guide screenshots (Katapult at 32KiB, Klipper with a 32KiB bootloader) and Klipper''s
+  generic config say 32KiB; the header of LDO''s voron2_leviathan.cfg says ''No bootloader'' (flashing Klipper
+  over DFU without Katapult). Using 32KiB, with the other case in the firmware notes.'
+- 'EXP2 pin 4: LDO''s voron2_leviathan.cfg and Klipper''s generic config both alias EXP2_4 to PE4, the KILL pin
+  (EXP2 pin 10). The V1.2 manual pin table and KiCad board file put SPI_CS (PA4) there. Using PA4.'
 - LDO README lists an STM32H743, but both v1.2 configs target STM32F446. The README describes V1.3
   (STM32H743, V1.3 manual), which is its own record (ldo-leviathan-v1.3).
 sources:
@@ -334,3 +343,11 @@ sources:
 - repo: https://github.com/MotorDynamicsLab/Leviathan
   path: README.md
   commit: 878c3c4893ea353552c957f574509f9890e1e37a
+- repo: https://github.com/MotorDynamicsLab/Leviathan
+  path: Manual/Leviathan_V1.2_Manual.pdf
+  commit: 878c3c4893ea353552c957f574509f9890e1e37a
+  note: "pin assignment: CANBus RX PB5 / TX PB6, Stepper4 DIAG PD12, EXP2 SPI_CS PA4, probe input 5/24V via jumper"
+- repo: https://github.com/MotorDynamicsLab/Leviathan
+  path: Media/klipper_can.jpg
+  commit: 878c3c4893ea353552c957f574509f9890e1e37a
+  note: "menuconfig: STM32F446, 32KiB bootloader, 12 MHz, USB to CAN bridge, CAN on PB5/PB6 (katapult_usb.jpg: Katapult at 32KiB)"

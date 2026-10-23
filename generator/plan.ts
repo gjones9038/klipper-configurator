@@ -277,10 +277,30 @@ export function plan(build: Build, db: Db): Plan {
       return;
     }
     if (!need) return;
-    const [lo, hi] = [Math.min(...need), Math.max(...need)];
-    if (!pv.some((v) => v >= lo && v <= hi)) {
-      err('probe_supply', `The ${p.name} needs ${lo}-${hi} V, but ${port.id} on ${b?.name ?? `the ${kind}`} only gives ${pv.join(' or ')} V. Power it from another connector or choose another probe.`);
+    const fits = (n: number[]) => pv.filter((v) => v >= Math.min(...n) && v <= Math.max(...n));
+    const where = `${port.id} on ${b?.name ?? `the ${kind}`}`;
+    const range = (n: number[]) => (n.length > 1 ? `${Math.min(...n)}-${Math.max(...n)} V` : `${n[0]} V`);
+    if (!fits(need).length) {
+      // Voron Tap: OptoTap V1 is 5 V only, V2 also takes 24 V. Only V2 may use a 24 V-only port.
+      if (p.supply_v_alt && fits(p.supply_v_alt.v).length) {
+        warn('probe_supply_version', `${where} gives ${pv.join(' or ')} V. Only connect ${p.supply_v_alt.who} there: a ${p.name} board that needs ${range(need)} is destroyed by ${pv.join(' or ')} V. Otherwise use a ${range(need)} port.`);
+      } else {
+        err('probe_supply', `The ${p.name} needs ${range(need)}, but ${where} only gives ${pv.join(' or ')} V. Power it from another connector or choose another probe.`);
+      }
+    } else if (fits(need).length < pv.length) {
+      // A port with a voltage jumper (Leviathan Z-PROBE, EBB Gen2 VPROBE): say which setting.
+      warn('probe_supply_jumper', `Set the voltage jumper for ${where} to ${fits(need).join(' or ')} V for the ${p.name}${p.supply_v_alt ? ` (${p.supply_v_alt.who} also takes ${pv.filter((v) => !fits(need).includes(v)).join(' or ')} V)` : ''}. The wrong setting can destroy it.`);
     }
+  }
+  // The probe input that suits a probe's supply: one that only gives voltages the probe takes
+  // (EBB SB2209: Voron Tap on the 5 V endstop header), else one with a jumper setting it takes, else the first.
+  function pickProbePort(ports: Rec[] | undefined, p: Rec): Rec | undefined {
+    if (!ports?.length) return undefined;
+    const need: number[] | undefined = p.supply_v;
+    if (!need) return ports[0];
+    const ok = (v: number) => v >= Math.min(...need) && v <= Math.max(...need);
+    return ports.find((x) => x.supply_v?.length && x.supply_v.every(ok))
+      ?? ports.find((x) => x.supply_v?.some(ok)) ?? ports[0];
   }
   // Voron-Tap OptoTap README (Sensor Logic): OPB9x0 sensors are totem pole and
   // drive the signal to 5 V, which RP2040 toolhead boards' pins do not tolerate.
@@ -300,7 +320,7 @@ export function plan(build: Build, db: Db): Plan {
       err('toolchanger_printer', tcRec.not_supported?.[build.printer]
         ?? `${tcRec.name} is modelled for ${tcRec.applies_to.map((id: string) => db.printers[id]?.name ?? id).join(', ')} only.`);
     }
-    if (build.toolhead !== tcRec.toolhead) err('toolchanger_toolhead', `${tcRec.name} tools are "${db.toolheads[tcRec.toolhead]?.name}"; set the toolhead to it.`);
+    if (!tcRec.toolheads.includes(build.toolhead)) err('toolchanger_toolhead', `${tcRec.name} supports these toolheads: ${tcRec.toolheads.map((id: string) => db.toolheads[id]?.name ?? id).join(', ')}. Choose one on the Printer step.`);
     if (!toolboard) err('toolchanger_needs_toolboard', `Every ${tcRec.name} tool carries its own toolhead board; T0 has none.`);
     if (!shuttle && build.probe) err('toolchanger_probe', `${tcRec.name} homes and probes with each tool's own Tap sensor ([tool_probe]); remove the separate probe, or choose a shuttle-mounted eddy probe.`);
     if (shuttle) {
@@ -312,6 +332,7 @@ export function plan(build: Build, db: Db): Plan {
     }
     if (build.homing.z !== 'probe_virtual_endstop') err('toolchanger_z_homing', `${tcRec.name} homes Z with the ${shuttle ? 'shuttle probe' : 'tool probe'}; set Z homing to "Probe as Z endstop".`);
     if (!tcSpec.tools.length) err('toolchanger_one_tool', 'A toolchanger needs at least two tools; add T1.');
+    else warn('tool_offsets', `Every tool's X, Y and Z offset from T0 starts at 0. Measure them (StealthChanger wiki: Offsets) and save them before printing with T1${tcSpec.tools.length > 1 ? `-T${tcSpec.tools.length}` : ''}, or the nozzle can hit the bed or print in the wrong place.`);
     for (const k of tcRec.module.known_issues ?? []) {
       warn('toolchanger_module', k.text);
       addLinks(k.links, 'toolchanger');
@@ -326,6 +347,9 @@ export function plan(build: Build, db: Db): Plan {
   for (const e of board.activeExtensions ?? []) for (const c of e.checks ?? []) warn('board_check', `${e.name}: ${c}`);
 
   // --- connectivity ------------------------------------------------------
+  if (build.mainboard.connection === 'can' && !build.canAdapter) {
+    err('no_can_path', `${board.name} on CAN needs a USB-CAN adapter to reach your Pi. Choose one, or connect the board by USB (Mainboard step).`);
+  }
   if (!board.interfaces.includes(build.mainboard.connection)) {
     err('connection_unsupported', `${board.name} cannot connect by "${build.mainboard.connection}"; it supports ${board.interfaces.join(', ')} (Mainboard step).`);
   }
@@ -447,7 +471,10 @@ export function plan(build: Build, db: Db): Plan {
       microsteps = printer.defaults.stepper_xy.microsteps;
     }
     if (driver.standalone && driver.microsteps) microsteps = driver.microsteps;   // set by the board's MS pins
-    const fullSteps = motor?.step_angle_deg === 0.9 ? 400 : 200;
+    // A chosen motor decides (0.9° = 400 steps); a stock printer's own config may give another count
+    // (BIQU BX: 400; Monoprice Select Mini Z: 48), which must not fall back to 200.
+    const stockSteps = group === 'extruder' ? extruder.full_steps_per_rotation : def.full_steps_per_rotation;
+    const fullSteps = motor ? (motor.step_angle_deg === 0.9 ? 400 : 200) : stockSteps ?? 200;
     const { current, note } = runCurrent(group, motor, driver, slot, extruder, def.run_current);
     return {
       name: def.klipper, role: def.role, position: def.position, board: boardKind, slot: slot.id,
@@ -481,9 +508,12 @@ export function plan(build: Build, db: Db): Plan {
         Object.assign(pins, spiPins(spi, boardKind, mcuName));
         if (slot.spi_speed) pins.spi_speed = String(slot.spi_speed);   // board config's SPI clock (Duet 2 TMC2660s: 2 MHz)
       }
+      const sense = od.sense_resistor ?? chips[od.chip].sense_resistor_default ?? undefined;
+      // Without the board's value Klipper falls back to its own default, which can over-drive the motor.
+      if (!sense && !od.rref && od.chip !== 'tmc2240') err('no_sense_resistor', `The data for socket ${slot.id} doesn't give its ${od.chip.toUpperCase()} sense resistor, so the motor current can't be set safely. This board can't be used until that is added.`);
       return {
         chip: od.chip, section: od.klipper_section ?? chips[od.chip].klipper_section, iface, pins,
-        sense: od.sense_resistor ?? chips[od.chip].sense_resistor_default ?? undefined,
+        sense,
         rref: od.rref ?? (od.chip === 'tmc2240' ? chips.tmc2240.current_reference.default_ohms : undefined),
         diag: slot.diag_pin ? { key: slot.diag_pin_key ?? 'diag_pin', pin: diagPin(slot, od.chip, boardKind, mcuName) } : undefined,
         onboard: true, hv: !!od.motor_power, uartAddress: slot.uart_address,
@@ -559,7 +589,15 @@ export function plan(build: Build, db: Db): Plan {
 
     const override = build.runCurrent?.[group];
     if (override) {
-      if (override > ceiling) warn('run_current_high', `The ${group === 'xy' ? 'X/Y' : group === 'z' ? 'Z' : 'extruder'} motor current you entered (${override} A) is above ${r2(ceiling)} A (${ceilingWhy}).`);
+      const what = group === 'xy' ? 'X/Y' : group === 'z' ? 'Z' : 'extruder';
+      // Hard limits: the motor's own rating, the socket's rating, the driver's practical limit.
+      const hard: Array<[number, string]> = [];
+      if (motor) hard.push([motor.rated_current_a, `the motor's ${motor.rated_current_a} A rating`]);
+      if (slot.onboard_driver?.max_current_a) hard.push([slot.onboard_driver.max_current_a, `the ${slot.id} socket's ${slot.onboard_driver.max_current_a} A rating`]);
+      if (chip.practical_max_rms_a) hard.push([chip.practical_max_rms_a, `the ${driver.chip.toUpperCase()} driver's ${chip.practical_max_rms_a} A practical limit`]);
+      const over = hard.filter(([v]) => override > v);
+      if (over.length) err('run_current_too_high', `The ${what} motor current you entered (${override} A) is above ${over.map(([, why]) => why).join(' and ')}. That overheats the motor or driver. Lower it on the Motors step.`);
+      else if (override > ceiling) warn('run_current_high', `The ${what} motor current you entered (${override} A) is above ${r2(ceiling)} A (${ceilingWhy}). Watch the motor and driver temperatures.`);
       return { current: override, note: 'your setting' };
     }
     let ref: number, refWhy: string;
@@ -638,9 +676,9 @@ export function plan(build: Build, db: Db): Plan {
       err('no_z_switch_xy', 'Enter the Z switch position on the Homing step. Homing at a guessed position could drive the nozzle into the bed.');
     }
     const sw = build.homing.zSwitchXY;
-    const min = printer.defaults.stepper_xy.position_min;
-    if (sw && (sw[0] < min || sw[1] < min || sw[0] > size.position_max.x || sw[1] > size.position_max.y)) {
-      err('z_switch_out_of_range', `The Z switch position (${sw.join(', ')}) is outside the area the nozzle can reach (${size.position_max.x} x ${size.position_max.y} mm). Check it on the Homing step.`);
+    const [tx, ty] = [travel({ printer, size }, 'x'), travel({ printer, size }, 'y')];
+    if (sw && (sw[0] < tx[0] || sw[1] < ty[0] || sw[0] > tx[1] || sw[1] > ty[1])) {
+      err('z_switch_out_of_range', `The Z switch position (${sw.join(', ')}) is outside the area the nozzle can reach (X ${tx[0]} to ${tx[1]}, Y ${ty[0]} to ${ty[1]} mm). Check it on the Homing step.`);
     }
   }
 
@@ -662,6 +700,7 @@ export function plan(build: Build, db: Db): Plan {
   const bedHeaterRec = heatedBed ? need(pick(mbHeaters, (h) => h.role === 'bed'), 'no_bed_heater', `${board.name} has no bed heater output.`) : undefined;
   const isBedTherm = (t: Rec) => t.typical_use === 'bed' || ['TB', 'THB'].includes(t.id);
   const bedThermRec = heatedBed ? pick(mbTherms, isBedTherm) ?? mbTherms[1] : undefined;
+  if (heatedBed && !bedThermRec) err('no_bed_thermistor', `${board.name} has no thermistor input left for the bed.`);
   const usedTherm = new Set<string>(bedThermRec ? [bedThermRec.id] : []);
   let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number; amp?: Rec };
   if (toolboard) {
@@ -669,6 +708,7 @@ export function plan(build: Build, db: Db): Plan {
     const t = pick(toolboard.thermistors, (x) => x.typical_use === 'hotend')!;
     hotendHeater = { board: 'toolboard', port: h.id, pin: qpin('toolboard', h.pin), maxPower: h.max_power };
     hotendSensor = { board: 'toolboard', port: t.id, pin: qpin('toolboard', t.pin), pullup: t.pullup_ohms ?? 4700 };
+    if (thermHotend.needs) err('thermistor_hw', `${thermHotend.label} needs its SPI chip, which this tool doesn't set up on a toolhead board. Choose the thermistor your hotend really has (Hotend step).`);
   } else {
     const h = need(pick(mbHeaters, (x) => x.role === 'hotend'), 'no_hotend_heater', `${board.name} has no hotend heater output.`);
     const t = need(pick(mbTherms, (x) => !isBedTherm(x) && !usedTherm.has(x.id)), 'no_thermistor', 'No free thermistor port for the hotend.');
@@ -678,12 +718,19 @@ export function plan(build: Build, db: Db): Plan {
       : { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
     hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700,
       ...(t.amp?.chip === thermHotend.sensor_type ? { amp: t.amp.klipper } : {}) };
+    if (thermHotend.needs && t.amp?.chip !== thermHotend.sensor_type) {
+      err('thermistor_hw', `${thermHotend.label} needs its SPI chip, and the hotend input ${t.id} on the ${board.name} doesn't have one. Choose the thermistor your hotend really has (Hotend step).`);
+    }
   }
   let chamberSensor: (PortUse & { pullup?: number }) | undefined;
   let thermChamber: Rec | undefined;
   if (build.thermistors.chamber) {
     thermChamber = db.thermistors[build.thermistors.chamber];
     if (!thermChamber) err('unknown_thermistor', `Unknown chamber thermistor "${build.thermistors.chamber}"`);
+    else {
+      if (thermChamber.custom_definition_required && !thermChamber.definition) err('custom_thermistor', `${thermChamber.label} needs a custom [thermistor] definition, which the data does not have yet.`);
+      if (thermChamber.needs) err('thermistor_hw', `${thermChamber.label} needs extra hardware (${thermChamber.needs.join('; ')}), which isn't set up for a chamber sensor. Choose a plain thermistor for the chamber (Hotend step).`);
+    }
     const tbChamber = toolboard && !tcRec && pick(toolboard.thermistors, (x) => x.typical_use === 'chamber');
     if (tbChamber) {
       chamberSensor = { board: 'toolboard', port: tbChamber.id, pin: qpin('toolboard', tbChamber.pin), pullup: tbChamber.pullup_ohms };
@@ -809,8 +856,8 @@ export function plan(build: Build, db: Db): Plan {
     } else {
       // Inductive probes go on the mainboard PROBE port (Voron); contact probes on the toolhead.
       const preferTool = !['inductive', 'integrated'].includes(p.kind);   // a printer's built-in probe uses the board's own input
-      const tPort = toolboard?.probe_ports?.[0];
-      const mPort = board.probe_ports?.[0];
+      const tPort = pickProbePort(toolboard?.probe_ports, p);
+      const mPort = pickProbePort(board.probe_ports, p);
       const use = preferTool && tPort ? { b: 'toolboard' as BoardKind, port: tPort } : mPort ? { b: 'mainboard' as BoardKind, port: mPort } : tPort ? { b: 'toolboard' as BoardKind, port: tPort } : undefined;
       if (!use) err('no_probe_port', `Your boards have no free input for the ${p.name}.`);
       checkProbeSupply(p, use?.port, use?.b ?? 'mainboard', use?.b === 'toolboard' ? toolboard : board);
@@ -831,8 +878,12 @@ export function plan(build: Build, db: Db): Plan {
         if (use && !use.port.modifier && !p.pin_modifier) warn('probe_modifier_default', `No source says how ${use.port.id} on the ${use.b} reads the probe, so "${mods}" is used. Before homing, run QUERY_PROBE: it must say "open" away from the bed and "TRIGGERED" near metal.`);
         if (use && !use.port.protected) warn('probe_voltage', `${use.port.id} is not known to handle 12-24 V, and inductive probes send out their supply voltage. Add a BAT85 diode in the signal wire (black band toward the probe), as in Voron's wiring guide, or use a protected probe port.`);
         if (use?.port.pnp_capable) warn('probe_port_jumper', `Set the ${use.port.id} jumper to ${output?.startsWith('pnp') ? 'PNP' : 'NPN'} to match the probe.`);
+      } else if (p.kind === 'integrated') {
+        mods = use?.port.modifier ?? p.pin_modifier ?? '^';   // the printer's own probe on its own input
       } else {
-        mods = use?.port.modifier ?? p.pin_modifier ?? '^';
+        // A contact or switch probe keeps its own polarity; a port's "!" is set for inductive probes
+        // (Octopus PROBE: ~! in Voron's config), so only its pull-up / pull-down is kept.
+        mods = p.pin_modifier ?? (use?.port.modifier?.replace('!', '') || '^');
       }
       probe = { ...p, offset, output, port: use && { board: use.b, port: use.port.id, pin: qpin(use.b, use.port.pin, mods) } };
       if (p.needs_macros) warn('probe_macros', `The ${p.name} needs its own pick-up and dock macros, which this tool doesn't write. Install them from the probe's instructions.`);
@@ -876,7 +927,7 @@ export function plan(build: Build, db: Db): Plan {
   if (tcSpec && tcRec && toolboard) {
     const tapMods = db.probes['voron-tap']?.pin_modifier ?? '^';
     const probePort = (tb: Rec, n: number, mcuName: string): PortUse => {
-      const port = tb.probe_ports?.[0];
+      const port = pickProbePort(tb.probe_ports, db.probes['voron-tap']);
       if (!port) {
         err('no_probe_port', `T${n}: ${tb.name} has no probe input for the Tap sensor.`);
         return { board: 'toolboard', port: '?', pin: '?' };
@@ -988,6 +1039,11 @@ export function plan(build: Build, db: Db): Plan {
       if (t.dock.y < yMin) err('dock_out_of_range', `T${t.n}'s dock (Y ${t.dock.y}) is further forward than Klipper may move (Y ${yMin}). Set "Y travel minimum" to ${t.dock.y} or lower on the Homing step.`);
       if (t.dock.z + pathZ > zMax) err('dock_out_of_range', `T${t.n}'s dock (Z ${t.dock.z}, plus ${pathZ} mm for the docking move) is higher than Klipper may move (Z ${zMax}). Set "Z travel maximum" to at least ${r2(t.dock.z + pathZ)} on the Homing step.`);
     }
+    // Tools need room side by side (StealthChanger wiki, Docks: 60 mm for Dragon Burner / Yavoth, 76 mm for Stealthburner).
+    const spacing: number | undefined = toolhead?.dock_spacing_mm;
+    const xs = tools.filter((t) => t.dock).map((t) => t.dock!.x).sort((a, b) => a - b);
+    const tight = spacing ? xs.slice(1).map((x, i) => r2(x - xs[i])).filter((gap) => gap < spacing) : [];
+    if (tight.length) warn('dock_spacing', `Some docks are only ${Math.min(...tight)} mm apart, but each ${toolhead!.name} needs about ${spacing} mm (StealthChanger wiki). Check the tools can't touch each other in their docks.`);
     if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y (${tcSpec.safeY}) is further than Y can travel (${size.position_max.y} mm).`);
     const docked = tools.filter((t) => t.dock).map((t) => t.dock!.y);
     toolchanger = {
@@ -1018,7 +1074,7 @@ export function plan(build: Build, db: Db): Plan {
   function finishLinks(): Link[] {
     if (build.homing.xy === 'sensorless') addLinks([KLIPPER_DOCS.tmcSensorless], 'homing');
     if (build.autotune) addLinks([{ title: 'klipper_tmc_autotune (install + options)', url: 'https://github.com/andrewmcgr/klipper_tmc_autotune' }], 'drivers');
-    if (toolboard && (build.toolboard!.connection ?? 'can') === 'can') addLinks([KLIPPER_DOCS.canbus], 'wiring');
+    if (toolboard && (build.toolboard!.connection ?? (toolboard.interfaces.includes('can') ? 'can' : 'usb')) === 'can') addLinks([KLIPPER_DOCS.canbus], 'wiring');
     if (build.probe) addLinks([KLIPPER_DOCS.probeCalibrate], 'probe');
     addLinks([KLIPPER_DOCS.bedLevel], 'z offset');
     addLinks([KLIPPER_DOCS.pressureAdvance], 'tuning');

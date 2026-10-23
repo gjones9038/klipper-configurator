@@ -4,7 +4,7 @@ name: BIGTREETECH EBB SB2209 CAN (RP2040)
 manufacturer: BIGTREETECH
 revisions:
 - '1.0'
-status: reviewed
+status: needs-review
 mcu:
   chip: rp2040
 can_pins: gpio4/gpio5   # BTT pin diagram: CAN-H RX-GPIO4, CAN-L TX-GPIO5
@@ -62,6 +62,7 @@ accelerometer:
     miso_pin: gpio3
 notes: []
 unverified:
+- Only the maker's own sources (config, pin diagram or schematic); Klipper and Voron have no config for this board, so it stays needs-review.
 - connector labels (taken from sample config order)
 sources:
 - repo: https://github.com/bigtreetech/EBB

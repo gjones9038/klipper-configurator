@@ -37,7 +37,9 @@ test('each tool: own extruder, fans, Tap probe shared with detection_pin', () =>
     assert.equal(value(tool, 'fan'), `T${n}_partfan`);
     assert.match(tool, new RegExp(`^tool_probe: tool_probe T${n}$`, 'm'));
     assert.equal(value(tool, 'detection_pin'), value(section(f, `tool_probe T${n}`), 'pin'));
-    assert.equal(value(tool, 'params_dock_set'), '0');
+    assert.doesNotMatch(tool, /params_dock_set/);               // SAVE_CONFIG-managed: lives in printer.cfg
+    assert.equal(value(section(r.files['printer.cfg'], `tool T${n}`), 'params_dock_set'), '0');
+    assert.match(section(r.files['printer.cfg'], `tool_probe T${n}`), /^z_offset: /m);
     assert.match(section(f, `heater_fan T${n}_hotend_fan`), new RegExp(`^heater: ${ext}$`, 'm'));
     assert.ok(section(f, `fan_generic T${n}_partfan`));
     const mcu = n === 0 ? 'toolhead' : `toolhead${n}`;
@@ -92,7 +94,7 @@ test('docks: unreachable docks are errors; measured docks enable tool changes', 
   b.toolchanger!.travel = { yMin: -10, zMax: 330 };
   const r = generate(b, db, 'test');
   assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
-  assert.equal(value(section(r.files['tools/T1.cfg'], 'tool T1'), 'params_dock_set'), '1');
+  assert.equal(value(section(r.files['printer.cfg'], 'tool T1'), 'params_dock_set'), '1');
   const tc = section(r.files['toolchanger.cfg'], 'toolchanger');
   assert.equal(value(tc, 'params_close_y'), '22');              // largest park_y (-8) + 30, StealthChanger wiki
   assert.equal(value(tc, 'params_layout_set'), '1');
@@ -121,4 +123,19 @@ test('shuttle eddy probe: no tool probes, detection switches only, eddy homes Z'
   assert.ok(r.issues.some((i) => i.code === 'toolchanger_z_offsets'));
   const bad = example(); bad.toolchanger!.zProbe = 'shuttle'; bad.probe = 'omron-tl-q5mc2';
   assert.ok(errors(bad).includes('toolchanger_shuttle_probe'));
+});
+
+test('StealthChanger with another supported toolhead (Dragon Burner): no Stealthburner LEDs or shaper guess, dock spacing checked', () => {
+  const b = example();
+  b.toolhead = 'stealthchanger-dragonburner';
+  b.leds = true;
+  b.toolchanger!.docks = [{ x: 50, y: -8, z: 320 }, { x: 100, y: -8, z: 320 }, { x: 160, y: -8, z: 320 }];
+  b.toolchanger!.safeY = 60;
+  b.toolchanger!.travel = { yMin: -10, zMax: 330 };
+  const r = generate(b, db, 'test');
+  assert.equal(r.ok, true, JSON.stringify(r.issues.filter((i) => i.level === 'error')));
+  assert.ok(r.issues.some((i) => i.code === 'dock_spacing' && /50 mm apart/.test(i.message)));   // 50 < 60 mm
+  assert.doesNotMatch(Object.values(r.files).join('\n'), /\[neopixel /);
+  b.toolhead = 'stealthburner';                                   // not a StealthChanger toolhead
+  assert.ok(errors(b).includes('toolchanger_toolhead') || errors(b).length > 0);
 });

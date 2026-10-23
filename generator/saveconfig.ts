@@ -49,6 +49,15 @@ export function generatedSections(files: Record<string, string>): Set<string> {
   return out;
 }
 
+/** What a saved z_offset / Z position_endstop depends on: the probe and the Z homing method. */
+export function buildFingerprint(b: { probe?: string; homing: { z: string }; toolchanger?: unknown }): string {
+  return `probe=${b.toolchanger ? 'tool_probe' : b.probe ?? 'none'} z=${b.homing.z}`;
+}
+const readFingerprint = (cfg: string | undefined) => {
+  const m = /^# build: probe=(\S+) z=(\S+)/m.exec(cfg ?? '');
+  return m ? { probe: m[1], z: m[2] } : undefined;
+};
+
 export interface CarryOver {
   printerCfg: string;
   kept: string[];
@@ -61,6 +70,13 @@ export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg
   if (!saved.length) return { printerCfg, kept: [], dropped: [] };
   const sections = generatedSections(files);
   const zHomesWithProbe = /^\[stepper_z\][^[]*^endstop_pin:\s*probe:z_virtual_endstop/m.test(Object.values(files).join('\n'));
+  // A Z offset or Z endstop position measured for another probe / homing method can crash the nozzle;
+  // a config without the build line (hand-written, or older) can't show it is the same, so those go too.
+  const was = readFingerprint(oldPrinterCfg);
+  const now = readFingerprint(printerCfg);
+  const sameProbe = !!was && !!now && was.probe === now.probe;
+  const sameZ = !!was && !!now && was.z === now.z;
+  const PROBE_SECTION = /^(probe|bltouch|tool_probe .+|probe_eddy_current .+|beacon|cartographer)$/;
   const kept: SavedSection[] = [];
   const dropped: CarryOver['dropped'] = [];
   for (const s of saved) {
@@ -74,6 +90,14 @@ export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg
     const options = s.options.filter(([k]) => {
       if (s.name === 'stepper_z' && k === 'position_endstop' && zHomesWithProbe) {
         dropped.push({ section: s.name, option: k, why: 'unused now that Z homes with the probe' });
+        return false;
+      }
+      if (s.name === 'stepper_z' && k === 'position_endstop' && !sameZ) {
+        dropped.push({ section: s.name, option: k, why: 'Z homing changed (or the old config does not say how it homed): run Z_ENDSTOP_CALIBRATE again' });
+        return false;
+      }
+      if (PROBE_SECTION.test(s.name) && /^(z_offset|tap_z_offset)$/.test(k) && !sameProbe) {
+        dropped.push({ section: s.name, option: k, why: 'the probe changed (or the old config does not say which it was): run PROBE_CALIBRATE again' });
         return false;
       }
       return true;

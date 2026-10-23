@@ -186,7 +186,7 @@ export function normalize(input: Build, db: Db): Build {
 }
 
 export function toolchangerFor(b: Build, db: Db): Rec | undefined {
-  return Object.values(db.toolchangers).find((t) => t.toolhead === b.toolhead);
+  return Object.values(db.toolchangers).find((t) => t.toolheads?.includes(b.toolhead));
 }
 
 /** Drivers a build needs on the mainboard (motion, plus the extruder without a toolhead board). */

@@ -59,6 +59,8 @@ export function printMacros(p: Plan, header: string[]): string {
   const hasChamber = !!p.chamberSensor;
   const scan = p.probe?.kind === 'eddy_native' ? ' METHOD=scan' : '';
   const threshold = nm?.threshold ?? 90;
+  // Purge at 0.3 mm, but never below Z travel (Anet A8 Plus: position_min 0.5 in Klipper's config).
+  const purgeZ = Math.max(0.3, p.printer.defaults.stepper_z?.position_min ?? 0);
   const nevermoreOn = nm
     ? (nm.mode === 'always'
       ? `    SET_FAN_SPEED FAN=nevermore SPEED=${nm.speed}`
@@ -116,7 +118,7 @@ ${levelCmd(p) ? `    SET_DISPLAY_TEXT MSG="Leveling"
     ${levelCmd(p)}
     G28 Z
 ` : ''}${hasProbe(p) ? `    SET_DISPLAY_TEXT MSG="Bed mesh"
-    BED_MESH_CALIBRATE ADAPTIVE=1${scan}` : ''}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}' : ''}
+    BED_MESH_CALIBRATE ADAPTIVE=1${scan}` : ''}${tc ? '\n    SET_DISPLAY_TEXT MSG="First tool: T{TOOL}"\n    T{TOOL}\n    {% if TOOL != 0 %}\n        M104 T0 S0   ; T0 was only warmed for probing: don\'t leave it oozing in its dock\n    {% endif %}' : ''}
     SET_DISPLAY_TEXT MSG="Hotend: {EXTRUDER}C"
     G0 X${g.front[0]} Y${g.front[1]} Z10 F6000
     M109 S{EXTRUDER}${p.printer.belt ? '\n    ; belt printer: no purge line here (the slicer start G-code primes the nozzle)' : '\n    PURGE_LINE'}
@@ -127,14 +129,16 @@ ${toolMacros(p)}${stockMacros(p)}${block(`
 [gcode_macro PURGE_LINE]
 description: Prime the nozzle with a short line along the front edge of the bed.
 gcode:
+    {% set ox = printer.gcode_move.homing_origin.x %}
+    {% set oy = printer.gcode_move.homing_origin.y %}
     SAVE_GCODE_STATE NAME=purge
     G90
     M83
-    G0 X${g.purge.x0} Y${g.purge.y} Z5 F6000
-    G0 Z0.3 F600
+    G0 X{${g.purge.x0} - ox} Y{${g.purge.y} - oy} Z5 F6000
+    G0 Z${purgeZ} F600
     G1 E8 F300
-    G1 X${g.purge.x1} E10 F1200
-    G1 X${g.purge.x2} F6000
+    G1 X{${g.purge.x1} - ox} E10 F1200
+    G1 X{${g.purge.x2} - ox} F6000
     G0 Z2 F600
     RESTORE_GCODE_STATE NAME=purge
 `)}
@@ -149,7 +153,10 @@ gcode:
     G92 E0
     G1 E-5 F1800
     G90
-${g.delta ? `    G0 X${g.park[0]} Y${g.park[1]} F6000   ; a delta reaches full height only near the centre
+${g.delta ? `    G91
+    G0 Z2 F3000   ; clear the print before moving across it
+    G90
+    G0 X${g.park[0]} Y${g.park[1]} F6000   ; a delta reaches full height only near the centre
     G0 Z{z} F3000` : `    G0 Z{z} F3000
     G0 X${g.park[0]} Y${g.park[1]} F6000`}
     TURN_OFF_HEATERS
@@ -440,6 +447,7 @@ ${setAll(run)}
     sensorless ? '# Sensorless X/Y. homing_override replaces safe_z_home, so Z homing lives here too.\n# CoreXY moves both A and B motors for either axis, so every A/B motor drops current together.' : '# homing_override replaces safe_z_home, so Z homing lives here too.',
     tc && p.toolchanger!.zProbe === 'per_tool' ? '# Toolchanger: the mounted tool\'s Tap sensor homes Z. INITIALIZE_TOOLCHANGER detects which tool\n# is mounted (require_tool_present: homing stops if none is), and ADJUST_Z_AFTER_TOOL_NOZZLE_HOME\n# applies that tool\'s Z offset after homing (klipper-toolchanger toolchanger.md).'
       : tc ? '# Toolchanger with a shuttle-mounted eddy probe: the probe homes Z whichever tool is mounted;\n# INITIALIZE_TOOLCHANGER detects the mounted tool (require_tool_present: homing stops if none is).' : '',
+    tc ? '# Y homes first and the toolhead moves to the back before X homes, so a shuttle left at the dock\n# row never sweeps sideways through the parked tools (klipper-toolchanger per-tool-probe example).' : '',
   ].filter(Boolean).join('\n');
   return `${hdr(header)}
 ${intro}
@@ -477,12 +485,20 @@ gcode:${tc ? '\n    INITIALIZE_TOOLCHANGER' : ''}
         G0 Z10 F1200
         G90
     {% endif %}
-    {% if home_all or 'X' in params %}
+${tc ? `    {% set want_x = home_all or 'X' in params %}
+    {% if home_all or 'Y' in params or (want_x and 'y' not in printer.toolhead.homed_axes) %}
+        _HOME_Y
+    {% endif %}
+    {% if want_x %}
+        G90
+        G0 Y{printer.toolhead.axis_maximum.y - 20} F6000
+        _HOME_X
+    {% endif %}` : `    {% if home_all or 'X' in params %}
         _HOME_X
     {% endif %}
     {% if home_all or 'Y' in params %}
         _HOME_Y
-    {% endif %}
+    {% endif %}`}
     {% if home_all or 'Z' in params %}
         _HOME_Z
     {% elif not z_homed %}

@@ -140,8 +140,10 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     eddy = os.path.exists(os.path.join(cfg, "probe.cfg")) and \
         "[probe_eddy_current" in open(os.path.join(cfg, "probe.cfg")).read()
     tc = os.path.exists(os.path.join(cfg, "toolchanger.cfg"))
+    # params_dock_set lives in printer.cfg (SAVE_CONFIG-managed) or in the tool files (older output).
     docked = tc and "params_dock_set: 0" not in "".join(
-        open(os.path.join(cfg, "tools", n)).read() for n in os.listdir(os.path.join(cfg, "tools")))
+        [open(os.path.join(cfg, "printer.cfg")).read()]
+        + [open(os.path.join(cfg, "tools", n)).read() for n in os.listdir(os.path.join(cfg, "tools"))])
     if tc:
         with open(os.path.join(cfg, "printer.cfg"), "a") as f:
             f.write("\n[kc_test_tool_detect]\n")

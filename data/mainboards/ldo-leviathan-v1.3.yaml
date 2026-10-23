@@ -119,6 +119,9 @@ driver_slots:
     sense_resistor: 0.11
     max_current_a: 2.0
   uart_pin: PD11
+  diag_pin: PD12
+  diag_pin_key: diag_pin
+  diag_modifier: ^!
 endstops:
 - id: X-ENDSTOP
   pin: PC1
@@ -178,7 +181,8 @@ probe_ports:
   pin: PF1
   modifier: ^
   protected: true
-  note: Selectable voltage, integrated diode (vendor README). LDO config uses ^PF1.
+  supply_v: [5, 24]
+  note: Voltage set by the probe voltage jumper (5V / 24V), integrated diode (vendor README, manual). LDO config uses ^PF1.
 neopixel_ports:
 - id: RGB
   pin: PF10
@@ -300,7 +304,7 @@ exp_aliases:
   EXP2_1: PA6
   EXP2_2: PA5
   EXP2_3: PE2
-  EXP2_4: PE4
+  EXP2_4: PA4   # SPI_CS (manual pin table, KiCad); LDO's and Klipper's configs say PE4 by mistake
   EXP2_5: PE3
   EXP2_6: PA7
   EXP2_7: PE5

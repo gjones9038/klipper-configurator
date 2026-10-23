@@ -4,7 +4,7 @@ name: BIGTREETECH EBB36 Gen2
 manufacturer: BIGTREETECH
 revisions:
 - '1.0'
-status: reviewed
+status: needs-review
 mcu:
   chip: stm32g0b1
   crystal_mhz: 8
@@ -82,6 +82,7 @@ notes:
   pin has no protection circuit.'
 - 'Sample config uses pullup_resistor: 2200 for the hotend thermistor.'
 unverified:
+- Only the maker's own sources (config, pin diagram or schematic); Klipper and Voron have no config for this board, so it stays needs-review.
 - connector labels (taken from sample config order)
 sources:
 - repo: https://github.com/bigtreetech/EBB

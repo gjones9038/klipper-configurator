@@ -39,7 +39,7 @@ function sources(rec: Rec): Child {
   return h('details', { class: 'hint' },
     h('summary', null, `Where this data comes from (${list.length} source${list.length === 1 ? '' : 's'}${rec.unverified?.length ? `, ${rec.unverified.length} unconfirmed detail${rec.unverified.length === 1 ? '' : 's'}` : ''})`),
     h('ul', { class: 'links' }, list.map((s) => h('li', null,
-      extLink(s.repo, s.repo.replace(/^https:\/\/github.com\//, '')), s.path ? ` · ${s.path}` : '', s.commit ? h('span', { class: 'mono' }, ` @ ${String(s.commit).slice(0, 7)}`) : ''))),
+      (s.repo ?? s.url) ? extLink(s.repo ?? s.url, (s.repo ?? s.url).replace(/^https:\/\/(github.com\/)?/, '')) : (s.note ?? ''), s.path ? ` · ${s.path}` : '', s.commit ? h('span', { class: 'mono' }, ` @ ${String(s.commit).slice(0, 7)}`) : ''))),
     rec.unverified?.length ? h('div', null, h('b', null, 'Not confirmed by a source: '), rec.unverified.map((u: any) => (typeof u === 'string' ? u : JSON.stringify(u))).join('; ')) : null,
     tech.length ? h('div', null, h('b', null, 'Technical details'), h('ul', null, tech.map((t) => h('li', null, t)))) : null);
 }
@@ -162,7 +162,7 @@ const toolboardStep: Step = {
     const boards = Object.values(db.toolboards).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const FORM: Record<string, string> = {
       stealthburner: 'Stealthburner', 'nema14-back': 'Back of a NEMA14 motor', 'nema17-back': 'Back of a NEMA17 motor',
-      orbiter: 'Orbiter extruder', 'sovol-sv08': 'SV08 toolhead',
+      orbiter: 'Orbiter extruder', 'sovol-sv08': 'SV08 toolhead', 'sovol-sv08-max': 'SV08 Max toolhead',
     };
     const ffPill = (ff: string) => !toolhead?.toolboard_form_factors ? h('span', null, FORM[ff] ?? ff)
       : toolhead.toolboard_form_factors.includes(ff) ? pill(FORM[ff] ?? ff, 'ok') : pill(FORM[ff] ?? ff, 'info');

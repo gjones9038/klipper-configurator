@@ -7,7 +7,7 @@ import { AUTOSAVE_HEADER, carryOverSaveConfig, readAutosave } from '../saveconfi
 const db = loadDb();
 const files = (example: string) =>
   generate(JSON.parse(readFileSync(new URL(`../../examples/${example}.json`, import.meta.url), 'utf8')), db, 'test').files;
-const old = (body: string) => `[printer]\nkinematics: corexy\n${AUTOSAVE_HEADER}${body}\n`;
+const old = (body: string, build = '# build: probe=omron-tl-q5mc2 z=nozzle_switch\n') => `${build}[printer]\nkinematics: corexy\n${AUTOSAVE_HEADER}${body}\n`;
 
 test('readAutosave parses sections, options and multi-line values', () => {
   const s = readAutosave(old('#*# [extruder]\n#*# pid_kp = 21.5\n#*#\n#*# [bed_mesh default]\n#*# points =\n#*# \t0.1, 0.2\n#*# \t0.3, 0.4\n#*# x_count = 2'));
@@ -42,4 +42,17 @@ test('stepper_z position_endstop is dropped when Z homes with the probe', () => 
   const r = carryOverSaveConfig(files('v24-350-leviathan-stealthchanger'), old('#*# [stepper_z]\n#*# position_endstop = 0.5\n#*#\n#*# [tool T1]\n#*# params_park_x = 160.0'));
   assert.deepEqual(r.kept, ['tool T1']);
   assert.deepEqual(r.dropped, [{ section: 'stepper_z', option: 'position_endstop', why: 'unused now that Z homes with the probe' }]);
+});
+
+test('a saved Z offset / Z endstop survives only when the probe and Z homing match the old config', () => {
+  const f = files('v24-350-leviathan-sb2209');   // Omron probe, nozzle switch Z
+  const body = ['#*# [probe]', '#*# z_offset = 1.2', '#*#', '#*# [stepper_z]', '#*# position_endstop = 0.5'].join('\n');
+  assert.deepEqual(carryOverSaveConfig(f, old(body)).kept, ['probe', 'stepper_z']);
+  const otherProbe = carryOverSaveConfig(f, old(body, '# build: probe=voron-tap z=nozzle_switch\n'));
+  assert.deepEqual(otherProbe.kept, ['stepper_z']);
+  assert.match(otherProbe.dropped[0].why, /probe changed/);
+  const otherZ = carryOverSaveConfig(f, old(body, '# build: probe=omron-tl-q5mc2 z=physical_min\n'));
+  assert.deepEqual(otherZ.kept, ['probe']);
+  const unknown = carryOverSaveConfig(f, old(body, ''));   // hand-written or older config: can't tell
+  assert.deepEqual(unknown.kept, []);
 });

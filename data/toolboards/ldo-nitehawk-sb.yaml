@@ -4,7 +4,7 @@ name: LDO Nitehawk-SB
 manufacturer: LDO
 revisions:
 - '1.0'
-status: reviewed
+status: needs-review
 mcu:
   chip: rp2040
 interfaces:
@@ -17,6 +17,7 @@ extruder_driver:
   dir_pin: gpio24
   enable_pin: '!gpio25'
   uart_pin: gpio0
+  tx_pin: gpio1      # LDO config: uart_pin gpio0, tx_pin gpio1
   sense_resistor: 0.1
 heaters:
 - id: HE0
@@ -32,6 +33,7 @@ thermistors:
   typical_use: chamber
 - id: BOARD_NTC
   pin: gpio26
+  pullup_ohms: 2200   # LDO config / schematic R27
   typical_use: board
 fans:
 - id: FAN0
@@ -61,6 +63,7 @@ notes:
 - USB toolhead board with a USB adapter board on the frame; not CAN.
 - Has an on-board chamber thermistor input (gpio28) and board NTC (gpio26).
 unverified:
+- Only the maker's own sources (config, pin diagram or schematic); Klipper and Voron have no config for this board, so it stays needs-review.
 - connector labels (taken from sample config order)
 sources:
 - repo: https://github.com/MotorDynamicsLab/Nitehawk-SB

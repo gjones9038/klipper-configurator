@@ -26,8 +26,19 @@ export function generate(build: Build, db: Db, dataRev: string): Result {
   files['LINKS.md'] = linksMarkdown(p);
   files['mcus.json'] = JSON.stringify(p.mcus, null, 2) + '\n';
   const warnings = p.issues.filter((i) => i.level === 'warning');
-  if (warnings.length) {
-    files['WARNINGS.md'] = ['# Check these before powering on', '', ...warnings.map((i) => `- **${i.code}**: ${i.message}`), '', ...linkSection(p)].join('\n');
+  // The plain-language notes the web app shows for each part (AWD: check motor pairs with the belts
+  // loose; Leviathan: the HV input powers the X/Y sockets), so a CLI user reads them too.
+  const notes: Array<[string, string[] | undefined]> = [
+    [p.printer.name, p.printer.notes], [`${p.printer.name}: ${p.variant?.name ?? ''}`, p.variant?.notes],
+    [p.board.name, p.board.notes], ...(p.board.activeExtensions ?? []).map((e: any): [string, string[]] => [e.name, e.notes]),
+    ...(p.tools ? p.tools.map((t): [string, string[]] => [`T${t.n}: ${t.toolboard.name}`, t.toolboard.notes]) : p.toolboard ? [[p.toolboard.name, p.toolboard.notes] as [string, string[]]] : []),
+    ...(p.probe?.notes ? [[p.probe.name, p.probe.notes] as [string, string[]]] : []),
+  ];
+  const noteLines = [...new Map(notes.filter(([, n]) => n?.length).map(([who, n]) => [who, n!])).entries()]
+    .flatMap(([who, n]) => [`### ${who}`, '', ...n.map((x) => `- ${x}`), '']);
+  if (warnings.length || noteLines.length) {
+    files['WARNINGS.md'] = ['# Check these before powering on', '', ...warnings.map((i) => `- ${i.message}`), '',
+      ...(noteLines.length ? ['## Notes for your hardware', '', ...noteLines] : []), ...linkSection(p)].join('\n');
   }
   return { ok: true, files, issues: p.issues, wiring: w, links: p.links, mcus: p.mcus };
 }

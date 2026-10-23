@@ -4,7 +4,7 @@ name: BIGTREETECH EBB SB2240 CAN
 manufacturer: BIGTREETECH
 revisions:
 - '1.0'
-status: reviewed
+status: needs-review
 mcu:
   chip: stm32g0b1
   crystal_mhz: 8
@@ -38,19 +38,25 @@ thermistors:
   pin: PA2
   typical_use: board
 fans:
-- id: FAN0
-  pin: PA1
-  wires: 2
 - id: FAN1
   pin: PA0
   wires: 2
 - id: FAN2
+  pin: PA1
+  wires: 2
+- id: 4WFAN
   pin: PB14
   tachometer_pin: PB15
   wires: 4
 probe_ports:
-- id: PROBE
+- id: ENDSTOP-STOP2
+  pin: PB5
+  supply_v: [5]
+  note: "4-pin Endstop header (+5V, GND, Stop2 PB5, Stop3 PB7). 5 V: use this one for Voron Tap."
+- id: PROXIMITY
   pin: PC13
+  supply_v: [5, 12, 24]
+  note: "3-pin Proximity header (PS PC13, GND, VDD) for inductive probes. VDD is set by the V_Proximity jumper (5V / 12V / VIN), and the NPN jumper must match the probe."
 i2c_ports: []   # no I2C header on this board (see notes)
 bltouch:
   sensor_pin: PB8
@@ -67,7 +73,7 @@ notes:
 - Same board as SB2209 but with a TMC2240 on SPI (cs PA15, spi2_PB2_PB11_PB10).
 - 'klipper_tmc_autotune: set overvoltage_vth to measured toolhead voltage + 0.8V.'
 unverified:
-- connector labels (taken from sample config order)
+- Only the maker's own sources (config, pin diagram or schematic); Klipper and Voron have no config for this board, so it stays needs-review.
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB SB2240_2209 CAN/sample-bigtreetech-ebb-sb-canbus-v1.0.cfg

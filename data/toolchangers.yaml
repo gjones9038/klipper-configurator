@@ -14,7 +14,9 @@ toolchangers:
         such as the Trident would need a liftbar; klipper-toolchanger's liftbar example is marked
         "NOT tested, use with caution", and its manual_rail module fails on current Klipper (open
         issue #165). Not generated.
-    toolhead: stealthchanger-sb   # toolheads.yaml entry every tool uses
+    # toolheads.yaml entries a tool can be (StealthChanger README: supported toolheads). All tools use the same one.
+    toolheads: [stealthchanger-sb, stealthchanger-dragonburner, stealthchanger-rapidburner, stealthchanger-yavoth,
+      stealthchanger-anthead, stealthchanger-a4t, stealthchanger-xol, stealthchanger-jabberwocky, stealthchanger-blackbird]
     dock: fixed
     z_probe: per_tool             # default: each tool's Tap / OptoTap sensor homes Z and detects the tool
     z_probe_modes:                # examples/README.md, "Z probing"

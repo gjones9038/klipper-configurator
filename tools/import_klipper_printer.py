@@ -252,6 +252,9 @@ def importer(klipper, name, commit, boards, file=None):
         stp = {"klipper": sn, "role": role, "rotation_distance": num(sec.get("rotation_distance"))}
         if sec.get("gear_ratio"):
             stp["gear_ratio"] = sec["gear_ratio"]
+        # Motors that are not 200 steps per turn (BIQU BX 0.9° motors: 400; Monoprice Select Mini Z: 48).
+        if num(sec.get("full_steps_per_rotation")) not in (None, 200):
+            stp["full_steps_per_rotation"] = num(sec["full_steps_per_rotation"])
         if dmods.count("!") % 2:
             stp["dir_inverted"] = True
         steppers.append(stp)
@@ -580,7 +583,8 @@ def importer(klipper, name, commit, boards, file=None):
     if thr:
         defaults["sensorless_thresholds"] = thr
     ext = {"id": f"{pid}-extruder", "name": f"{meta['name']} stock extruder", "drive": "unknown",
-           "rotation_distance": num(ex["rotation_distance"]), "microsteps": num(ex.get("microsteps")) or 16, "full_steps_per_rotation": 200,
+           "rotation_distance": num(ex["rotation_distance"]), "microsteps": num(ex.get("microsteps")) or 16,
+           "full_steps_per_rotation": num(ex.get("full_steps_per_rotation")) or 200,
            "pa_baseline": {"start": 0, "range": [0, 1]}, "confidence": "medium", "applies_to": [pid], "sources": [src],
            "unverified": ["Klipper's config does not say whether this is a direct-drive or Bowden extruder, so pressure advance starts at 0: tune it (TUNE_PA)."]}
     if ex.get("gear_ratio"):
