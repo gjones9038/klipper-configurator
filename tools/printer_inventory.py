@@ -24,7 +24,8 @@ for p in sorted(printers, key=lambda p: (str(p["manufacturer"]).lower(), p["name
     stock = (p.get("stock") or {}).get("mainboards") or []
     b = boards.get(stock[0]) if stock else None
     board = f"{b['name']} {'/'.join(map(str, b.get('revisions', [])))}".replace(" stock", "") if b else "your choice (kit)"
-    status = "Reviewed" if (b or {}).get("status", p.get("status")) == "reviewed" else "Needs review"
+    # Reviewed only when the printer record and its stock board both are (SV05: reviewed board, single-source printer).
+    status = "Reviewed" if p.get("status") == "reviewed" and (b is None or b.get("status") == "reviewed") else "Needs review"
     src = p.get("imported_from") or (p.get("sources") or [{}])[0]
     link = f"[{src.get('path', src.get('url', ''))}]({src['repo']}/blob/master/{src['path']})" if src.get("repo") and src.get("path") else src.get("url", "")
     lines.append(f"| {p['name']} | {p['manufacturer']} | {board} | {status} | {link} |")
@@ -35,19 +36,17 @@ if len(sys.argv) > 1:
     imported = {(p.get("imported_from") or {}).get("path") for p in printers}
     covered_by_hand = {"creality-ender3-v2-2020", "creality-ender3-v2-neo-2022", "creality-ender3pro-2020", "creality-ender3-s1-2021",
                        "creality-ender5pro-2020", "sovol-sv06-2022", "elegoo-neptune3-pro-2023"}
-    reasons = {"delta": "delta printer (delta kinematics are not supported yet)", "extruders": "two extruders (not supported yet)"}
-    lines += ["# Not supported yet", "", "Klipper reference configs that are not in the configurator yet, and why.", "",
-              "| Klipper config | Why |", "|---|---|"]
+    rows = []
     for f in sorted(glob.glob(os.path.join(sys.argv[1], "config", "printer-*.cfg"))):
         n = os.path.basename(f)[8:-4]
         if f"config/printer-{n}.cfg" in imported or n in covered_by_hand:
             continue
         t = open(f, errors="replace").read()
-        why = names.get(n, {}).get("skip")
-        if not why:
-            why = reasons["delta"] if "kinematics: delta" in t else reasons["extruders"] if "[extruder1]" in t else "not imported yet"
-        lines.append(f"| printer-{n}.cfg | {why} |")
-    lines.append("")
+        why = names.get(n, {}).get("skip") or "not imported yet"
+        rows.append(f"| printer-{n}.cfg | {why} |")
+    if rows:
+        lines += ["# Not supported yet", "", "Klipper reference configs that are not in the configurator yet, and why.", "",
+                  "| Klipper config | Why |", "|---|---|", *rows, ""]
 
 vendor = json.load(open(os.path.join(ROOT, "tools", "vendor_klipper_status.json")))
 lines += ["# Printers running their maker's own Klipper", "",

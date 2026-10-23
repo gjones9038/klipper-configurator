@@ -50,7 +50,10 @@ thermistors:
 - {id: TB, pin: PA0, typical_use: bed}
 fans:
 - {id: FAN0, pin: PG14, typical_use: hotend}
-- {id: FAN1, pin: PG13, typical_use: part_cooling}
+- id: FAN1
+  pin: PG13
+  typical_use: part_cooling
+  klipper: {max_power: '1'}
 - {id: FAN2, pin: PD6, typical_use: controller}
 probe_ports:
 - {id: PROBE, pin: PG9, modifier: '!'}

@@ -51,6 +51,19 @@ stock:
   homing_z: physical_max
   fans: [part_cooling, hotend]
   probe: lulzbot-mini1-probe
+  extra_sections:
+  - section: homing_override
+    klipper: {gcode: 'G91
+
+        G28 Z
+
+        G0 Z-5
+
+        G28 X Y
+
+        G0 X3 Y7
+
+        G90'}
 stock_parts:
   extruders:
   - id: lulzbot-mini1-extruder

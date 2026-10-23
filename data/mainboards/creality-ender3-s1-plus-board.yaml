@@ -51,7 +51,7 @@ fans:
 - {id: FAN0, pin: PC0, typical_use: hotend}
 - {id: FAN1, pin: PA0, typical_use: part_cooling}
 probe_ports: []
-bltouch: {sensor_pin: PC14, control_pin: PC13}
+bltouch: {sensor_pin: PC14, control_pin: PC13, sensor_modifier: ^}
 filament_sensor_ports:
 - {id: FIL, pin: PC15, modifier: '!'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless

@@ -49,11 +49,15 @@ thermistors:
 - {id: TB, pin: PK6, typical_use: bed}
 fans:
 - {id: FAN0, pin: PH6, typical_use: part_cooling}
-- {id: FAN1, pin: PL5, typical_use: hotend}
+- id: FAN1
+  pin: PL5
+  typical_use: hotend
+  klipper: {max_power: '1.0'}
 - id: FAN2
   pin: PH4
   typical_use: controller
-  klipper: {heater: 'heater_bed,extruder', idle_speed: 0.5, idle_timeout: 300}
+  klipper: {hardware_pwm: 'True', max_power: '1.0', shutdown_speed: '1.0', heater: 'heater_bed,extruder', idle_speed: 0.5,
+    idle_timeout: 300}
 probe_ports: []
 filament_sensor_ports:
 - {id: FIL, pin: PC4, modifier: ^!}

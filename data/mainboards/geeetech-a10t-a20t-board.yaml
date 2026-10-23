@@ -48,7 +48,10 @@ thermistors:
 - {id: TH0, pin: PK3, typical_use: hotend}
 - {id: TB, pin: PK2, typical_use: bed}
 fans:
-- {id: FAN0, pin: PH6, typical_use: part_cooling}
+- id: FAN0
+  pin: PH6
+  typical_use: part_cooling
+  klipper: {cycle_time: '0.150'}
 probe_ports: []
 filament_sensor_ports:
 - {id: FIL, pin: PK4, modifier: '!'}

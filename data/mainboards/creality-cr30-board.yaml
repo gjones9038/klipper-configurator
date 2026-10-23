@@ -50,8 +50,6 @@ thermistors:
 - {id: TB, pin: PC4, typical_use: bed}
 fans:
 - {id: FAN0, pin: PA2, typical_use: part_cooling}
-- {id: FAN1, pin: PC0}
-- {id: FAN2, pin: PC1}
 probe_ports: []
 filament_sensor_ports:
 - {id: FIL, pin: PA6, modifier: ^!}

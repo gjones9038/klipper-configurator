@@ -53,6 +53,9 @@ stock:
   display: {lcd_type: st7920, cs_pin: PH1, sclk_pin: PA1, sid_pin: PH0, encoder_pins: '^PC4, ^PC6', click_pin: ^!PC2}
   filament_sensors:
   - {port: FIL}
+  extra_sections:
+  - section: verify_heater heater_bed
+    klipper: {check_gain_time: '240'}
 stock_parts:
   extruders:
   - id: sunlu-s8-extruder

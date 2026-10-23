@@ -55,7 +55,6 @@ probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
-    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
-    source does not state it.]
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
 sources:
 - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-monoprice-select-mini-v2-2018.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

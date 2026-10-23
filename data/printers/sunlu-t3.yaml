@@ -59,6 +59,10 @@ stock:
   probe_offsets:
     bltouch: {x: -28.45, y: 4}
   display: {lcd_type: st7920, cs_pin: PB8, sclk_pin: PB9, sid_pin: PB15, encoder_pins: '^PA10, ^PA9', click_pin: ^!PA15}
+  filament_sensors:
+  - port: FIL
+    kind: motion
+    klipper: {detection_length: 7, extruder: extruder}
 stock_parts:
   extruders:
   - id: sunlu-t3-extruder

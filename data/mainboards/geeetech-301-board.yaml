@@ -50,12 +50,13 @@ heaters:
   role: hotend
 - {id: BED, pin: PB1, role: bed}
 thermistors:
-- {id: TH0, pin: PC0, typical_use: hotend, pullup_ohms: 4700}
+- {id: TH0, pin: PC0, typical_use: hotend, pullup_ohms: 4700, inline_ohms: 220}
 - {id: TB, pin: PC3, typical_use: bed}
 fans:
 - id: FAN0
   pins: [PB7, PB8, PB9]
   typical_use: hotend
+  klipper: {max_power: '0.8', shutdown_speed: '0'}
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']

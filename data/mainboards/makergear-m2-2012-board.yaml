@@ -48,7 +48,10 @@ thermistors:
 - {id: TB, pin: PF2, typical_use: bed}
 fans:
 - {id: FAN0, pin: PH5, typical_use: part_cooling}
-- {id: FAN1, pin: PH3, typical_use: hotend}
+- id: FAN1
+  pin: PH3
+  typical_use: hotend
+  klipper: {cycle_time: '.000030', hardware_pwm: 'True', max_power: '0.61'}
 probe_ports: []
 setup_sections:
 - section: ad5206 stepper_digipot

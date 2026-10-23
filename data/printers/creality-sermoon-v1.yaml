@@ -51,6 +51,10 @@ stock:
   homing_xy: physical
   homing_z: physical_min
   fans: [part_cooling]
+  extra_fans:
+  - section: fan_generic side_fan
+    klipper: {pin: PC15}
+    note: printer config
 stock_parts:
   extruders:
   - id: creality-sermoon-v1-extruder

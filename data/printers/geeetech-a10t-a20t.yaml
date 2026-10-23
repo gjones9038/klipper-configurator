@@ -57,6 +57,11 @@ stock:
   - {port: FIL}
   - {port: FIL1}
   - {port: FIL2}
+  extra_sections:
+  - section: extruder_stepper extruder_1
+    klipper: {extruder: '', enable_pin: '!PL1', dir_pin: PL2, step_pin: PL0, microsteps: '16', rotation_distance: '8'}
+  - section: extruder_stepper extruder_2
+    klipper: {extruder: '', enable_pin: '!PG0', dir_pin: PL4, step_pin: PL6, microsteps: '16', rotation_distance: '8'}
 stock_parts:
   extruders:
   - id: geeetech-a10t-a20t-extruder

@@ -8,6 +8,7 @@ set -euo pipefail
 
 KLIPPER_COMMIT=9cb99754c035b90206ef0a02660f674fc9517e9b
 AUTOTUNE_REPO=https://github.com/andrewmcgr/klipper_tmc_autotune.git
+AUTOTUNE_COMMIT=b6c7cfa98c2ef880812d5279a9117cbe67d6d4d5
 # klipper-toolchanger main (94756df) does not load on this Klipper (probe API change of
 # 2026-05-25); check against PR #174, the open fix. Switch to main once it is merged.
 TOOLCHANGER_REPO=https://github.com/viesturz/klipper-toolchanger.git
@@ -25,7 +26,8 @@ if [ ! -d "$C/klipper" ]; then
   git clone -q https://github.com/Klipper3d/klipper.git "$C/klipper"
 fi
 git -C "$C/klipper" fetch -q origin "$KLIPPER_COMMIT" && git -C "$C/klipper" checkout -q "$KLIPPER_COMMIT"
-[ -d "$C/autotune" ] || git clone -q --depth 1 "$AUTOTUNE_REPO" "$C/autotune"
+[ -d "$C/autotune" ] || git clone -q "$AUTOTUNE_REPO" "$C/autotune"
+git -C "$C/autotune" fetch -q origin "$AUTOTUNE_COMMIT" && git -C "$C/autotune" checkout -q "$AUTOTUNE_COMMIT"
 [ -d "$C/toolchanger" ] || git clone -q "$TOOLCHANGER_REPO" "$C/toolchanger"
 git -C "$C/toolchanger" fetch -q origin "$TOOLCHANGER_REF" && git -C "$C/toolchanger" checkout -q "$TOOLCHANGER_COMMIT"
 # web UI client configs, so [include mainsail.cfg] / [include fluidd.cfg] resolve in checks

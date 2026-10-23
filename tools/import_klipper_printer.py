@@ -122,9 +122,12 @@ def header_info(header):
     m = re.search(r"(\d+)\s*MHz", h, re.I)
     if m:
         mhz = int(m.group(1))
+    # A crystal named next to its frequency (Rat Rig V-Minion: "12MHZ Crystal"), never a CPU clock.
+    m = re.search(r"(\d+)\s*MHz\W{0,3}crystal|crystal\W{0,20}?(\d+)\s*MHz", h, re.I)
+    crystal = int(m.group(1) or m.group(2)) if m else None
     # Flashing instructions: the sentences that mention flashing, verbatim.
     flash = " ".join(s for s in re.split(r"(?<=\.)\s+", h) if re.search(r"flash|SD card|avrdude|bootloader|firmware\.bin|\.bin", s, re.I) and "menuconfig" not in s)
-    return chip, boot, comm, mhz, flash.strip()
+    return chip, boot, comm, mhz, flash.strip(), crystal
 
 
 def chip_id(chip):
@@ -194,7 +197,7 @@ def importer(klipper, name, commit, boards, file=None):
     if kin not in ("cartesian", "corexy", "delta"):
         raise SystemExit(f"{name}: kinematics {kin} not supported yet")
 
-    chip, boot, comm, mhz, flash = header_info([l.lstrip("#").strip() for l in header])
+    chip, boot, comm, mhz, flash, crystal = header_info([l.lstrip("#").strip() for l in header])
     mm = meta.get("mcu") or {}   # MCU details from another source (e.g. the firmware's .config)
     chip, boot, comm, flash = mm.get("chip", chip), mm.get("bootloader_kib", boot), mm.get("comm", comm), mm.get("flash", flash)
     mcu_chip = chip_id(chip)
@@ -338,6 +341,8 @@ def importer(klipper, name, commit, boards, file=None):
         t = {"id": id_, "pin": resolve(sec["sensor_pin"], al), "typical_use": use}
         if num(sec.get("pullup_resistor")):
             t["pullup_ohms"] = num(sec["pullup_resistor"])
+        if num(sec.get("inline_resistor")):
+            t["inline_ohms"] = num(sec["inline_resistor"])   # resistor in series with the thermistor (Geeetech 301)
         # An SPI temperature chip (MAX6675, MAX31865): sensor_pin is its chip select; keep its bus and settings.
         st = sec.get("sensor_type", "").split("#")[0].strip()
         if st.upper().startswith("MAX"):
@@ -353,36 +358,43 @@ def importer(klipper, name, commit, boards, file=None):
         if c and c["id"] not in [x["id"] for x in therms]:
             therms.append(c)
 
-    fans, stock_fans = [], []
+    fans, stock_fans, misc_fans = [], [], []
     hotend_fan = "always_on"
+    PORT_OPTS = ("cycle_time", "hardware_pwm", "max_power", "shutdown_speed")   # fan settings the maker chose
     for sec_name in order:
         sec = S[sec_name]
         kind = sec_name.split(" ")[0]
-        if kind not in ("fan", "heater_fan", "controller_fan", "fan_generic") or "pin" not in sec:
+        if kind not in ("fan", "heater_fan", "controller_fan", "fan_generic", "temperature_fan") or "pin" not in sec:
             continue
-        follows = [x.strip() for x in sec.get("heater", "").split(",") if x.strip()]
-        shared = kind == "controller_fan" and "extruder" in follows   # one fan for hotend and board (Neptune 4)
-        if kind == "heater_fan" and (sec.get("heater", "extruder") != "extruder" or re.search(r"extruder\d+", sec_name)):
-            role = None   # follows another heater, or is a second nozzle's fan (stock extra_fans)
-        else:
-            role = {"fan": "part_cooling", "heater_fan": "hotend", "controller_fan": "controller"}.get(kind)
         if kind == "heater_fan" and re.search(r"extruder\d+", sec_name):
             continue   # a second nozzle's fan: written with that nozzle (stock extra_fans), not a free port
+        follows = [x.strip() for x in sec.get("heater", "").split(",") if x.strip()]
+        shared = kind == "controller_fan" and "extruder" in follows   # one fan for hotend and board (Neptune 4)
+        role = {"fan": "part_cooling", "heater_fan": "hotend", "controller_fan": "controller"}.get(kind)
+        if kind == "heater_fan" and sec.get("heater", "extruder") != "extruder":
+            role = None   # follows the bed or another heater
+        if role is None or role in stock_fans:
+            # Any other fan the printer has (a second hotend fan cooling the drivers, a bed-following fan,
+            # an MCU temperature fan, a fan_generic): written as it is, with the stock board.
+            misc_fans.append({"section": sec_name, "klipper": {k: (resolve(v, al) if k.endswith("_pin") else v.strip()) for k, v in sec.items()},
+                              "note": "printer config"})
+            continue
         k, v = out_pin(sec["pin"])
         if k == "pins":
             port = {"id": f"FAN{len(fans)}", "pins": v}
         else:
             mods, pin = split_pin(v)
             port = {"id": f"FAN{len(fans)}", "pin": mods + pin}
-        if role:
-            port["typical_use"] = role
-            if role not in stock_fans:
-                stock_fans.append(role)
+        port["typical_use"] = role
+        stock_fans.append(role)
         if sec.get("tachometer_pin"):
             port["tachometer_pin"] = resolve(sec["tachometer_pin"], al)
+        opts = {k2: sec[k2].strip() for k2 in PORT_OPTS if sec.get(k2)}   # verbatim: cycle_time .00005 must not round to 0
         if shared:
-            port["klipper"] = {k: (num(sec[k]) if num(sec[k]) is not None else sec[k]) for k in ("heater", "fan_speed", "idle_speed", "idle_timeout") if sec.get(k)}
+            opts.update({k2: (num(sec[k2]) if num(sec[k2]) is not None else sec[k2]) for k2 in ("heater", "fan_speed", "idle_speed", "idle_timeout") if sec.get(k2)})
             hotend_fan = "controller_fan"
+        if opts:
+            port["klipper"] = opts
         fans.append(port)
         if role == "hotend":
             hotend_fan = None
@@ -392,6 +404,8 @@ def importer(klipper, name, commit, boards, file=None):
     if "bltouch" in S:
         b = S["bltouch"]
         bltouch = {"sensor_pin": split_pin(resolve(b["sensor_pin"], al))[1], "control_pin": resolve(b["control_pin"], al)}
+        if split_pin(resolve(b["sensor_pin"], al))[0]:
+            bltouch["sensor_modifier"] = split_pin(resolve(b["sensor_pin"], al))[0]
         stock_probe = "bltouch"
         probe_offset = {"x": num(b.get("x_offset", 0)), "y": num(b.get("y_offset", 0))}
     elif "probe" in S:
@@ -420,12 +434,14 @@ def importer(klipper, name, commit, boards, file=None):
     # --- filament runout sensors ---------------------------------------------------
     fil_ports, fil_stock = [], []
     for sec_name in order:
-        if sec_name.startswith("filament_switch_sensor ") and S[sec_name].get("switch_pin"):
+        motion = sec_name.startswith("filament_motion_sensor ")
+        if (sec_name.startswith("filament_switch_sensor ") or motion) and S[sec_name].get("switch_pin"):
             mods, pin = split_pin(resolve(S[sec_name]["switch_pin"], al))
             pid_ = "FIL" if not fil_ports else f"FIL{len(fil_ports)}"
             fil_ports.append({"id": pid_, "pin": pin, **({"modifier": mods} if mods else {})})
-            extra_k = {k: num(S[sec_name][k]) for k in ("event_delay", "pause_delay") if num(S[sec_name].get(k)) is not None}
-            fil_stock.append({"port": pid_, **({"klipper": extra_k} if extra_k else {})})
+            keys = ("event_delay", "pause_delay") + (("detection_length", "extruder") if motion else ())
+            extra_k = {k: (num(S[sec_name][k]) if num(S[sec_name][k]) is not None else S[sec_name][k].strip()) for k in keys if S[sec_name].get(k)}
+            fil_stock.append({"port": pid_, **({"kind": "motion"} if motion else {}), **({"klipper": extra_k} if extra_k else {})})
 
     # --- board setup ------------------------------------------------------------------
     # Sections the board needs to run at all, copied as they are: motor-current chips and PWM
@@ -461,7 +477,7 @@ def importer(klipper, name, commit, boards, file=None):
     if avr:
         mcu.update(arch="avr", cpu_mhz=mhz or 16)
     else:
-        mcu.update(crystal_mhz=8, bootloader_kib=boot if boot is not None else 0)
+        mcu.update(crystal_mhz=mm.get("crystal_mhz", crystal or 8), bootloader_kib=boot if boot is not None else 0)
         # Klipper check: a dictionary built the way this firmware is (serial boards keep PA11/PA12 free).
         if mcu_chip.startswith(("stm32", "gd32")) and (usb_serial or host_uart):
             u = re.search(r"usart\s*(\d)", f"{comm} {flash}", re.I)
@@ -511,7 +527,7 @@ def importer(klipper, name, commit, boards, file=None):
         board["tech_notes"] = [f"Not generated (lights, LEDs, beepers): {', '.join('[' + x + ']' for x in left_out)}."]
     board["unverified"] = [f"Only one source ({meta.get('source_label', 'Klipper' + chr(39) + 's reference config for this printer')}). Check the pins against your board before powering on.",
                            "Thermistor pull-ups not given in the source use Klipper's default (4.7k).",
-                           *([] if avr else ["crystal_mhz 8 is Klipper's default; the source does not state it."])]
+                           *([] if avr or crystal or mm.get("crystal_mhz") else ["crystal_mhz 8 is Klipper's default; the source does not state it."])]
     board["sources"] = [src]
     # Reuse a curated board only when the source names it (pin-compatible boards with another
     # or no stated name, e.g. the Aquila's FFP0173, keep their own record so the name is right).
@@ -603,7 +619,7 @@ def importer(klipper, name, commit, boards, file=None):
         hot["pid_seed"] = {"pid_kp": num(ex["pid_kp"]), "pid_ki": num(ex["pid_ki"]), "pid_kd": num(ex["pid_kd"])}
     stock = {"mainboards": [match or board_id], "toolhead": None, "extruder": ext["id"], "hotend": hot["id"],
              "thermistors": {"hotend": hot_t, "bed": bed_t}, "probe_options": [stock_probe] if stock_probe else [],
-             "homing_xy": homing_xy, "homing_z": homing_z, "fans": stock_fans or ["part_cooling"]}
+             "homing_xy": homing_xy, "homing_z": homing_z, "fans": stock_fans}   # AdimLab: no [fan] in its config
     if stock_probe:
         stock["probe"] = stock_probe
         if probe_offset:
@@ -645,11 +661,30 @@ def importer(klipper, name, commit, boards, file=None):
                 stated = k.get("heater")
                 k["heater"] = hit
                 xf.append({"section": n, "klipper": k, **({} if stated == hit else {"note": f"heater set to {hit} (Klipper's config: {stated or 'default, extruder'})"})})
-        if xf:
-            stock["extra_fans"] = xf
+        misc_fans = xf + misc_fans
         tm = {n.split(" ", 1)[1]: S[n]["gcode"].strip() for n in order if re.match(r"gcode_macro T\d+$", n) and S[n].get("gcode")}
         if tm:
             stock["tool_macros"] = tm
+    if misc_fans:
+        stock["extra_fans"] = misc_fans
+    # Sections the stock hardware needs that the generator doesn't build itself, copied as they are:
+    # heater checks tuned for a slow bed, the extra motors of a mixing hotend, a homing order the
+    # printer depends on (Lulzbot Mini 1 homes Z up first). homing_override only with switch homing.
+    extra_secs = []
+    for n in order:
+        kind = n.split(" ")[0]
+        if kind in ("verify_heater", "extruder_stepper") or (kind == "homing_override" and homing_z in ("physical_min", "physical_max") and homing_xy == "physical"):
+            sec_k = verbatim(S[n])
+            extra_secs.append({"section": n, "klipper": sec_k})
+            if kind == "extruder_stepper" and n.split(" ", 1)[1] in tmc_of:
+                extra_secs.append({"section": f"{tmc_of[n.split(' ', 1)[1]][0]} {n.split(' ', 1)[1]}", "klipper": verbatim(tmc_of[n.split(' ', 1)[1]][1])})
+    if extra_secs:
+        stock["extra_sections"] = extra_secs
+    # Options of generated stepper sections the stock printer adds (a second Z endstop squares the X gantry).
+    st_opts = {sn: {"endstop_pin": resolve(S[sn]["endstop_pin"], al)} for sn in order
+               if re.match(r"stepper_z\d+$", sn) and S[sn].get("endstop_pin")}
+    if st_opts:
+        stock["stepper_options"] = st_opts
     # A motor whose current differs from its group's (Eryone ER20: X 0.6 A, Y 0.7 A) keeps its own.
     for st in steppers:
         grp = "stepper_z" if st["klipper"].startswith("stepper_z") else "stepper_xy"

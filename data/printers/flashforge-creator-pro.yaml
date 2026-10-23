@@ -58,15 +58,15 @@ stock:
     klipper: {step_pin: PA7, dir_pin: PA6, enable_pin: '!PG2', microsteps: '16', rotation_distance: '33', nozzle_diameter: '0.400',
       filament_diameter: '1.750', heater_pin: PB5, sensor_type: MAX6675, sensor_pin: PE4, spi_software_miso_pin: PE5, spi_software_sclk_pin: PE2,
       spi_software_mosi_pin: PA1, control: pid, pid_kp: '27.341', pid_ki: '1.293', pid_kd: '144.566', min_temp: '0', max_temp: '260'}
-  extra_fans:
-  - section: heater_fan extruder1_fan
-    klipper: {pin: PB6, heater: extruder1}
-    note: 'heater set to extruder1 (Klipper''s config: default, extruder)'
   tool_macros: {T0: 'SET_GCODE_OFFSET X=-34
 
       ACTIVATE_EXTRUDER EXTRUDER=extruder', T1: 'SET_GCODE_OFFSET X=0
 
       ACTIVATE_EXTRUDER EXTRUDER=extruder1'}
+  extra_fans:
+  - section: heater_fan extruder1_fan
+    klipper: {pin: PB6, heater: extruder1}
+    note: 'heater set to extruder1 (Klipper''s config: default, extruder)'
 stock_parts:
   extruders:
   - id: flashforge-creator-pro-extruder

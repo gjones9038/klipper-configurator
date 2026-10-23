@@ -7,7 +7,7 @@ revisions: [stock]
 status: needs-review
 stock_only: true
 mcu_variants:
-- {chip: stm32f446, crystal_mhz: 8, bootloader_kib: 32}
+- {chip: stm32f446, crystal_mhz: 12, bootloader_kib: 32}
 interfaces: [usb]
 firmware: {interface: USB (on PA11/PA12), flash: The firmware filename must be named "firmware.bin"  See docs/Config_Reference.md
     for a description of parameters.}
@@ -47,14 +47,16 @@ thermistors:
 - {id: TH0, pin: PF4, typical_use: hotend}
 - {id: TB, pin: PF3, typical_use: bed}
 fans:
-- {id: FAN0, pin: PA8, typical_use: part_cooling}
+- id: FAN0
+  pin: PA8
+  typical_use: part_cooling
+  klipper: {shutdown_speed: '0.0'}
 - {id: FAN1, pin: PE5, typical_use: hotend}
 - {id: FAN2, pin: PD12, typical_use: controller}
 probe_ports:
 - {id: PROBE, pin: PB7, modifier: ^}
 notes: []
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering
-    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k)., crystal_mhz 8 is Klipper's default; the
-    source does not state it.]
+    on., Thermistor pull-ups not given in the source use Klipper's default (4.7k).]
 sources:
 - {repo: 'https://github.com/Klipper3d/klipper', path: config/printer-ratrig-v-minion-2021.cfg, commit: 9cb99754c035b90206ef0a02660f674fc9517e9b}

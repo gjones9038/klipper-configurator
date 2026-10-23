@@ -1,7 +1,7 @@
 // Render a Plan into Klipper config files. No decisions here beyond formatting.
 import { CfgFile, Section } from './cfg.ts';
 import type { Plan, StepperPlan, FanPlan, PortUse } from './plan.ts';
-import { TOOLHEAD_MCU, bedGeometry, travel, zHomeXY } from './plan.ts';
+import { TOOLHEAD_MCU, bedGeometry, deltaReach, travel, zHomeXY } from './plan.ts';
 import type { Db, Rec } from './types.ts';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -60,8 +60,10 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   pc.add(pr);
   if (dg) {
     // DELTA_CALIBRATE: with a probe it probes; without one, METHOD=manual walks you through a paper test.
+    const reach = deltaReach(p);
+    const calR = Math.min(dg.calibrate_radius, r2(reach - 5));
     pc.add(new Section('delta_calibrate', 'run DELTA_CALIBRATE (or DELTA_CALIBRATE METHOD=manual without a probe), then SAVE_CONFIG')
-      .set('radius', dg.calibrate_radius)
+      .set('radius', calR, calR < dg.calibrate_radius ? `inside the ${r2(reach)} mm the nozzle can reach (arm length - delta radius)` : undefined)
       .set('horizontal_move_z', dg.calibrate_horizontal_move_z ?? 5)
       .set('speed', dg.calibrate_speed ?? 50));
   }
@@ -150,7 +152,7 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
       .set('horizontal_move_z', mesh.horizontal_move_z ?? (dg ? 5 : 10), scan ? 'scan height for eddy probes (vendor sample)' : undefined);
     if (dg) {
       // Round bed: a circle around the centre, inside the print radius by the probe offset and a margin.
-      const rr = r2(dg.print_radius - Math.max(Math.abs(off.x), Math.abs(off.y)) - 10);
+      const rr = r2(deltaReach(p) - Math.max(Math.abs(off.x), Math.abs(off.y)) - 10);
       bm.set('mesh_radius', rr, `print radius minus the probe offset and 10 mm`).set('mesh_origin', '0, 0')
         .set('round_probe_count', 5, 'odd number of points across');
     } else {
@@ -186,7 +188,10 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
   mb.add(mcuSection('mcu', p.board, b.mainboard.connection, p.mcu.chip));
   // AVR chips have no internal temperature sensor (Klipper: no ADC_TEMPERATURE pin).
   // Some MCUs have no internal temperature sensor in Klipper (AVR, HC32F460: no ADC_TEMPERATURE pin).
-  if (p.mcu.arch !== 'avr' && !['hc32f460'].includes(p.mcu.build_as ?? p.mcu.chip)) mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
+  // A stock fan that already reads the MCU temperature (Sidewinder X3 Plus [temperature_fan]) owns it:
+  // Klipper allows the ADC_TEMPERATURE pin only once.
+  const mcuTempTaken = extraFans(p).some((x) => x.klipper.sensor_type === 'temperature_mcu' && !x.klipper.sensor_mcu);
+  if (p.mcu.arch !== 'avr' && !['hc32f460'].includes(p.mcu.build_as ?? p.mcu.chip) && !mcuTempTaken) mb.add(new Section('temperature_sensor mainboard').set('sensor_type', 'temperature_mcu'));
   // Board setup copied from the maker / Klipper config: motor-current chips, microstep pins, power enables.
   for (const ss of p.board.setup_sections ?? []) {
     const s = new Section(ss.section, ss.why);
@@ -280,7 +285,15 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     }
     fileFor(f.board).add(fs);
   }
-  // A second nozzle's own hotend fan (Creator Pro), with its stock board.
+  // Sections the stock printer's config has that are copied as they are (verify_heater for a slow bed,
+  // a mixing hotend's extra motors, the Lulzbot Mini 1's homing order), with its stock board.
+  for (const x of stockExtra(p, 'extra_sections')) {
+    if (x.section === 'homing_override' && (sensorless || p.tools || b.homing.z !== p.printer.stock.homing_z)) continue;
+    const s = new Section(x.section, `${p.printer.name} config`);
+    for (const [k, v] of Object.entries(x.klipper as Rec)) s.set(k, v as any);
+    mb.add(s);
+  }
+  // Other fans of the stock printer (second nozzle, driver cooling, bed-following), with its stock board.
   for (const x of extraFans(p)) {
     const s = new Section(x.section, x.note ?? 'second nozzle hotend fan (printer config)');
     for (const [k, v] of Object.entries(x.klipper)) s.set(k, v as any);
@@ -360,12 +373,12 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     mb.add(s);
   }
   // The printer's own filament runout sensor(s), when its stock board is used: pause when filament runs out.
-  const fsens: Array<{ port: string; klipper?: Rec }> = p.printer.stock?.filament_sensors ?? [];
+  const fsens: Array<{ port: string; kind?: string; klipper?: Rec }> = p.printer.stock?.filament_sensors ?? [];
   if (fsens.length && p.printer.stock.mainboards?.includes(b.mainboard.id) && b.filamentSensor !== false) {
     fsens.forEach((fs, i) => {
       const port = (p.board.filament_sensor_ports ?? []).find((x: Rec) => x.id === fs.port);
       if (!port) return;
-      const s = new Section(`filament_switch_sensor filament_sensor${fsens.length > 1 ? `_${i}` : ''}`, `${p.printer.name} runout sensor (${port.id})`)
+      const s = new Section(`filament_${fs.kind === 'motion' ? 'motion' : 'switch'}_sensor filament_sensor${fsens.length > 1 ? `_${i}` : ''}`, `${p.printer.name} runout sensor (${port.id})`)
         .set('switch_pin', `${port.modifier ?? ''}${port.pin}`).set('pause_on_runout', true, 'pauses the print when the filament runs out');
       for (const [k, v] of Object.entries(fs.klipper ?? {})) s.set(k, v as any);
       mb.add(s);
@@ -452,7 +465,7 @@ export function hoistAutosaved(files: Record<string, string>): void {
 
 export interface HotendParts {
   heater: PortUse;
-  sensor: PortUse & { pullup: number; amp?: Rec };
+  sensor: PortUse & { pullup: number; amp?: Rec; inline?: number };
   thermistor: Rec;
   hotend: Rec;
   extruder: Rec;
@@ -470,6 +483,7 @@ export function extruderSec(es: StepperPlan, p: Plan, db: Db, t: HotendParts, tu
     .set('sensor_pin', t.sensor.pin);
   if (t.sensor.amp) for (const [k, v] of Object.entries(t.sensor.amp)) sec.set(k, v as any);   // SPI temperature chip wiring
   else if (t.sensor.pullup !== 4700) sec.set('pullup_resistor', t.sensor.pullup, 'board thermistor pull-up');
+  if (t.sensor.inline) sec.set('inline_resistor', t.sensor.inline, 'resistor in series with the thermistor on this board');
   const hdef = db.hotendDefaults;
   sec.set('min_temp', hdef.min_temp).set('max_temp', t.maxTemp)
     .set('max_power', t.heater.maxPower ?? hdef.max_power, t.heater.maxPower ? 'board maker: keeps the heater short-circuit auto-recovery working' : undefined).set('min_extrude_temp', hdef.min_extrude_temp)
@@ -552,6 +566,11 @@ export function stepperSection(s: StepperPlan, p: Plan): Section {
       .set('homing_speed', z.homing_speed).set('second_homing_speed', z.second_homing_speed)
       .set('homing_retract_dist', z.homing_retract_dist);
   }
+  // The stock printer's own extras on this stepper (a second Z endstop that squares the X gantry).
+  const extra = stockExtra(p, 'stepper_options') as unknown as Record<string, Rec>;
+  if (s.board === 'mainboard' && extra && !Array.isArray(extra) && extra[s.name]) {
+    for (const [k, v] of Object.entries(extra[s.name])) sec.set(k, v as any, `${p.printer.name} config`);
+  }
   return sec;
 }
 
@@ -588,6 +607,11 @@ export function extraHeaters(p: Plan): Array<{ name: string; note?: string; klip
 export function extraExtruders(p: Plan): Array<{ name: string; klipper: Rec; tmc?: { section: string; klipper: Rec } }> {
   const st = p.printer.stock;
   return st?.extra_extruders && st.mainboards?.includes(p.build.mainboard.id) ? st.extra_extruders : [];
+}
+
+function stockExtra(p: Plan, key: string): Rec[] {
+  const st = p.printer.stock;
+  return st?.[key] && st.mainboards?.includes(p.build.mainboard.id) ? st[key] : [];
 }
 
 export function extraFans(p: Plan): Array<{ section: string; note?: string; klipper: Rec }> {

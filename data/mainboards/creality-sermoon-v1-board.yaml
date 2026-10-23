@@ -50,7 +50,6 @@ thermistors:
 - {id: TB, pin: PC0, typical_use: bed}
 fans:
 - {id: FAN0, pin: PA5, typical_use: part_cooling}
-- {id: FAN1, pin: PC15}
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']

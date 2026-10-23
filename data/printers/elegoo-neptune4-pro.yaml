@@ -64,6 +64,13 @@ stock:
     note: extra bed heater zone, heated to the bed temperature by PRINT_START
     klipper: {heater_pin: PC8, max_power: 1, sensor_type: NTC 100K MGB18-104F39050L32, sensor_pin: PC2, control: pid, pid_kp: 75.301,
       pid_ki: 1.383, pid_kd: 1025.032, min_temp: 0, max_temp: 120, pwm_cycle_time: 0.3}
+  extra_sections:
+  - section: verify_heater extruder
+    klipper: {max_error: '120', check_gain_time: '30', hysteresis: '10', heating_gain: '2'}
+  - section: verify_heater heater_bed
+    klipper: {max_error: '120', check_gain_time: '120', hysteresis: '10', heating_gain: '1'}
+  - section: verify_heater heater_bed_outer
+    klipper: {max_error: '600', check_gain_time: '120', hysteresis: '10', heating_gain: '1'}
 stock_parts:
   extruders:
   - id: elegoo-neptune4-pro-extruder

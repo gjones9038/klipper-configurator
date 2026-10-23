@@ -51,7 +51,7 @@ fans:
 - {id: FAN0, pin: PC13, typical_use: hotend}
 - {id: FAN1, pin: PB15, typical_use: part_cooling}
 probe_ports: []
-bltouch: {sensor_pin: PC15, control_pin: PC14}
+bltouch: {sensor_pin: PC15, control_pin: PC14, sensor_modifier: ^}
 filament_sensor_ports:
 - {id: FIL, pin: PA15, modifier: '!'}
 setup_sections:

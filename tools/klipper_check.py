@@ -34,6 +34,7 @@ LEVEL_BED
 LEVEL_IF_NEEDED
 CALC_E_STEPS REMAINING=20
 CALC_PA HEIGHT=12.5
+_KC_PURGE_MOVES
 PRINT_END
 """
 
@@ -147,6 +148,15 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     if tc:
         with open(os.path.join(cfg, "printer.cfg"), "a") as f:
             f.write("\n[kc_test_tool_detect]\n")
+    # Test-only: batch mode has no heat, so PURGE_LINE can't extrude. Check its moves with a copy that
+    # has the E words removed (_KC_PURGE_MOVES), called in place of PURGE_LINE.
+    pm = os.path.join(cfg, "macros", "print.cfg")
+    m = re.search(r"^\[gcode_macro PURGE_LINE\][^\[]*", open(pm).read(), re.M) if os.path.exists(pm) else None
+    if m:
+        body = re.sub(r"(?m)^(\s+G1)\s+E-?[\d.]+(\s+F[\d.]+)?\s*$", "", m.group(0))   # extrude-only lines
+        body = re.sub(r"\s+E-?[\d.]+", "", body).replace("[gcode_macro PURGE_LINE]", "[gcode_macro _KC_PURGE_MOVES]")
+        with open(os.path.join(cfg, "printer.cfg"), "a") as f:
+            f.write("\n" + body + "\n")
     with open(os.path.join(work, "test.gcode"), "w") as f:
         if tc and eddy:
             # Shuttle eddy probe: Z cannot home before calibration, so no tool changes either.
@@ -173,6 +183,10 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
             if os.path.exists(pm) and "[gcode_macro T1]" in open(pm).read():
                 text += "T1\nM109 S200\nG1 E5 F300\nT0\nM104 S0 T1\n"
             f.write(text)
+    return run_klippy(klipper, cfg, work, mcus, dicts, site)
+
+
+def run_klippy(klipper, cfg, work, mcus, dicts, site, retried=False):
     args = [sys.executable, os.path.join(klipper, "klippy", "klippy.py"),
             os.path.join(cfg, "printer.cfg"), "-i", os.path.join(work, "test.gcode"),
             "-o", os.path.join(work, "out.serial"), "-l", os.path.join(work, "klippy.log")]
@@ -196,8 +210,12 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     # Batch mode has no bed: a probe never triggers and reads stepper_z position_min. On printers
     # whose position_min is far below 0 (Anycubic Kobra: -10) that "mesh" exceeds the fade range and
     # Klipper stops. A simulation artifact, not a config error, as long as nothing else went wrong.
-    if proc.returncode != 0 and not bad and "Mesh extends outside of the fade range" in text:
-        return True, proc.returncode, text, []
+    # Re-run without the probing commands so the rest of the script is still checked.
+    if proc.returncode != 0 and not bad and "Mesh extends outside of the fade range" in text and not retried:
+        tg = os.path.join(work, "test.gcode")
+        kept = [l for l in open(tg).read().splitlines() if l.split()[:1] not in (["G32"], ["LEVEL_BED"], ["LEVEL_IF_NEEDED"])]
+        open(tg, "w").write("\n".join(kept) + "\n")
+        return run_klippy(klipper, cfg, work, mcus, dicts, site, retried=True)
     return proc.returncode == 0 and not bad, proc.returncode, text, bad
 
 

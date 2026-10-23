@@ -51,8 +51,10 @@ thermistors:
 - {id: TB, pin: PA1, typical_use: bed}
 fans:
 - {id: FAN0, pin: PB7, typical_use: part_cooling}
-- {id: FAN1, pin: PB6}
-- {id: FAN2, pin: PB5, typical_use: hotend}
+- id: FAN1
+  pin: PB5
+  typical_use: hotend
+  klipper: {max_power: '1.0'}
 probe_ports:
 - {id: PROBE, pin: PE4, modifier: ^!}
 filament_sensor_ports:

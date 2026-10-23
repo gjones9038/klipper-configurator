@@ -53,6 +53,10 @@ stock:
   display: {lcd_type: st7920, cs_pin: PH1, sclk_pin: PA1, sid_pin: PH0, encoder_pins: '^PC6, ^PC4', click_pin: ^!PC2, kill_pin: ^!PG0}
   filament_sensors:
   - {port: FIL}
+  extra_fans:
+  - section: heater_fan stepstick_fan
+    klipper: {pin: PH4, kick_start_time: '1.0'}
+    note: printer config
 stock_parts:
   extruders:
   - id: anycubic-4max-extruder

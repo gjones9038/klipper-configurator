@@ -23,7 +23,7 @@ sizes:
 steppers:
 - {klipper: stepper_x, role: X, rotation_distance: 34.51, dir_inverted: true}
 - {klipper: stepper_y, role: Y, rotation_distance: 34.51}
-- {klipper: stepper_z, role: Z0, rotation_distance: 0.7}
+- {klipper: stepper_z, role: Z0, rotation_distance: 0.7, full_steps_per_rotation: 48}
 variants:
 - id: standard
   name: Stock

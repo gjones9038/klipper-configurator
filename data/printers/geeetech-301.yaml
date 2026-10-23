@@ -54,6 +54,11 @@ stock:
   fans: [hotend]
   display: {lcd_type: hd44780, rs_pin: PE6, e_pin: PE14, d4_pin: PD8, d5_pin: PD9, d6_pin: PD10, d7_pin: PE15, encoder_pins: '^PE9,
       ^PE8', click_pin: ^PE13}
+  extra_sections:
+  - section: extruder_stepper e1
+    klipper: {extruder: '', step_pin: PA0, dir_pin: '!PB6', enable_pin: '!PA1', microsteps: '16', rotation_distance: '32'}
+  - section: extruder_stepper e2
+    klipper: {extruder: '', step_pin: PB2, dir_pin: '!PB11', enable_pin: '!PC4', microsteps: '16', rotation_distance: '32'}
 stock_parts:
   extruders:
   - id: geeetech-301-extruder

@@ -52,7 +52,10 @@ thermistors:
 fans:
 - {id: FAN0, pin: PB12, typical_use: controller}
 - {id: FAN1, pin: PB13, typical_use: hotend}
-- {id: FAN2, pin: PB5, typical_use: part_cooling}
+- id: FAN2
+  pin: PB5
+  typical_use: part_cooling
+  klipper: {cycle_time: '0.00005'}
 probe_ports:
 - {id: PROBE, pin: PA1, modifier: ''}
 setup_sections:

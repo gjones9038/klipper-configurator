@@ -65,7 +65,7 @@ fans:
 - {id: FAN0, pin: PB5, typical_use: part_cooling}
 - {id: FAN1, pin: PB4, typical_use: hotend}
 probe_ports: []
-bltouch: {sensor_pin: PA11, control_pin: PA12}
+bltouch: {sensor_pin: PA11, control_pin: PA12, sensor_modifier: ^}
 notes: []
 tech_notes: ['Not generated (lights, LEDs, beepers): [output_pin beeper].']
 unverified: [Only one source (Klipper's reference config for this printer). Check the pins against your board before powering

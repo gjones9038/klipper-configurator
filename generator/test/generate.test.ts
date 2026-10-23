@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { generate, loadDb } from '../index.ts';
 import { plan } from '../plan.ts';
 import { matrix } from './matrix.ts';
-import type { Build } from '../types.ts';
+import type { Build, Rec } from '../types.ts';
 
 const db = loadDb();
 const example = (): Build => JSON.parse(readFileSync(new URL('../../examples/v24-350-leviathan-sb2209.json', import.meta.url), 'utf8'));
@@ -563,6 +563,7 @@ const stockBuild = (printerId: string): Build => {
   return {
     printer: printerId, size: p.sizes[0].id, variant: 'standard',
     mainboard: { id: st.mainboards[0], connection: db.mainboards[st.mainboards[0]].interfaces[0] },
+    ...(st.toolboard ? { toolboard: { id: st.toolboard, connection: db.toolboards[st.toolboard].interfaces[0] } } : {}),
     drivers: { xy: { module: 'btt-tmc2209' }, z: { module: 'btt-tmc2209' } }, motors: { xy: '', z: '' },
     homing: { xy: st.homing_xy ?? 'physical', z: st.homing_z ?? 'physical_min' },
     ...(st.probe ? { probe: st.probe } : {}),
@@ -570,6 +571,18 @@ const stockBuild = (printerId: string): Build => {
     fans: (st.fans ?? ['part_cooling']).map((role: string) => ({ role })), autotune: false, webUi: 'mainsail',
   };
 };
+
+// Every printer that ships with its own board must generate as it comes out of the box (the web app's
+// starting point for it). A global list of "expected" matrix errors once hid one that never did.
+test('every stock printer generates with its stock parts', () => {
+  const bad: string[] = [];
+  for (const [id, p] of Object.entries(db.printers)) {
+    if (!(p as Rec).stock?.mainboards?.length) continue;
+    const r = generate(stockBuild(id), db, 'test');
+    if (!r.ok) bad.push(`${id}: ${r.issues.filter((i) => i.level === 'error').map((i) => i.code).join(', ')}`);
+  }
+  assert.deepEqual(bad, []);
+});
 
 test('FLSUN Q5 (delta): delta geometry, towers home up, round mesh, centred purge and park', () => {
   const r = generate(stockBuild('flsun-q5'), db, 'test');
@@ -586,7 +599,7 @@ test('FLSUN Q5 (delta): delta geometry, towers home up, round mesh, centred purg
   assert.match(pc, /\[stepper_c\][^[]*angle: 90/);   // DELTA_CALIBRATE saves angle: in printer.cfg
   assert.doesNotMatch(mb, /\[stepper_[xyz]\]/);
   const pm = r.files['macros/print.cfg'];
-  assert.match(pm, /G0 X\{-42\.14 - ox\} Y\{-85 - oy\} Z5/);    // purge inside the 100 mm circle (minus any gcode offset)
+  assert.match(pm, /G0 X\{-36\.06 - ox\} Y\{-60 - oy\} Z5/);    // purge within 70% of the 100 mm radius (minus any gcode offset)
   assert.match(pm, /G0 Z2 F3000[^\n]*\n\s*G90\n\s*G0 X0 Y0 F6000[^\n]*\n\s*G0 Z\{z\}/);   // lift clear, park at the centre, then rise
   assert.match(r.files['macros/leveling.cfg'], /\[gcode_macro CALIBRATE_DELTA\][^[]*DELTA_CALIBRATE\n/);
 });

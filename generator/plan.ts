@@ -113,7 +113,7 @@ export interface Plan {
   extruder: Rec;
   hotend: Rec;
   hotendHeater: PortUse;
-  hotendSensor: PortUse & { pullup: number; amp?: Rec };
+  hotendSensor: PortUse & { pullup: number; amp?: Rec; inline?: number };
   bedHeater?: PortUse;                       // undefined when the printer has no heated bed
   bedSensor?: PortUse & { pullup: number };
   chamberSensor?: PortUse & { pullup?: number };
@@ -141,11 +141,21 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
  * round bed is centred on 0,0 with a radius, and its full height is only reachable near the
  * centre (so parking goes to the centre before rising).
  */
+/** How far from the centre a delta's nozzle can go: Klipper's limit is the smaller of print_radius and
+ *  arm_length - delta_radius (kinematics/delta.py max_xy2). Rostock Max V2: 290.8 - 174.75 = 116 mm. */
+export function deltaReach(p: { printer: Rec; size: Rec }): number {
+  const dg = p.printer.delta;
+  const pr = dg?.print_radius ?? p.size.bed_radius;
+  return dg?.arm_length && dg?.delta_radius ? Math.min(pr, dg.arm_length - dg.delta_radius) : pr;
+}
+
 export function bedGeometry(p: { printer: Rec; size: Rec }) {
   if (p.printer.kinematics === 'delta') {
-    const r = p.size.bed_radius;
-    const y = -r2(r * 0.85);
-    const half = r2(Math.sqrt(r * r - y * y) * 0.8);
+    const r = deltaReach(p);
+    // A delta can't reach the edge of its print circle at low height when the print radius is close
+    // to the delta radius (Anet A4: both 113 mm), so the purge line stays within 70% of the radius.
+    const y = -r2(r * 0.6);
+    const half = r2(Math.sqrt((0.7 * r) ** 2 - y * y));
     return {
       delta: true, radius: r, min: [-r, -r] as [number, number], max: [r, r] as [number, number], center: [0, 0] as [number, number], front: [0, -r2(r * 0.6)] as [number, number],
       purge: { x0: -half, x1: half - 10, x2: half, y }, park: [0, 0] as [number, number],
@@ -702,7 +712,7 @@ export function plan(build: Build, db: Db): Plan {
   const bedThermRec = heatedBed ? pick(mbTherms, isBedTherm) ?? mbTherms[1] : undefined;
   if (heatedBed && !bedThermRec) err('no_bed_thermistor', `${board.name} has no thermistor input left for the bed.`);
   const usedTherm = new Set<string>(bedThermRec ? [bedThermRec.id] : []);
-  let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number; amp?: Rec };
+  let hotendHeater: PortUse, hotendSensor: PortUse & { pullup: number; amp?: Rec; inline?: number };
   if (toolboard) {
     const h = toolboard.heaters[0];
     const t = pick(toolboard.thermistors, (x) => x.typical_use === 'hotend')!;
@@ -716,7 +726,7 @@ export function plan(build: Build, db: Db): Plan {
     hotendHeater = h.pins
       ? { board: 'mainboard', port: h.id, pin: 'multi_pin:hotend_heater', multi: { name: 'hotend_heater', pins: h.pins.map((x: string) => qpin('mainboard', x)) }, maxPower: h.max_power }
       : { board: 'mainboard', port: h.id, pin: qpin('mainboard', h.pin), maxPower: h.max_power };
-    hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700,
+    hotendSensor = { board: 'mainboard', port: t.id, pin: qpin('mainboard', t.pin), pullup: t.pullup_ohms ?? 4700, inline: t.inline_ohms,
       ...(t.amp?.chip === thermHotend.sensor_type ? { amp: t.amp.klipper } : {}) };
     if (thermHotend.needs && t.amp?.chip !== thermHotend.sensor_type) {
       err('thermistor_hw', `${thermHotend.label} needs its SPI chip, and the hotend input ${t.id} on the ${board.name} doesn't have one. Choose the thermistor your hotend really has (Hotend step).`);
@@ -851,7 +861,7 @@ export function plan(build: Build, db: Db): Plan {
     } else if (p.kind === 'servo_pin') {
       const src = toolboard?.bltouch ? { b: 'toolboard' as BoardKind, d: toolboard.bltouch } : board.bltouch ? { b: 'mainboard' as BoardKind, d: board.bltouch } : undefined;
       if (!src) err('no_bltouch_port', 'Neither of your boards has a BLTouch connector. Choose another probe, or a board with one.');
-      else bltouch = { board: src.b, sensor: qpin(src.b, src.d.sensor_pin, '^'), control: qpin(src.b, src.d.control_pin) };
+      else bltouch = { board: src.b, sensor: qpin(src.b, src.d.sensor_pin, src.d.sensor_modifier ?? '^'), control: qpin(src.b, src.d.control_pin) };
       probe = { ...p, offset };
     } else {
       // Inductive probes go on the mainboard PROBE port (Voron); contact probes on the toolhead.

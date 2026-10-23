@@ -16,10 +16,10 @@ sizes:
   bed_mm: [250, 250]
   position_max: {x: 250, y: 250, z: 250}
 steppers:
-- {klipper: stepper_x, role: X, rotation_distance: 40, dir_inverted: true}
-- {klipper: stepper_y, role: Y, rotation_distance: 40, dir_inverted: true}
-- {klipper: stepper_z, role: Z0, rotation_distance: 8}
-- {klipper: stepper_z1, role: Z1, rotation_distance: 8}
+- {klipper: stepper_x, role: X, rotation_distance: 40, full_steps_per_rotation: 400, dir_inverted: true}
+- {klipper: stepper_y, role: Y, rotation_distance: 40, full_steps_per_rotation: 400, dir_inverted: true}
+- {klipper: stepper_z, role: Z0, rotation_distance: 8, full_steps_per_rotation: 400}
+- {klipper: stepper_z1, role: Z1, rotation_distance: 8, full_steps_per_rotation: 400}
 variants:
 - id: standard
   name: Stock

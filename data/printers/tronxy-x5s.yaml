@@ -49,6 +49,9 @@ stock:
   homing_z: physical_min
   fans: [part_cooling]
   display: {lcd_type: st7920, cs_pin: PA1, sclk_pin: PC0, sid_pin: PA3, encoder_pins: '^PD2, ^PD3', click_pin: ^!PA5}
+  extra_sections:
+  - section: verify_heater heater_bed
+    klipper: {check_gain_time: '600'}
 stock_parts:
   extruders:
   - id: tronxy-x5s-extruder

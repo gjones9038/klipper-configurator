@@ -53,6 +53,10 @@ stock:
   probe: biqu-b1-se-plus-probe
   filament_sensors:
   - {port: FIL}
+  extra_fans:
+  - section: heater_fan Cooling_fan
+    klipper: {pin: PB6, max_power: '1.0', kick_start_time: '0.100', heater: heater_bed}
+    note: printer config
 stock_parts:
   extruders:
   - id: biqu-b1-se-plus-extruder

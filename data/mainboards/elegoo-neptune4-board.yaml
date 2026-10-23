@@ -53,7 +53,7 @@ fans:
 - id: FAN1
   pin: PA8
   typical_use: controller
-  klipper: {heater: 'extruder, heater_bed', fan_speed: 1, idle_speed: 0.5, idle_timeout: 43200}
+  klipper: {shutdown_speed: '1', heater: 'extruder, heater_bed', fan_speed: 1, idle_speed: 0.5, idle_timeout: 43200}
 probe_ports:
 - {id: PROBE, pin: PA11, modifier: ^}
 filament_sensor_ports:

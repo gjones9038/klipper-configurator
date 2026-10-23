@@ -55,7 +55,6 @@ thermistors:
 fans:
 - {id: FAN0, pin: PL5, typical_use: hotend}
 - {id: FAN1, pin: PH6, typical_use: part_cooling}
-- {id: FAN2, pin: PH4, typical_use: hotend}
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']

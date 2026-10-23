@@ -60,6 +60,21 @@ stock:
   filament_sensors:
   - port: FIL
     klipper: {event_delay: 3, pause_delay: 1}
+  extra_fans:
+  - section: fan_generic fan3
+    klipper: {pin: PC9}
+    note: printer config
+  - section: fan_generic fan4
+    klipper: {pin: PA8}
+    note: printer config
+  - section: fan_generic fan5
+    klipper: {pin: PA15}
+    note: printer config
+  extra_sections:
+  - section: verify_heater extruder
+    klipper: {max_error: '30', check_gain_time: '10', hysteresis: '10', heating_gain: '2'}
+  - section: verify_heater heater_bed
+    klipper: {max_error: '120', check_gain_time: '120', hysteresis: '10', heating_gain: '2'}
 stock_parts:
   extruders:
   - id: elegoo-neptune4-max-extruder

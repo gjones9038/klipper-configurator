@@ -94,7 +94,7 @@ check them against your printer before powering on.
 | Robo3D R2 | Robo3D | Robo3D R2 mainboard | Needs review | [config/printer-robo3d-r2-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-robo3d-r2-2017.cfg) |
 | SeeMeCNC Rostock Max V2 | SeeMeCNC | SeeMeCNC Rostock Max V2 mainboard | Needs review | [config/printer-seemecnc-rostock-max-v2-2015.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-seemecnc-rostock-max-v2-2015.cfg) |
 | Sovol SV01 | Sovol | Sovol SV01 mainboard | Needs review | [config/printer-sovol-sv01-2020.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv01-2020.cfg) |
-| Sovol SV05 | Sovol | Creality v4.2.2 | Reviewed | [config/printer-sovol-sv05-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv05-2022.cfg) |
+| Sovol SV05 | Sovol | Creality v4.2.2 | Needs review | [config/printer-sovol-sv05-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv05-2022.cfg) |
 | Sovol SV06 | Sovol | Sovol V131 | Reviewed | [config/printer-sovol-sv06-2022.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-2022.cfg) |
 | Sovol SV06 Plus | Sovol | Sovol SV06 Plus mainboard | Needs review | [config/printer-sovol-sv06-plus-2023.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-sovol-sv06-plus-2023.cfg) |
 | Sovol SV08 | Sovol | Sovol SV08 mainboard H616_JC_6Z V1.2 | Needs review | [home/sovol/printer_data/config/printer.cfg](https://github.com/Sovol3d/SV08/blob/master/home/sovol/printer_data/config/printer.cfg) |
@@ -128,13 +128,6 @@ check them against your printer before powering on.
 | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select | Wanhao | Wanhao Duplicator i3 v2.1 / Monoprice Maker Select mainboard | Needs review | [config/printer-wanhao-duplicator-i3-v2.1-2017.cfg](https://github.com/Klipper3d/klipper/blob/master/config/printer-wanhao-duplicator-i3-v2.1-2017.cfg) |
 
 119 printers.
-
-# Not supported yet
-
-Klipper reference configs that are not in the configurator yet, and why.
-
-| Klipper config | Why |
-|---|---|
 
 # Printers running their maker's own Klipper
 

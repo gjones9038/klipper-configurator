@@ -54,6 +54,11 @@ stock:
   probe: artillery-sidewinder-x3-plus-probe
   filament_sensors:
   - {port: FIL}
+  extra_fans:
+  - section: temperature_fan Artillery_MCU
+    klipper: {sensor_type: temperature_mcu, pin: PA5, max_temp: '60.0', target_temp: '40.0', min_temp: '0', shutdown_speed: '0.0',
+      kick_start_time: '0.5', off_below: '0.19', max_speed: '1.0', min_speed: '0.0', control: watermark}
+    note: printer config
 stock_parts:
   extruders:
   - id: artillery-sidewinder-x3-plus-extruder
