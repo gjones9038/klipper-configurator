@@ -48,7 +48,10 @@ thermistors:
 - {id: TH0, pin: PC0, typical_use: hotend}
 - {id: TB, pin: PC1, typical_use: bed}
 fans:
-- {id: FAN0, pin: PC8, typical_use: part_cooling}
+- id: FAN0
+  pin: PC8
+  typical_use: part_cooling
+  klipper: {off_below: '0.1'}
 - {id: FAN1, pin: PC7, typical_use: hotend}
 - {id: FAN2, pin: PC6, typical_use: controller}
 probe_ports: []

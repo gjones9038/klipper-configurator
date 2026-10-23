@@ -50,7 +50,11 @@ function commit() {
 function loadBuild(raw: unknown, source: string) {
   const problem = knownIds(raw, db);
   if (problem) { notice = { tone: 'bad', text: `${source}: ${problem}. Kept the current build.` }; render(); return; }
-  build = normalize(raw as Build, db);
+  try {
+    build = normalize(raw as Build, db);
+  } catch (e) {
+    notice = { tone: 'bad', text: `${source} couldn't be loaded (${(e as Error).message}). Kept the current build.` }; render(); return;
+  }
   notice = { tone: 'ok', text: `Loaded ${source}.` };
   commit();
 }
@@ -60,7 +64,9 @@ function openFile() {
   input.addEventListener('change', async () => {
     const f = input.files?.[0];
     if (!f) return;
-    try { loadBuild(JSON.parse(await f.text()), f.name); } catch (e) { notice = { tone: 'bad', text: `${f.name} is not valid JSON.` }; render(); }
+    let raw: unknown;
+    try { raw = JSON.parse(await f.text()); } catch { notice = { tone: 'bad', text: `${f.name} is not valid JSON.` }; render(); return; }
+    loadBuild(raw, f.name);
   });
   input.click();
 }
@@ -198,7 +204,14 @@ async function boot() {
     return;
   }
   const saved = loadSaved();
-  build = saved.build && !knownIds(saved.build, db) ? normalize(saved.build, db) : normalize(defaultBuild(), db);
+  // A saved build from older data (a renamed part) must never leave the page blank: start fresh instead.
+  try {
+    build = saved.build && !knownIds(saved.build, db) ? normalize(saved.build, db) : normalize(defaultBuild(), db);
+    if (saved.build && knownIds(saved.build, db)) notice = { tone: 'bad', text: `Your last build couldn't be restored (${knownIds(saved.build, db)}), so this is a fresh one. Use Open build if you saved a copy.` };
+  } catch (e) {
+    build = normalize(defaultBuild(), db);
+    notice = { tone: 'bad', text: `Your last build couldn't be restored (${(e as Error).message}), so this is a fresh one. Use Open build if you saved a copy.` };
+  }
   step = saved.step !== undefined && saved.step >= 0 && saved.step <= EXPORT ? saved.step : 0;
   commit();
 }

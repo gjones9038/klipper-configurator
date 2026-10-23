@@ -44,6 +44,10 @@ toolchangers:
             ("__init__() takes from 3 to 4 positional arguments but 5 were given").
             Open fix: PR #174 (orion23rigel, tool-probe-latest-klipper-api). Until it is merged,
             install that branch or run a Klipper from before 2026-05-25.
+          fix: >-
+            After the normal install: cd ~/klipper-toolchanger && git fetch origin pull/174/head:pr-174
+            && git checkout pr-174 && sudo systemctl restart klipper. Don't let Moonraker update
+            klipper-toolchanger (it would switch back to main) until the fix is merged.
           links:
             - {title: "klipper-toolchanger PR #174: update for latest Klipper probe API", url: "https://github.com/viesturz/klipper-toolchanger/pull/174"}
           sources:
@@ -61,7 +65,7 @@ toolchangers:
     dropoff_path: [{z: 3.5, y: 4}, {z: 0, y: 0}, {z: -12, y: 0}]
     pickup_path: [{z: -12, y: 2}, {z: -12, y: 0}, {z: 1.5, y: 0, f: 0.5, verify: 1}, {z: 0.5, y: 2.5, f: 0.5}, {z: 8, y: 8}]
     close_y_offset: 30            # wiki: close_y = park_y + 30
-    safe_y_rule: "park_y + the thickness of your thickest tool, plus a little buffer"   # wiki; per build
+    safe_y_rule: "close_y + the thickness of your thickest tool + 10 mm, or a Y where a tool on the shuttle clears every docked tool"   # wiki Calibration.md, Dock Parking (stricter than Configuration.md's park_y + thickness)
     dock_z_rule: "Z is the point where 1 more mm down will untrigger the tap module"    # wiki
     tool_probe:                   # examples/z probe/per tool probe/toolhead_n.cfg
       speed: 5.0
@@ -92,6 +96,9 @@ toolchangers:
         tapchanger macros; the klipper-toolchanger examples use [fan_generic],
         params_dropoff_path / params_pickup_path. Following klipper-toolchanger (the module the
         StealthChanger wiki tells you to install).
+    user_notes:
+      - "Order of setup: measure every dock (TC_DOCK_ALIGN_START, TC_DOCK_ALIGN_SAVE, SAVE_CONFIG), then set params_safe_y, params_close_y and params_layout_set: 1 in toolchanger.cfg and restart. Tool changes stay locked until then."
+      - "After a tool change the new tool goes back down to print height at its dock's X position before moving over the print (klipper-toolchanger restores Z first). Keep tall objects away from the front of the bed in line with the docks."
     unverified:
       - "dropoff/pickup paths are the upstream StealthChanger defaults; check them with TEST_TOOL_DOCKING on your docks"
       - "dock positions, safe_y and tool offsets are per printer and always measured"

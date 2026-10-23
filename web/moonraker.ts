@@ -138,9 +138,15 @@ export async function firmwareRestart(t: Target): Promise<void> {
 /** Backup, then upload every file. Stops at the first failure; reports what was written. */
 export async function upload(t: Target, p: UploadPlan, onProgress: (done: number, total: number, path: string) => void = () => {}):
   Promise<{ backup?: string; written: string[] }> {
-  const backupPath = await backup(t, p.overwrite);
+  let backupPath: string | undefined;
+  try {
+    backupPath = await backup(t, p.overwrite);
+  } catch (e) {
+    throw new MoonrakerError(`Couldn't back up your current config files on the printer (${(e as Error).message}), so nothing was uploaded and your printer is unchanged. Free some space on the printer, or update Moonraker (the backup needs its "zip" feature), then try again. You can also download the zip on this page and copy the files yourself.`);
+  }
   const written: string[] = [];
-  const entries = Object.entries(p.files);
+  // printer.cfg last: if the upload stops part-way, the old printer.cfg still matches the files it includes.
+  const entries = Object.entries(p.files).sort(([a], [b]) => Number(a === 'printer.cfg') - Number(b === 'printer.cfg'));
   for (const [path, text] of entries) {
     onProgress(written.length, entries.length, path);
     try {

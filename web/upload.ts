@@ -36,7 +36,8 @@ export function renderUpload(result: Result, build: Build, rerender: () => void)
   const target = (): mr.Target => ({ url: mr.normalizeUrl(st.url), apiKey: st.apiKey.trim() || undefined });
   const extra = { 'wiring.json': JSON.stringify(result.wiring, null, 2) + '\n', 'build.json': JSON.stringify(build, null, 2) + '\n' };
   const key = keyOf(result.files) + (st.keep ? 'k' : '');
-  const stale = st.plan && st.planKey !== key && st.phase === 'ready';
+  // After a failed upload too: the plan was made for the build as it was at check time.
+  const stale = st.plan && st.planKey !== key && (st.phase === 'ready' || st.phase === 'error');
 
   const check = async () => {
     if (!st.url.trim()) { st.phase = 'error'; st.error = 'Enter the printer address first.'; rerender(); return; }

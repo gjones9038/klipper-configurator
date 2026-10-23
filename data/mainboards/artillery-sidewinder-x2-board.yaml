@@ -48,9 +48,18 @@ thermistors:
 - {id: TH0, pin: PC0, typical_use: hotend}
 - {id: TB, pin: PC1, typical_use: bed}
 fans:
-- {id: FAN0, pin: PC8, typical_use: part_cooling}
-- {id: FAN1, pin: PC7, typical_use: hotend}
-- {id: FAN2, pin: PC6, typical_use: controller}
+- id: FAN0
+  pin: PC8
+  typical_use: part_cooling
+  klipper: {off_below: '0.1'}
+- id: FAN1
+  pin: PC7
+  typical_use: hotend
+  klipper: {off_below: '0.2'}
+- id: FAN2
+  pin: PC6
+  typical_use: controller
+  klipper: {off_below: '0.3'}
 probe_ports: []
 bltouch: {sensor_pin: PC2, control_pin: PC3}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless

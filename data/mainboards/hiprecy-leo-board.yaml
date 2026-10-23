@@ -59,7 +59,7 @@ fans:
 - id: FAN1
   pin: PL4
   typical_use: hotend
-  klipper: {cycle_time: '0.010', max_power: '1.0', shutdown_speed: '0'}
+  klipper: {cycle_time: '0.010', max_power: '1.0', shutdown_speed: '0', kick_start_time: '0.100'}
 probe_ports:
 - {id: PROBE, pin: PB6, modifier: ''}
 setup_sections:

@@ -62,6 +62,7 @@ export interface Build {
   };
   leds?: boolean;
   beeps?: boolean;                           // buzzer tunes at print end / pause; default on when a buzzer exists
+  parked?: Record<string, any>;               // web app: settings set aside while they don't apply (toolhead switch); ignored by the generator
   filamentSensor?: boolean;                  // printer's stock runout sensor; default on when the stock board is used
   display?: boolean;                         // printer's stock display ([display]); default on when the stock board is used
   autotune?: boolean;

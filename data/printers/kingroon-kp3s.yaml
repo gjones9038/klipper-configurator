@@ -88,7 +88,7 @@ stock_parts:
   thermistors:
   - id: kingroon-kp3s-kingroon-b3950
     max_temp_c: null
-    label: Kingroon KP3S stock thermistor (Kingroon_B3950)
+    label: Kingroon KP3S stock thermistor (Kingroon B3950)
     sensor_type: kingroon_kp3s_kingroon_b3950
     custom_definition_required: true
     definition: {temperature1: 25, resistance1: 103180, temperature2: 150, resistance2: 1366.2, temperature3: 250, resistance3: 168.6}

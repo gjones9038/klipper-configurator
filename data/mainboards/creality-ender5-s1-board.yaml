@@ -49,10 +49,17 @@ thermistors:
 - {id: TH0, pin: PC5, typical_use: hotend}
 - {id: TB, pin: PC4, typical_use: bed}
 fans:
-- {id: FAN0, pin: PA0, typical_use: part_cooling}
+- id: FAN0
+  pin: PA0
+  typical_use: part_cooling
+  klipper: {kick_start_time: '0.5'}
 - {id: FAN1, pin: PC0, typical_use: hotend}
 probe_ports: []
-bltouch: {sensor_pin: PC14, control_pin: PC13, sensor_modifier: ^}
+bltouch:
+  sensor_pin: PC14
+  control_pin: PC13
+  sensor_modifier: ^
+  klipper: {probe_with_touch_mode: 'true', stow_on_each_sample: 'true'}
 filament_sensor_ports:
 - {id: FIL, pin: PC15, modifier: ^!}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless

@@ -52,7 +52,10 @@ fans:
 - {id: FAN0, pin: PC7, typical_use: hotend}
 - {id: FAN1, pin: PC6, typical_use: part_cooling}
 probe_ports: []
-bltouch: {sensor_pin: PC14, control_pin: PA1}
+bltouch:
+  sensor_pin: PC14
+  control_pin: PA1
+  klipper: {pin_up_touch_mode_reports_triggered: 'FALSE'}
 filament_sensor_ports:
 - {id: FIL, pin: PC15, modifier: '!'}
 setup_sections:

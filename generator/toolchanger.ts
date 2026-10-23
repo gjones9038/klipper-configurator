@@ -181,7 +181,12 @@ export function toolchangerFile(p: Plan, header: string[]): string {
       'SET_TOOL_PARAMETER PARAMETER=params_park_y VALUE={pos.y}',
       'SET_TOOL_PARAMETER PARAMETER=params_park_z VALUE={pos.z}',
       'SET_TOOL_PARAMETER PARAMETER=params_dock_set VALUE=1',
-      'TEST_TOOL_DOCKING RESTORE_AXIS=XYZ',
+      // Tool changes stay locked until safe_y and close_y are set; say so instead of tripping the error state.
+      '{% if printer.toolchanger.params_layout_set|default(0)|int %}',
+      '    TEST_TOOL_DOCKING RESTORE_AXIS=XYZ',
+      '{% else %}',
+      '    RESPOND TYPE=error MSG="Docking test skipped: set params_safe_y, params_close_y and params_layout_set: 1 in toolchanger.cfg first (measure every dock with TC_DOCK_ALIGN_SAVE, then FIRMWARE_RESTART)."',
+      '{% endif %}',
     ]));
   f.add(new Section('gcode_macro TC_DOCK_ALIGN_SAVE')
     .set('description', 'Dock alignment, step 3: store the current position as the dock of the mounted tool. Then SAVE_CONFIG.')
@@ -195,6 +200,9 @@ export function toolchangerFile(p: Plan, header: string[]): string {
       'SAVE_TOOL_PARAMETER PARAMETER=params_park_y',
       'SAVE_TOOL_PARAMETER PARAMETER=params_park_z',
       'SAVE_TOOL_PARAMETER PARAMETER=params_dock_set',
+      // Leave the dock straight backwards first (close_y = park_y + 30), so a later G28 lift is clear of it.
+      'G90',
+      `G0 Y{pos.y + ${rec.close_y_offset}} F3000`,
       'EXIT_DOCKING_MODE',
       'RESPOND MSG="Dock of {printer.toolchanger.tool} stored. Run SAVE_CONFIG. Set params_close_y to the largest park_y + 30 once all docks are measured."',
     ]));

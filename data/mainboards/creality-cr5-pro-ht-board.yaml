@@ -48,7 +48,11 @@ thermistors:
 fans:
 - {id: FAN0, pin: PH6, typical_use: part_cooling}
 probe_ports: []
-bltouch: {sensor_pin: PD2, control_pin: PB5, sensor_modifier: ^}
+bltouch:
+  sensor_pin: PD2
+  control_pin: PB5
+  sensor_modifier: ^
+  klipper: {pin_move_time: '0.4', set_output_mode: 5V}
 filament_sensor_ports:
 - {id: FIL, pin: PE4, modifier: '!'}
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless

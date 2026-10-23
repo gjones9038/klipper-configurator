@@ -7,7 +7,9 @@ import { AUTOSAVE_HEADER, carryOverSaveConfig, readAutosave } from '../saveconfi
 const db = loadDb();
 const files = (example: string) =>
   generate(JSON.parse(readFileSync(new URL(`../../examples/${example}.json`, import.meta.url), 'utf8')), db, 'test').files;
-const old = (body: string, build = '# build: probe=omron-tl-q5mc2 z=nozzle_switch\n') => `${build}[printer]\nkinematics: corexy\n${AUTOSAVE_HEADER}${body}\n`;
+// The example's own "# build:" line (probe, Z homing, hotend, toolhead), so carry-over sees the same printer.
+const fp = /^# build: .*$/m.exec(files('v24-350-leviathan-sb2209')['printer.cfg'])![0] + '\n';
+const old = (body: string, build = fp) => `${build}[printer]\nkinematics: corexy\n${AUTOSAVE_HEADER}${body}\n`;
 
 test('readAutosave parses sections, options and multi-line values', () => {
   const s = readAutosave(old('#*# [extruder]\n#*# pid_kp = 21.5\n#*#\n#*# [bed_mesh default]\n#*# points =\n#*# \t0.1, 0.2\n#*# \t0.3, 0.4\n#*# x_count = 2'));
@@ -33,7 +35,12 @@ test('keeps sections the new config has, plus SAVE_CONFIG-created ones; drops th
   ].join('\n')));
   assert.deepEqual(r.kept, ['extruder', 'input_shaper', 'bed_mesh default', 'stepper_z']);
   assert.deepEqual(r.dropped.map((d) => d.section), ['bltouch']);
-  assert.ok(r.printerCfg.startsWith(f['printer.cfg'].trimEnd()));
+  // Klipper ignores a saved value that printer.cfg also sets, so the body copy is commented out.
+  const body = r.printerCfg.split(AUTOSAVE_HEADER)[0];
+  assert.match(body, /^\[extruder\][^[]*^#pid_kp: /m);
+  assert.doesNotMatch(body, /^\[extruder\][^[]*^pid_kp: /m);
+  assert.match(body, /^\[extruder\][^[]*^pid_ki: /m);         // not saved: left alone
+  assert.match(body, /^\[stepper_z\][^[]*^#position_endstop: /m);
   assert.equal(r.printerCfg.split(AUTOSAVE_HEADER).length, 2);
   assert.deepEqual(readAutosave(r.printerCfg).map((s) => s.name), r.kept);
 });
@@ -48,11 +55,17 @@ test('a saved Z offset / Z endstop survives only when the probe and Z homing mat
   const f = files('v24-350-leviathan-sb2209');   // Omron probe, nozzle switch Z
   const body = ['#*# [probe]', '#*# z_offset = 1.2', '#*#', '#*# [stepper_z]', '#*# position_endstop = 0.5'].join('\n');
   assert.deepEqual(carryOverSaveConfig(f, old(body)).kept, ['probe', 'stepper_z']);
-  const otherProbe = carryOverSaveConfig(f, old(body, '# build: probe=voron-tap z=nozzle_switch\n'));
+  const otherProbe = carryOverSaveConfig(f, old(body, fp.replace('probe=omron-tl-q5mc2', 'probe=voron-tap')));
   assert.deepEqual(otherProbe.kept, ['stepper_z']);
-  assert.match(otherProbe.dropped[0].why, /probe changed/);
-  const otherZ = carryOverSaveConfig(f, old(body, '# build: probe=omron-tl-q5mc2 z=physical_min\n'));
+  assert.match(otherProbe.dropped[0].why, /probe, hotend or toolhead changed/);
+  const otherZ = carryOverSaveConfig(f, old(body, fp.replace('z=nozzle_switch', 'z=physical_min')));
   assert.deepEqual(otherZ.kept, ['probe']);
   const unknown = carryOverSaveConfig(f, old(body, ''));   // hand-written or older config: can't tell
   assert.deepEqual(unknown.kept, []);
+});
+
+test('a different hotend also drops a saved Z offset (the nozzle height changed)', () => {
+  const f = files('v24-350-leviathan-sb2209');
+  const r = carryOverSaveConfig(f, old('#*# [probe]\n#*# z_offset = 1.2', fp.replace(/hotend=\S+/, 'hotend=revo-voron')));
+  assert.deepEqual(r.kept, []);
 });

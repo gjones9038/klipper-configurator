@@ -16,7 +16,7 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
     add({
       component: t ? `T${t.n} extruder motor` : label(s), board: s.board, connector: s.board === 'toolboard' ? 'MOTOR' : s.slot,
       pins: `step ${bare(s.step)} / dir ${bare(s.dir)} / en ${bare(s.enable)}`,
-      note: `${s.name}${s.motor ? `, ${s.motor.autotune_name}` : ''}, run_current ${s.runCurrent} A`,
+      note: `${s.name}${s.motor ? `, ${s.motor.autotune_name}` : ''}${s.driver.standalone ? ', current set on the board (not by Klipper)' : `, run_current ${s.runCurrent} A`}`,
       ...(t ? { tool: t.n } : {}),
     });
   }
@@ -26,7 +26,8 @@ export function wiring(p: Plan): { connections: WireConnection[]; jumpers: strin
         connector: s.endstop.port, pins: bare(s.endstop.pin),
         // "!" in the pin means the config expects a normally open switch (stock printers); without it, normally closed.
         note: [s.name === 'stepper_z' ? ({ nozzle_switch: 'nozzle switch', physical_max: 'switch at the bottom (Z max)', belt: 'not used for homing (belt)' } as Record<string, string>)[p.build.homing.z] ?? 'Z endstop switch' : '',
-          /^[\^~!]*/.exec(s.endstop.pin)![0].includes('!') ? 'normally open (NO) switch, as stock' : 'wire the switch normally closed (NC)'].filter(Boolean).join('; ') });
+          p.printer.stock?.mainboards?.includes(p.build.mainboard.id) ? 'the printer\'s own switch, wired as it came'
+            : /^[\^~!]*/.exec(s.endstop.pin)![0].includes('!') ? 'normally open (NO) switch' : 'wire the switch normally closed (NC)'].filter(Boolean).join('; ') });
     }
   }
   if (!p.tools) {

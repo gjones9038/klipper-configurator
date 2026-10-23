@@ -32,12 +32,17 @@ export function generate(build: Build, db: Db, dataRev: string): Result {
     [p.printer.name, p.printer.notes], [`${p.printer.name}: ${p.variant?.name ?? ''}`, p.variant?.notes],
     [p.board.name, p.board.notes], ...(p.board.activeExtensions ?? []).map((e: any): [string, string[]] => [e.name, e.notes]),
     ...(p.tools ? p.tools.map((t): [string, string[]] => [`T${t.n}: ${t.toolboard.name}`, t.toolboard.notes]) : p.toolboard ? [[p.toolboard.name, p.toolboard.notes] as [string, string[]]] : []),
+    ...(p.toolhead?.notes ? [[p.toolhead.name, p.toolhead.notes] as [string, string[]]] : []),
+    ...(p.toolchanger?.rec.user_notes ? [[p.toolchanger.rec.name, p.toolchanger.rec.user_notes] as [string, string[]]] : []),
     ...(p.probe?.notes ? [[p.probe.name, p.probe.notes] as [string, string[]]] : []),
   ];
   const noteLines = [...new Map(notes.filter(([, n]) => n?.length).map(([who, n]) => [who, n!])).entries()]
     .flatMap(([who, n]) => [`### ${who}`, '', ...n.map((x) => `- ${x}`), '']);
-  if (warnings.length || noteLines.length) {
-    files['WARNINGS.md'] = ['# Check these before powering on', '', ...warnings.map((i) => `- ${i.message}`), '',
+  // CAN boards: the config has placeholders that must be replaced before Klipper can start.
+  const uuids = [...new Set(Object.values(files).join('\n').match(/REPLACE_WITH_\w+_UUID/g) ?? [])];
+  const setup = uuids.length ? [`- Set up the CAN interface on the Pi (can0 at 1000000; Klipper's CAN bus guide in LINKS.md), then run \`~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0\` and put each board's UUID in place of ${uuids.join(', ')} in the .cfg files. Klipper won't start until every one is replaced.`] : [];
+  if (warnings.length || noteLines.length || setup.length) {
+    files['WARNINGS.md'] = ['# Check these before powering on', '', ...setup, ...warnings.map((i) => `- ${i.message}`), '',
       ...(noteLines.length ? ['## Notes for your hardware', '', ...noteLines] : []), ...linkSection(p)].join('\n');
   }
   return { ok: true, files, issues: p.issues, wiring: w, links: p.links, mcus: p.mcus };

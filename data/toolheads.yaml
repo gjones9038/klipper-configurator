@@ -40,9 +40,6 @@ toolheads:
       x: {type: mzv, freq_hz: 50}
       y: {type: mzv, freq_hz: 38}
       confidence: low
-    notes:
-      - "Generator v2: per-tool [extruderN], [tool N] / klipper-toolchanger sections, tool
-        offsets and dock positions. Not modelled yet."
     unverified: ["everything in this entry beyond the SB fan layout"]
 
   - id: stealthchanger-dragonburner

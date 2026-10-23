@@ -121,7 +121,7 @@ export interface Plan {
   maxTemp: number;
   fans: FanPlan[];
   probe?: Rec & { port?: PortUse; offset: { x: number; y: number }; output?: string; connection?: string; i2c?: { mcu: string; bus: string; port: Rec } };
-  bltouch?: { board: BoardKind; sensor: string; control: string };
+  bltouch?: { board: BoardKind; sensor: string; control: string; options?: Rec };
   accel?: Rec & { board: BoardKind };
   leds?: PortUse & { chain: number; order: string };
   paBaseline: number;
@@ -158,7 +158,7 @@ export function bedGeometry(p: { printer: Rec; size: Rec }) {
     const half = r2(Math.sqrt((0.7 * r) ** 2 - y * y));
     return {
       delta: true, radius: r, min: [-r, -r] as [number, number], max: [r, r] as [number, number], center: [0, 0] as [number, number], front: [0, -r2(r * 0.6)] as [number, number],
-      purge: { x0: -half, x1: half - 10, x2: half, y }, park: [0, 0] as [number, number],
+      purge: { x0: -half, x1: r2(half - 10), x2: half, y }, park: [0, 0] as [number, number],
     };
   }
   const [bx, by] = p.size.bed_mm;
@@ -216,8 +216,12 @@ export function plan(build: Build, db: Db): Plan {
     const repo = rec.sources?.find((s: Rec) => !/Klipper3d|VoronDesign/.test(s.repo))?.repo ?? rec.sources?.[0]?.repo;
     return repo ? [{ title: `${rec.name} ${rec.revisions?.join('/') ?? ''}: ${what}`.replace(/\s+:/, ':'), url: repo }] : [];
   };
-  const err = (code: string, message: string) => issues.push({ level: 'error', code, message });
-  const warn = (code: string, message: string) => issues.push({ level: 'warning', code, message });
+  // The same message once (a check that runs per motor would otherwise repeat it for each).
+  const add = (level: 'error' | 'warning', code: string, message: string) => {
+    if (!issues.some((i) => i.level === level && i.message === message)) issues.push({ level, code, message });
+  };
+  const err = (code: string, message: string) => add('error', code, message);
+  const warn = (code: string, message: string) => add('warning', code, message);
   const need = <T>(v: T | undefined, code: string, what: string): T => {
     if (v === undefined || v === null) throw new PlanError(code, what);
     return v;
@@ -281,6 +285,10 @@ export function plan(build: Build, db: Db): Plan {
   function checkProbeSupply(p: Rec, port: Rec | undefined, kind: BoardKind, b: Rec | undefined) {
     const pv: number[] | undefined = port?.supply_v;
     const need: number[] | undefined = p.supply_v;
+    if (port && !pv && need && Math.max(...need) <= 5) {
+      // No source says what this port supplies; many probe ports give (or can be jumpered to) 24 V.
+      warn('probe_supply_unknown', `The ${p.name} needs ${need.join(' or ')} V, and no source says what ${port.id} on ${b?.name ?? `the ${kind}`} supplies. Measure it (or check the board manual and any voltage jumper) before connecting: 24 V destroys it.`);
+    }
     if (!pv || !port) return;
     if (!pv.length) {
       warn('probe_power_elsewhere', `${port.id} on ${b?.name ?? `the ${kind}`} has only signal and ground wires, no power. Power the ${p.name} from another connector${need ? ` (it needs ${Math.min(...need)}-${Math.max(...need)} V)` : ''}.`);
@@ -344,7 +352,7 @@ export function plan(build: Build, db: Db): Plan {
     if (!tcSpec.tools.length) err('toolchanger_one_tool', 'A toolchanger needs at least two tools; add T1.');
     else warn('tool_offsets', `Every tool's X, Y and Z offset from T0 starts at 0. Measure them (StealthChanger wiki: Offsets) and save them before printing with T1${tcSpec.tools.length > 1 ? `-T${tcSpec.tools.length}` : ''}, or the nozzle can hit the bed or print in the wrong place.`);
     for (const k of tcRec.module.known_issues ?? []) {
-      warn('toolchanger_module', k.text);
+      warn('toolchanger_module', k.fix ? `${k.text} ${k.fix}` : k.text);
       addLinks(k.links, 'toolchanger');
     }
     addLinks(tcRec.docs, 'toolchanger');
@@ -600,11 +608,10 @@ export function plan(build: Build, db: Db): Plan {
     const override = build.runCurrent?.[group];
     if (override) {
       const what = group === 'xy' ? 'X/Y' : group === 'z' ? 'Z' : 'extruder';
-      // Hard limits: the motor's own rating, the socket's rating, the driver's practical limit.
+      // Hard limits: the motor's own rating and the socket's rating. The driver's practical limit (TMC2209 1.4 A) is guidance, so only a warning below.
       const hard: Array<[number, string]> = [];
       if (motor) hard.push([motor.rated_current_a, `the motor's ${motor.rated_current_a} A rating`]);
       if (slot.onboard_driver?.max_current_a) hard.push([slot.onboard_driver.max_current_a, `the ${slot.id} socket's ${slot.onboard_driver.max_current_a} A rating`]);
-      if (chip.practical_max_rms_a) hard.push([chip.practical_max_rms_a, `the ${driver.chip.toUpperCase()} driver's ${chip.practical_max_rms_a} A practical limit`]);
       const over = hard.filter(([v]) => override > v);
       if (over.length) err('run_current_too_high', `The ${what} motor current you entered (${override} A) is above ${over.map(([, why]) => why).join(' and ')}. That overheats the motor or driver. Lower it on the Motors step.`);
       else if (override > ceiling) warn('run_current_high', `The ${what} motor current you entered (${override} A) is above ${r2(ceiling)} A (${ceilingWhy}). Watch the motor and driver temperatures.`);
@@ -705,6 +712,16 @@ export function plan(build: Build, db: Db): Plan {
     const amp = (board.thermistors ?? []).some((x: Rec) => x.amp?.chip === t.sensor_type);
     if (t.needs && !amp) err('thermistor_hw', `${t.label} needs extra hardware (${t.needs.join('; ')}), which the generator does not configure yet.`);
   }
+  // Numbers typed into the web app: the field limits are only hints there, so check them here.
+  const outside = (v: number | undefined, lo: number, hi: number) => v !== undefined && (!Number.isFinite(v) || v < lo || v > hi);
+  if (outside(build.bed?.maxPower, 0.05, 1)) err('bad_number', `Bed max power must be between 0.05 and 1 (1 = full power), not ${build.bed!.maxPower} (Hotend step).`);
+  const bedLimit = Math.min(150, thermBed?.max_temp_c ?? 150);
+  if (outside(build.bed?.maxTemp, 40, bedLimit)) err('bad_number', `Bed max temperature must be between 40 and ${bedLimit} °C${thermBed?.max_temp_c && thermBed.max_temp_c < 150 ? ` (the ${thermBed.label} is rated to ${thermBed.max_temp_c} °C)` : ''}, not ${build.bed!.maxTemp}. Klipper uses it as its overheat shutdown (Hotend step).`);
+  if (outside(build.nozzleDiameter, 0.1, 1.2)) err('bad_number', `Nozzle diameter must be between 0.1 and 1.2 mm, not ${build.nozzleDiameter} (Hotend step).`);
+  if (outside(build.nevermore?.speed, 0, 1)) err('bad_number', `Filter fan speed must be between 0 and 1 (1 = full speed), not ${build.nevermore!.speed} (Fans step).`);
+  if (outside(build.nevermore?.postPrintMinutes, 0, 600)) err('bad_number', `Filter run time after a print must be between 0 and 600 minutes, not ${build.nevermore!.postPrintMinutes} (Fans step).`);
+  for (const [g, v] of Object.entries(build.runCurrent ?? {})) if (outside(v as number, 0.05, 10)) err('bad_number', `The ${g === 'xy' ? 'X/Y' : g} motor current must be a positive number of amps, not ${v} (Motors step).`);
+  if (build.probeOffset && (outside(build.probeOffset.x, -100, 100) || outside(build.probeOffset.y, -100, 100))) err('bad_number', `Probe offsets must be within 100 mm of the nozzle (${build.probeOffset.x}, ${build.probeOffset.y}) (Homing step).`);
   const mbHeaters: Rec[] = board.heaters;
   const mbTherms: Rec[] = board.thermistors;
   const bedHeaterRec = heatedBed ? need(pick(mbHeaters, (h) => h.role === 'bed'), 'no_bed_heater', `${board.name} has no bed heater output.`) : undefined;
@@ -861,7 +878,7 @@ export function plan(build: Build, db: Db): Plan {
     } else if (p.kind === 'servo_pin') {
       const src = toolboard?.bltouch ? { b: 'toolboard' as BoardKind, d: toolboard.bltouch } : board.bltouch ? { b: 'mainboard' as BoardKind, d: board.bltouch } : undefined;
       if (!src) err('no_bltouch_port', 'Neither of your boards has a BLTouch connector. Choose another probe, or a board with one.');
-      else bltouch = { board: src.b, sensor: qpin(src.b, src.d.sensor_pin, src.d.sensor_modifier ?? '^'), control: qpin(src.b, src.d.control_pin) };
+      else bltouch = { board: src.b, sensor: qpin(src.b, src.d.sensor_pin, src.d.sensor_modifier ?? '^'), control: qpin(src.b, src.d.control_pin), options: src.d.klipper };
       probe = { ...p, offset };
     } else {
       // Inductive probes go on the mainboard PROBE port (Voron); contact probes on the toolhead.
@@ -920,6 +937,7 @@ export function plan(build: Build, db: Db): Plan {
 
   // --- autotune and tuning baselines --------------------------------------
   if (build.autotune) {
+    warn('autotune_install', 'Install klipper_tmc_autotune on the printer before starting Klipper with this config: autotune.cfg needs it, and Klipper stops with an error without it (https://github.com/andrewmcgr/klipper_tmc_autotune).');
     if (steppers.every((s) => s.driver.standalone)) warn('autotune_standalone', 'klipper_tmc_autotune needs TMC drivers on UART/SPI; every driver here is standalone, so it is skipped.');
     for (const s of steppers) {
       if (s.driver.standalone) continue;
@@ -1056,9 +1074,14 @@ export function plan(build: Build, db: Db): Plan {
     if (tight.length) warn('dock_spacing', `Some docks are only ${Math.min(...tight)} mm apart, but each ${toolhead!.name} needs about ${spacing} mm (StealthChanger wiki). Check the tools can't touch each other in their docks.`);
     if (tcSpec.safeY !== undefined && tcSpec.safeY > size.position_max.y) err('safe_y_out_of_range', `Safe Y (${tcSpec.safeY}) is further than Y can travel (${size.position_max.y} mm).`);
     const docked = tools.filter((t) => t.dock).map((t) => t.dock!.y);
+    // A tool carried along safe_y must clear the docked tools: safe_y = close_y + thickest tool + 10 (wiki).
+    const closeY = docked.length === tools.length ? r2(Math.max(...docked) + tcRec.close_y_offset) : undefined;
+    if (tcSpec.safeY !== undefined && closeY !== undefined && tcSpec.safeY <= closeY + 10) {
+      err('safe_y_too_small', `Safe Y (${tcSpec.safeY}) is too close to the docks: a tool on the shuttle would hit the docked tools. Use close Y (${closeY}) + the thickness of your thickest tool + 10 mm (StealthChanger wiki), on the Toolhead board step.`);
+    }
     toolchanger = {
       rec: tcRec, safeY: tcSpec.safeY, yMin: tcSpec.travel?.yMin, zMax: tcSpec.travel?.zMax, zProbe: shuttle ? 'shuttle' : 'per_tool',
-      closeY: docked.length === tools.length ? r2(Math.max(...docked) + tcRec.close_y_offset) : undefined,
+      closeY,
     };
     if (tools.some((t) => t.connection === 'can')) addLinks([KLIPPER_DOCS.canbus], 'wiring');
   }

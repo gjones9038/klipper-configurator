@@ -323,7 +323,7 @@ def importer(klipper, name, commit, boards, file=None):
             return THERMISTORS[st], None
         if st in custom:
             tid = f"{pid}-{st.lower().replace('_', '-')}"
-            return tid, {"id": tid, "max_temp_c": None, "label": f"{meta['name']} stock thermistor ({st})", "sensor_type": f"{pid.replace('-', '_')}_{st}".lower(),
+            return tid, {"id": tid, "max_temp_c": None, "label": f"{meta['name']} stock thermistor ({st.replace('_', ' ')})", "sensor_type": f"{pid.replace('-', '_')}_{st}".lower(),
                          "custom_definition_required": True, "definition": custom[st], "applies_to": [pid],
                          "sources": [src], "note": f"Defined in Klipper's {meta['name']} config as [thermistor {st}]."}
         raise SystemExit(f"{name}: unknown sensor_type {st!r}")
@@ -360,7 +360,7 @@ def importer(klipper, name, commit, boards, file=None):
 
     fans, stock_fans, misc_fans = [], [], []
     hotend_fan = "always_on"
-    PORT_OPTS = ("cycle_time", "hardware_pwm", "max_power", "shutdown_speed")   # fan settings the maker chose
+    PORT_OPTS = ("cycle_time", "hardware_pwm", "max_power", "shutdown_speed", "kick_start_time", "off_below")   # fan settings the maker chose
     for sec_name in order:
         sec = S[sec_name]
         kind = sec_name.split(" ")[0]
@@ -406,6 +406,11 @@ def importer(klipper, name, commit, boards, file=None):
         bltouch = {"sensor_pin": split_pin(resolve(b["sensor_pin"], al))[1], "control_pin": resolve(b["control_pin"], al)}
         if split_pin(resolve(b["sensor_pin"], al))[0]:
             bltouch["sensor_modifier"] = split_pin(resolve(b["sensor_pin"], al))[0]
+        # Settings a stock BLTouch (often a clone) needs (Sunlu T3: "needed bc of the bltouch clone").
+        bt_opts = {k: b[k].strip() for k in ("pin_up_touch_mode_reports_triggered", "pin_up_reports_not_triggered",
+                                              "probe_with_touch_mode", "stow_on_each_sample", "pin_move_time", "set_output_mode") if b.get(k)}
+        if bt_opts:
+            bltouch["klipper"] = bt_opts
         stock_probe = "bltouch"
         probe_offset = {"x": num(b.get("x_offset", 0)), "y": num(b.get("y_offset", 0))}
     elif "probe" in S:

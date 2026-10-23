@@ -49,13 +49,15 @@ export function generatedSections(files: Record<string, string>): Set<string> {
   return out;
 }
 
-/** What a saved z_offset / Z position_endstop depends on: the probe and the Z homing method. */
-export function buildFingerprint(b: { probe?: string; homing: { z: string }; toolchanger?: unknown }): string {
-  return `probe=${b.toolchanger ? 'tool_probe' : b.probe ?? 'none'} z=${b.homing.z}`;
+/** What a saved z_offset / Z position_endstop depends on: the probe, the Z homing method, and the
+ *  nozzle(s) the offset was measured with (hotend and toolhead change the nozzle height). */
+export function buildFingerprint(b: { probe?: string; homing: { z: string }; toolchanger?: any; hotend?: string; toolhead?: string }): string {
+  const tools = (b.toolchanger?.tools ?? []).map((t: any) => t.hotend ?? b.hotend).join(',');
+  return `probe=${b.toolchanger ? 'tool_probe' : b.probe ?? 'none'} z=${b.homing.z} hotend=${b.hotend ?? 'none'}${tools ? `,${tools}` : ''} toolhead=${b.toolhead ?? 'none'}`;
 }
 const readFingerprint = (cfg: string | undefined) => {
-  const m = /^# build: probe=(\S+) z=(\S+)/m.exec(cfg ?? '');
-  return m ? { probe: m[1], z: m[2] } : undefined;
+  const m = /^# build: (.*)$/m.exec(cfg ?? '');
+  return m ? Object.fromEntries(m[1].trim().split(/\s+/).map((kv) => kv.split('=') as [string, string])) as Record<string, string> : undefined;
 };
 
 export interface CarryOver {
@@ -65,7 +67,7 @@ export interface CarryOver {
 }
 
 export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg: string | undefined): CarryOver {
-  const printerCfg = files['printer.cfg'];
+  let printerCfg = files['printer.cfg'];
   const saved = oldPrinterCfg ? readAutosave(oldPrinterCfg) : [];
   if (!saved.length) return { printerCfg, kept: [], dropped: [] };
   const sections = generatedSections(files);
@@ -74,7 +76,7 @@ export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg
   // a config without the build line (hand-written, or older) can't show it is the same, so those go too.
   const was = readFingerprint(oldPrinterCfg);
   const now = readFingerprint(printerCfg);
-  const sameProbe = !!was && !!now && was.probe === now.probe;
+  const sameProbe = !!was && !!now && ['probe', 'hotend', 'toolhead'].every((k) => was[k] !== undefined && was[k] === now[k]);
   const sameZ = !!was && !!now && was.z === now.z;
   const PROBE_SECTION = /^(probe|bltouch|tool_probe .+|probe_eddy_current .+|beacon|cartographer)$/;
   const kept: SavedSection[] = [];
@@ -97,7 +99,7 @@ export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg
         return false;
       }
       if (PROBE_SECTION.test(s.name) && /^(z_offset|tap_z_offset)$/.test(k) && !sameProbe) {
-        dropped.push({ section: s.name, option: k, why: 'the probe changed (or the old config does not say which it was): run PROBE_CALIBRATE again' });
+        dropped.push({ section: s.name, option: k, why: 'the probe, hotend or toolhead changed (or the old config does not say): run PROBE_CALIBRATE again' });
         return false;
       }
       return true;
@@ -105,6 +107,20 @@ export function carryOverSaveConfig(files: Record<string, string>, oldPrinterCfg
     if (options.length) kept.push({ name: s.name, options });
   }
   if (!kept.length) return { printerCfg, kept: [], dropped };
+  // Klipper ignores a saved value when printer.cfg itself sets the same option (configfile.py
+  // _strip_duplicates), so comment those lines out, as Klipper's own SAVE_CONFIG does.
+  const savedKeys = new Set(kept.flatMap((s) => s.options.map(([k]) => `${s.name}\u0000${k.toLowerCase()}`)));
+  let section = '';
+  let inDup = false;
+  const bodyLines = printerCfg.split('\n').map((line) => {
+    const h = /^\[([^\]]+)\]/.exec(line);
+    if (h) { section = h[1].trim(); inDup = false; return line; }
+    if (/^\s/.test(line) && line.trim()) return inDup ? `#${line}` : line;   // continuation of a multi-line value
+    const k = /^([A-Za-z0-9_]+)\s*[:=]/.exec(line);
+    inDup = !!k && savedKeys.has(`${section}\u0000${k[1].toLowerCase()}`);
+    return inDup ? `#${line}` : line;
+  });
+  printerCfg = bodyLines.join('\n');
   const body = kept.map((s) => [`#*# [${s.name}]`, ...s.options.map(([k, v]) => `#*# ${k} = ${v.split('\n').join('\n#*# ')}`)].join('\n')).join('\n#*#\n');
   return {
     printerCfg: printerCfg.replace(/\s*$/, '\n') + AUTOSAVE_HEADER + body + '\n',

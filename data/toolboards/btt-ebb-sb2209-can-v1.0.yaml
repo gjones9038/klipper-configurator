@@ -67,8 +67,7 @@ accelerometer:
   spi_bus: spi2_PB2_PB11_PB10
 notes:
 - No I2C header (BTT pin diagram), so an Eddy Coil cannot be connected; use the Eddy USB instead.
-- Mounts on the Stealthburner; has a probe input for Tap/inductive (PC13).
-unverified:
+- "Mounts on the Stealthburner. Voron Tap goes on the 5 V Endstop header (Stop2, PB5); inductive probes go on the Proximity header (PC13), whose voltage jumper can give 24 V, so never plug a 5 V Tap in there."
 sources:
 - repo: https://github.com/bigtreetech/EBB
   path: EBB SB2240_2209 CAN/sample-bigtreetech-ebb-sb-canbus-v1.0.cfg

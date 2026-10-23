@@ -66,6 +66,14 @@ export function knownIds(b: any, db: Db): string | null {
   if (!db.extruders[b.extruder]) return `unknown extruder "${b.extruder}"`;
   if (!db.hotends[b.hotend]) return `unknown hotend "${b.hotend}"`;
   if (!b.drivers?.xy || !b.motors || !b.homing || !b.thermistors || !Array.isArray(b.fans)) return 'missing required fields';
+  if (b.probe !== undefined && !db.probes[b.probe]) return `unknown probe "${b.probe}"`;
+  if (b.fans.some((f: any) => !f || typeof f !== 'object' || typeof f.role !== 'string')) return 'a fan entry is not valid';
+  if (b.mainboard.extensions !== undefined && !Array.isArray(b.mainboard.extensions)) return 'mainboard extensions are not a list';
+  if (b.toolchanger !== undefined) {
+    const tc = b.toolchanger;
+    if (!tc || typeof tc !== 'object' || !Array.isArray(tc.tools)) return 'toolchanger settings are not valid';
+    if (tc.tools.some((t: any) => !t || !db.toolboards[t.toolboard?.id])) return 'a toolchanger tool names an unknown toolhead board';
+  }
   return null;
 }
 
@@ -121,6 +129,21 @@ export function normalize(input: Build, db: Db): Build {
   // Toolchanger toolheads (StealthChanger) switch the build into toolchanger mode:
   // every tool has its own board and Tap sensor, which homes Z and probes.
   const tc = toolchangerFor(b, db);
+  // Settings that only apply with or without a toolchanger are set aside (b.parked) rather than lost,
+  // so switching toolhead and back restores the probe, Z homing, docks and tools.
+  const parked = (b.parked ??= {});
+  if (tc && !b.toolchanger && parked.toolchanger) { b.toolchanger = parked.toolchanger; delete parked.toolchanger; }
+  if (tc && !parked.single && (b.probe || b.homing.z !== 'probe_virtual_endstop')) {
+    parked.single = { probe: b.probe, probeOffset: b.probeOffset, probeOutput: b.probeOutput, probeConnection: b.probeConnection, z: b.homing.z, zSwitchXY: b.homing.zSwitchXY };
+  }
+  if (!tc && parked.single) {
+    const s = parked.single;
+    if (!b.probe && s.probe && db.probes[s.probe]) Object.assign(b, { probe: s.probe, probeOffset: s.probeOffset, probeOutput: s.probeOutput, probeConnection: s.probeConnection });
+    b.homing.z = s.z;
+    if (s.zSwitchXY) b.homing.zSwitchXY = s.zSwitchXY;
+    for (const k of ['probeOffset', 'probeOutput', 'probeConnection'] as const) if (b[k] === undefined) delete b[k];
+    delete parked.single;
+  }
   if (tc) {
     const firstTapBoard = Object.values(db.toolboards).find((t) => t.probe_ports?.length && t.interfaces.includes('can'))!;
     b.toolboard ??= { id: firstTapBoard.id, connection: 'can' };
@@ -141,6 +164,7 @@ export function normalize(input: Build, db: Db): Build {
     }
     b.homing.z = 'probe_virtual_endstop';
   } else {
+    if (b.toolchanger) parked.toolchanger = b.toolchanger;
     delete b.toolchanger;
   }
   if (b.homing.z !== 'nozzle_switch') delete b.homing.zSwitchXY;
@@ -162,7 +186,9 @@ export function normalize(input: Build, db: Db): Build {
     }
   }
   if (b.toolboard) delete b.drivers.extruder;
-  if (!b.toolboard || !db.toolheads[b.toolhead ?? '']?.leds) b.leds = false;
+  if (!b.toolboard || !db.toolheads[b.toolhead ?? '']?.leds) { if (b.leds) parked.leds = true; b.leds = false; }
+  else if (parked.leds) { b.leds = true; delete parked.leds; }
+  if (!Object.keys(parked).length) delete b.parked;
 
   // Fans: a fan pinned to the toolhead board falls back to auto when there is none,
   // and a chosen port is dropped when the board it would be on does not have it.

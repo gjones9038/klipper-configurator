@@ -56,7 +56,7 @@ fans:
 - id: FAN0
   pins: [PB7, PB8, PB9]
   typical_use: hotend
-  klipper: {max_power: '0.8', shutdown_speed: '0'}
+  klipper: {max_power: '0.8', shutdown_speed: '0', off_below: '0.2'}
 probe_ports: []
 notes: ['The motor drivers on this board can''t be adjusted from Klipper. Motor current is set on the board, and sensorless
     homing (homing without switches) isn''t possible.']

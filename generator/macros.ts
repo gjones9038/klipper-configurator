@@ -273,7 +273,7 @@ export function preflightMacros(p: Plan, header: string[]): string {
 ${block(`
 [gcode_macro PREFLIGHT]
 description: First check after wiring: temperatures, endstops and probe. Then run PREFLIGHT_MOTORS and PREFLIGHT_FANS.
-gcode:${p.tools ? '\n    INITIALIZE_TOOLCHANGER' : ''}
+gcode:
     {% set ns = namespace(ok=true) %}
     {% for name in ${JSON.stringify(sensors)} %}
         {% set t = printer[name].temperature %}
@@ -284,7 +284,9 @@ gcode:${p.tools ? '\n    INITIALIZE_TOOLCHANGER' : ''}
             RESPOND MSG="{name}: {t|round(1)}C ok"
         {% endif %}
     {% endfor %}
-    QUERY_ENDSTOPS
+${p.tools ? `    RESPOND MSG="Checking which tool is on the shuttle (INITIALIZE_TOOLCHANGER). If this stops with an error, check the mounted tool's Tap wiring and detection pin."
+    INITIALIZE_TOOLCHANGER
+` : ''}    QUERY_ENDSTOPS
     RESPOND MSG="Endstops should read 'open'. Press each switch by hand and run QUERY_ENDSTOPS again: it must read 'TRIGGERED'."
 ${p.tools && p.toolchanger!.zProbe === 'per_tool' ? '    QUERY_PROBE\n    RESPOND MSG="QUERY_PROBE reads the mounted tool\'s Tap sensor. Lift the tool off its Tap by hand and query again: it must change state."' : ''}
 ${(p.probe?.port || p.bltouch) ? '    QUERY_PROBE\n    RESPOND MSG="Probe should be open; trigger it by hand and run QUERY_PROBE again."' : ''}

@@ -95,7 +95,7 @@ stock_parts:
   thermistors:
   - id: geeetech-301-bed-thermistor
     max_temp_c: null
-    label: Geeetech 301 stock thermistor (bed_thermistor)
+    label: Geeetech 301 stock thermistor (bed thermistor)
     sensor_type: geeetech_301_bed_thermistor
     custom_definition_required: true
     definition: {temperature1: 24, resistance1: 104600, temperature2: 40, resistance2: 47700, temperature3: 67, resistance3: 13000}

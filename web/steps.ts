@@ -450,7 +450,7 @@ const hotendStep: Step = {
           value: e.id, label: `${e.name}${e.gear_ratio ? ` · gears ${e.gear_ratio}` : ''}`,
           group: fits(e.id) ? (toolhead ? `Fits ${toolhead.name}` : 'Extruders') : 'Other extruders',
         })).sort((a, b) => Number(!fits(a.value)) - Number(!fits(b.value))), (v) => update((b) => { b.extruder = v; delete b.motors.extruder; })),
-        select('Hotend', build.hotend, Object.values(db.hotends).filter(forPrinter(build)).map((x) => ({ value: x.id, label: `${x.name} · ${x.flow_class} flow · ${x.max_temp == null ? 'no published max temp' : x.max_temp_basis === 'metalwork' ? `no heater/thermistor included (metal rated ${x.max_temp} °C)` : `max ${x.max_temp} °C`}` })),
+        select('Hotend', build.hotend, Object.values(db.hotends).filter(forPrinter(build)).map((x) => ({ value: x.id, label: `${x.name} · ${({ standard: 'standard flow', high_flow: 'high flow', ultra_high_flow: 'ultra high flow' } as Record<string, string>)[x.flow_class] ?? x.flow_class} · ${x.max_temp == null ? 'no published max temp' : x.max_temp_basis === 'metalwork' ? `no heater/thermistor included (metal rated ${x.max_temp} °C)` : `max ${x.max_temp} °C`}` })),
           (v) => update((b) => { b.hotend = v; }), hotend.common_thermistor ? `Usually ships with: ${db.thermistors[hotend.common_thermistor]?.label ?? hotend.common_thermistor}` : undefined)),
       h('div', { class: 'grid' },
         select('Hotend thermistor', build.thermistors.hotend, therm, (v) => update((b) => { b.thermistors.hotend = v; }), 'The temperature sensor in the heater block. The wrong type reads the wrong temperature.'),

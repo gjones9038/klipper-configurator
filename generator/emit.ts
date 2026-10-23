@@ -326,9 +326,12 @@ export function emit(p: Plan, db: Db, dataRev: string): Record<string, string> {
     fileFor(pr.port!.board).add(s);
   }
   if (p.bltouch) {
-    fileFor(p.bltouch.board).add(new Section('bltouch')
+    const bt = new Section('bltouch')
       .set('sensor_pin', p.bltouch.sensor).set('control_pin', p.bltouch.control)
-      .set('x_offset', p.probe!.offset.x).set('y_offset', p.probe!.offset.y).set('z_offset', 0));
+      .set('x_offset', p.probe!.offset.x).set('y_offset', p.probe!.offset.y).set('z_offset', 0);
+    // The board maker's BLTouch settings (clone sensors need some of these), only with that board's own port.
+    for (const [k, v] of Object.entries(p.bltouch.options ?? {})) bt.set(k, v as any, 'board maker setting');
+    fileFor(p.bltouch.board).add(bt);
   }
   if (p.accel && tb) {
     const a = new Section(p.accel.chip).set('cs_pin', `${TOOLHEAD_MCU}:${p.accel.cs_pin}`);

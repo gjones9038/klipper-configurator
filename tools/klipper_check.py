@@ -73,6 +73,16 @@ ERROR_MARKERS = ("Config error", "Internal error", "Error evaluating", "Tracebac
                  "Move out of range", "Unknown command", "Must home", "Option '")
 
 
+def append_cfg(path, text):
+    """Add test-only sections to printer.cfg, before any SAVE_CONFIG block (Klipper ignores the
+    saved values when something follows them)."""
+    data = open(path).read()
+    mark = "\n#*# <---------------------- SAVE_CONFIG ---------------------->"
+    i = data.find(mark)
+    data = data + "\n" + text if i < 0 else data[:i] + "\n" + text + data[i:]
+    open(path, "w").write(data)
+
+
 def mcus_for(outdir):
     with open(os.path.join(outdir, "mcus.json")) as f:
         return json.load(f)
@@ -146,8 +156,7 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
         [open(os.path.join(cfg, "printer.cfg")).read()]
         + [open(os.path.join(cfg, "tools", n)).read() for n in os.listdir(os.path.join(cfg, "tools"))])
     if tc:
-        with open(os.path.join(cfg, "printer.cfg"), "a") as f:
-            f.write("\n[kc_test_tool_detect]\n")
+        append_cfg(os.path.join(cfg, "printer.cfg"), "[kc_test_tool_detect]\n")
     # Test-only: batch mode has no heat, so PURGE_LINE can't extrude. Check its moves with a copy that
     # has the E words removed (_KC_PURGE_MOVES), called in place of PURGE_LINE.
     pm = os.path.join(cfg, "macros", "print.cfg")
@@ -155,8 +164,7 @@ def check(outdir, klipper, dicts, site, work, ui_configs):
     if m:
         body = re.sub(r"(?m)^(\s+G1)\s+E-?[\d.]+(\s+F[\d.]+)?\s*$", "", m.group(0))   # extrude-only lines
         body = re.sub(r"\s+E-?[\d.]+", "", body).replace("[gcode_macro PURGE_LINE]", "[gcode_macro _KC_PURGE_MOVES]")
-        with open(os.path.join(cfg, "printer.cfg"), "a") as f:
-            f.write("\n" + body + "\n")
+        append_cfg(os.path.join(cfg, "printer.cfg"), body + "\n")
     with open(os.path.join(work, "test.gcode"), "w") as f:
         if tc and eddy:
             # Shuttle eddy probe: Z cannot home before calibration, so no tool changes either.

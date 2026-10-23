@@ -139,3 +139,13 @@ test('StealthChanger with another supported toolhead (Dragon Burner): no Stealth
   b.toolhead = 'stealthburner';                                   // not a StealthChanger toolhead
   assert.ok(errors(b).includes('toolchanger_toolhead') || errors(b).length > 0);
 });
+
+test('safe Y too close to the docks is refused (wiki: close_y + thickest tool + 10)', () => {
+  const b = example();
+  b.toolchanger!.docks = [{ x: 50, y: -5, z: 320 }, { x: 130, y: -5, z: 320 }, { x: 210, y: -5, z: 320 }];
+  b.toolchanger!.travel = { yMin: -10, zMax: 330 };
+  b.toolchanger!.safeY = 10;                                     // close_y = -5 + 30 = 25
+  assert.ok(errors(b).includes('safe_y_too_small'));
+  b.toolchanger!.safeY = 80;
+  assert.ok(!errors(b).includes('safe_y_too_small'));
+});
