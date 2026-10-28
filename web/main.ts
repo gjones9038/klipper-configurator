@@ -194,13 +194,19 @@ function render() {
 
 async function boot() {
   try {
-    const res = await fetch('db.json');
-    if (!res.ok) throw new Error(`db.json: HTTP ${res.status}`);
-    const data: { rev: string; raw: RawData } = await res.json();
+    // The built page embeds the data; the dev server's page fetches it.
+    const embedded = document.getElementById('kc-db');
+    let data: { rev: string; raw: RawData };
+    if (embedded) data = JSON.parse(embedded.textContent ?? '');
+    else {
+      const res = await fetch('db.json');
+      if (!res.ok) throw new Error(`db.json: HTTP ${res.status}`);
+      data = await res.json();
+    }
     db = assembleDb(data.raw);
     rev = data.rev;
   } catch (e) {
-    app.replaceChildren(h('p', { class: 'boot' }, `Could not load the component data (${(e as Error).message}). Serve dist/web over HTTP, e.g. npm run web:dev.`));
+    app.replaceChildren(h('p', { class: 'boot' }, `Could not load the component data (${(e as Error).message}). Rebuild with npm run web:build and use dist/web/index.html.`));
     return;
   }
   const saved = loadSaved();

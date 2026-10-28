@@ -42,6 +42,9 @@ async function call<T>(t: Target, method: 'GET' | 'POST', path: string, body?: B
 function unreachable(url: string): string {
   const here = typeof location !== 'undefined' ? location.origin : '';
   const mixed = typeof location !== 'undefined' && location.protocol === 'https:' && url.startsWith('http:');
+  if (typeof location !== 'undefined' && location.protocol === 'file:') {
+    return `Could not reach Moonraker at ${url}. This copy is opened as a file, and Moonraker blocks file pages unless null is in cors_domains under [authorization] (which lets sandboxed frames on any website reach the printer too). Safer: download the zip and upload it in Mainsail or Fluidd.`;
+  }
   return mixed
     ? `This page is served over HTTPS, so the browser blocks requests to ${url} (plain HTTP). Open the configurator over HTTP (e.g. npm run web:dev) or serve Moonraker over HTTPS.`
     : `Could not reach Moonraker at ${url}. Check the address and port (7125, or the web UI's address). If it is right, the browser is blocking it: add ${here || 'this page\'s origin'} to cors_domains under [authorization] in moonraker.conf and restart Moonraker.`;

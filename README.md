@@ -68,13 +68,23 @@ shuttle-mounted eddy probe (`toolchanger.zProbe: shuttle`).
 ## Web app
 
 ```sh
-npm run web:dev       # build into dist/web, rebuild on change, serve on http://localhost:8080
-npm run web:build     # one-off static build into dist/web (serve it from any static host)
+npm run web:dev       # dev build in dist/dev, rebuild on change, serve on http://localhost:8080
+npm run web:build     # dist/web/index.html: one self-contained page (upload anywhere, or open from disk)
 npm run typecheck     # tsc over generator/, web/ and tools/
 ```
 
-A static, client-side app: `tools/build_web.ts` bundles `web/main.ts` with esbuild and writes
-`db.json` (the raw data files plus the data revision). The browser runs the same `plan()` /
+**One file.** `npm run web:build` writes `dist/web/index.html` (about 1.5 MB) with the script,
+styles, IBM Plex fonts and component data inlined, plus `README.txt` and the font licence. Upload
+that one file to any static host, or double-click it: it runs offline either way. It is a classic
+inline script with the data in a `<script type="application/json" id="kc-db">` tag, because
+browsers block module scripts and `fetch()` on `file://` pages, and a separate `app.js` could be
+missed on upload or served with the wrong MIME type (all three left the page stuck on "Loading").
+Opened from disk the page's origin is `null`; allowing `null` in Moonraker's `cors_domains` would
+also admit sandboxed frames from any website, so there the upload panel tells the user to download
+the zip and upload it in Mainsail or Fluidd.
+
+A static, client-side app: `tools/build_web.ts` bundles `web/main.ts` with esbuild and embeds
+the raw data files plus the data revision (the dev server serves them as `db.json`). The browser runs the same `plan()` /
 `generate()` as the CLI on every change, so the zip it downloads matches
 `npm run generate` for the same `build.json` byte for byte. Nothing leaves the browser; the build is
 remembered in localStorage and can be saved or opened as `build.json`.
@@ -137,7 +147,7 @@ tools/
   validate.py              pin-conflict + reference checks; --matrix prints compatibility
   klipper_check.py         run generated configs through Klipper (batch mode)
   setup_klipper_check.sh   one-time setup for klipper_check.py
-  build_web.ts             bundle the web app into dist/web
+  build_web.ts             bundle the web app into one page, dist/web/index.html
 generator/                 TypeScript, run directly by Node >= 23.6 (no build step)
                            generate.ts / dbcore.ts have no Node imports and also run in the browser
 web/                       the web app (vanilla TypeScript, no framework)

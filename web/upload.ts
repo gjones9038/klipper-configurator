@@ -94,6 +94,9 @@ export function renderUpload(result: Result, build: Build, rerender: () => void)
           onChange: (e: Event) => { st.apiKey = (e.target as HTMLInputElement).value; } }))),
     checkbox('Keep saved values from the current printer.cfg', st.keep, (v) => { st.keep = v; st.phase = st.plan ? 'idle' : st.phase; st.plan = undefined; rerender(); },
       'Keeps the values Klipper saved after calibration (heater tuning, probe offset, bed mesh, input shaper, dock positions). Values for parts the new config no longer has are left out, because Klipper would refuse to start with them.', busy),
+    location.protocol === 'file:' ? h('div', { class: 'issue warning' },
+      'This copy is opened as a file, not from a web address, and Moonraker blocks file pages unless ', h('code', { class: 'mono' }, 'null'),
+      ' is in ', h('code', { class: 'mono' }, 'cors_domains'), '. Adding it lets any web page in a sandboxed frame reach your printer, so the safer way is: download the zip above, then upload the files in Mainsail or Fluidd.') :
     h('p', { class: 'hint', style: 'margin:0' },
       'Your browser sends the files straight to Moonraker (the service behind Mainsail and Fluidd), so Moonraker has to allow this page first: in moonraker.conf, under ', h('code', { class: 'mono' }, '[authorization]'),
       ', add ', h('code', { class: 'mono' }, origin), ' to ', h('code', { class: 'mono' }, 'cors_domains'), ', then restart Moonraker.'),
