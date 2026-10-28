@@ -4,6 +4,9 @@ A tool that turns "my printer, board, toolhead, motors, hotend…" into a comple
 config plus wiring diagrams. This repo holds the **component data**, the **generator** and a
 **web app** that runs the generator in the browser.
 
+**Just want to use it?** Everything is in [`site/`](site/): download `site/index.html` and
+double-click it, or upload it to any web host. No npm, no install, works offline.
+
 ## Generator
 
 ```sh
@@ -69,11 +72,12 @@ shuttle-mounted eddy probe (`toolchanger.zProbe: shuttle`).
 
 ```sh
 npm run web:dev       # dev build in dist/dev, rebuild on change, serve on http://localhost:8080
-npm run web:build     # dist/web/index.html: one self-contained page (upload anywhere, or open from disk)
+npm run web:build     # site/index.html: one self-contained page (upload anywhere, or open from disk)
 npm run typecheck     # tsc over generator/, web/ and tools/
 ```
 
-**One file.** `npm run web:build` writes `dist/web/index.html` (about 1.5 MB) with the script,
+**One file.** `npm run web:build` writes `site/index.html` (about 1.5 MB, committed; rebuild and
+commit it after changing data or the app) with the script,
 styles, IBM Plex fonts and component data inlined, plus `README.txt` and the font licence. Upload
 that one file to any static host, or double-click it: it runs offline either way. It is a classic
 inline script with the data in a `<script type="application/json" id="kc-db">` tag, because
@@ -147,7 +151,7 @@ tools/
   validate.py              pin-conflict + reference checks; --matrix prints compatibility
   klipper_check.py         run generated configs through Klipper (batch mode)
   setup_klipper_check.sh   one-time setup for klipper_check.py
-  build_web.ts             bundle the web app into one page, dist/web/index.html
+  build_web.ts             bundle the web app into one page, site/index.html
 generator/                 TypeScript, run directly by Node >= 23.6 (no build step)
                            generate.ts / dbcore.ts have no Node imports and also run in the browser
 web/                       the web app (vanilla TypeScript, no framework)

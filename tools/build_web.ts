@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Build the web app.
-//   node tools/build_web.ts           dist/web/index.html: one self-contained page (script,
+//   node tools/build_web.ts           site/index.html (committed): one self-contained page (script,
 //                                     styles, fonts and data inlined) that works uploaded to any
 //                                     static host or opened straight from disk
 //   node tools/build_web.ts --serve   dev build in dist/dev (separate app.js + db.json),
@@ -41,7 +41,7 @@ else {
 // cannot leave the page without its script: browsers refuse module scripts and
 // fetch() on file:// pages, so it is a classic inline script plus a JSON data tag.
 async function buildPortable() {
-  const out = join(root, 'dist', 'web');
+  const out = join(root, 'site');
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   const js = await esbuild.build({ ...options, format: 'iife', sourcemap: false, write: false });
@@ -66,7 +66,7 @@ async function buildPortable() {
   writeFileSync(join(out, 'index.html'), html);
   writeFileSync(join(out, 'README.txt'), readme());
   copyFileSync(join(root, 'node_modules', '@fontsource', 'ibm-plex-sans', 'LICENSE'), join(out, 'FONT-LICENSE.txt'));
-  console.log(`wrote dist/web/index.html (${(html.length / 1e6).toFixed(1)} MB), README.txt, FONT-LICENSE.txt`);
+  console.log(`wrote site/index.html (${(html.length / 1e6).toFixed(1)} MB), README.txt, FONT-LICENSE.txt`);
 }
 
 /** The IBM Plex weights the page uses, as inline @font-face rules (latin subset, like Google Fonts serves). */
